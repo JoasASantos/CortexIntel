@@ -20,6 +20,35 @@ use crate::config::ProviderChoice;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 
+/// macOS/Linux GUI apps launched from Finder/Dock do NOT inherit the shell PATH,
+/// so `claude`/`codex` (in ~/.local/bin, /opt/homebrew/bin, …) are invisible and
+/// spawning fails. Prepend the common CLI locations to PATH once at startup so
+/// the embedded server can find them regardless of how the app was launched.
+pub fn augment_path() {
+    let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+    if let Some(home) = dirs::home_dir() {
+        dirs.push(home.join(".local/bin"));
+        dirs.push(home.join("bin"));
+        dirs.push(home.join(".cargo/bin"));
+    }
+    for d in ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin", "/usr/bin", "/bin"] {
+        dirs.push(std::path::PathBuf::from(d));
+    }
+    let cur = std::env::var("PATH").unwrap_or_default();
+    let existing: std::collections::HashSet<&str> = cur.split(':').collect();
+    let mut prefix: Vec<String> = Vec::new();
+    for d in &dirs {
+        let s = d.to_string_lossy().to_string();
+        if d.exists() && !existing.contains(s.as_str()) {
+            prefix.push(s);
+        }
+    }
+    if !prefix.is_empty() {
+        let joined = if cur.is_empty() { prefix.join(":") } else { format!("{}:{}", prefix.join(":"), cur) };
+        std::env::set_var("PATH", joined);
+    }
+}
+
 /// A single completion request.
 /// How demanding a task is — drives model routing in `Auto` mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

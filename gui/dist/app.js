@@ -925,7 +925,51 @@ async function askAbout(q){
     if(adds){ $("#addProp").addEventListener("click",()=>mergeProposals(res)); }
     applyFocus(res.focus);
     pushNotif("ai","AI copilot answered a query");
-  } catch(e){ thinking.remove(); const a=el("div","ask-msg a"); a.textContent="✦ error: "+e.message; log.appendChild(a); }
+  } catch(e){
+    thinking.remove();
+    // Deterministic fallback: many asks are simple "show/filter X" requests that
+    // don't need an LLM. Try a local graph filter before surfacing the error.
+    const local=localFilterAnswer(q, t);
+    const a=el("div","ask-msg a");
+    if(local){ a.innerHTML=local.html; log.appendChild(a); log.scrollTop=log.scrollHeight; applyLocalFocus(local.ids); }
+    else { const noProvider=/spawn|installed|providers failed/.test(e.message||"");
+      a.innerHTML = noProvider
+        ? `✦ No LLM backend reachable (Claude/Codex not found on PATH). I answered locally where I could. Set a provider in Settings, or run <code>cortex serve</code> from a terminal where <code>claude</code>/<code>codex</code> are on PATH.`
+        : "✦ error: "+esc(e.message);
+      log.appendChild(a); }
+    log.scrollTop=log.scrollHeight;
+  }
+}
+// Handle simple "show/filter/only X" asks without an LLM: match nodes whose
+// label/attributes contain the query's salient tokens, and isolate them.
+function localFilterAnswer(q, t){
+  if(!t||!t.graph.nodes.length) return null;
+  const ql=q.toLowerCase();
+  if(!/\b(show|filter|only|mostr|mostre|exib|list|find|encontr|quais|onde|filtr)\b/.test(ql)) {
+    // still allow bare token queries like "protonmail"
+  }
+  // salient tokens: things with . or @, or words >2 chars that aren't stopwords
+  const stop=new Set(["show","only","that","are","the","with","and","or","me","os","que","sao","são","no","na","graph","grafo","mostre","mostrar","exibir","quais","onde","from","filter","filtre","find","list","de","da","do","as","um","uma"]);
+  const toks=(q.match(/[A-Za-z0-9._@\-]+/g)||[]).map(s=>s.toLowerCase()).filter(s=>s.length>2 && !stop.has(s));
+  if(!toks.length) return null;
+  const hay=n=>(n.label+" "+n.kind+" "+(n.tags||[]).join(" ")+" "+Object.entries(n.attributes||{}).map(([k,v])=>k+" "+v).join(" ")).toLowerCase();
+  const matches=t.graph.nodes.filter(n=>toks.some(tk=>hay(n).includes(tk)));
+  if(!matches.length) return { html:`✦ (local) No entities match: ${esc(toks.join(", "))}.`, ids:[] };
+  const ids=matches.map(n=>n.id);
+  const sample=matches.slice(0,12).map(n=>esc(n.label)).join(", ");
+  return { html:`✦ (local filter) <b>${matches.length}</b> entit${matches.length>1?"ies":"y"} match <b>${esc(toks.join(", "))}</b> — isolated in the graph.<div class="pts muted" style="margin-top:4px;font-size:11px">${sample}${matches.length>12?" …":""}</div>`, ids };
+}
+function applyLocalFocus(ids){ if(!ids||!ids.length) return; const t=activeTab(); if(!t) return; showView("graph");
+  const keep=new Set(ids);
+  const need=()=>{ initCy(); return cy && ids.some(id=>cy.$id(id).length); };
+  // If the graph is clustered (Overview) the individual nodes aren't rendered —
+  // rebuild uncollapsed so we can isolate the matches.
+  if((t.clusterMode||"none")!=="none" || !need()){ t.clusterMode="none"; t.graphMode="full"; $("#graphCluster")&&($("#graphCluster").value="none"); renderGraph(); }
+  setTimeout(()=>requestAnimationFrame(()=>{ initCy(); if(!cy)return; cy.resize();
+    cy.nodes().forEach(n=>n.style("display",keep.has(n.id())?"element":"none"));
+    cy.edges().forEach(ed=>ed.style("display",(keep.has(ed.source().id())&&keep.has(ed.target().id()))?"element":"none"));
+    if(cy.nodes(":visible").length) cy.fit(cy.nodes(":visible"),70);
+  }), 350);
 }
 function mergeProposals(res){
   const t=activeTab(); if(!t) return;

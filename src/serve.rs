@@ -63,6 +63,8 @@ const V_COSE_BASE: &str = include_str!("../gui/dist/vendor/cose-base.js");
 const V_FCOSE: &str = include_str!("../gui/dist/vendor/cytoscape-fcose.js");
 
 pub fn serve(port: u16, open: bool) -> Result<()> {
+    // GUI apps don't inherit the shell PATH — make the LLM CLIs discoverable.
+    crate::llm::augment_path();
     let addr = format!("127.0.0.1:{port}");
     let listener = TcpListener::bind(&addr)
         .map_err(|e| anyhow!("cannot bind {addr}: {e} (try another --port)"))?;
