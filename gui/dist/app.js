@@ -1843,6 +1843,49 @@ function renderDecisionMatrix(t,g,m){ const tb=$("#intelDecision tbody"); if(!tb
       $("#nbaGo")&&$("#nbaGo").addEventListener("click",b.go); } }
 }
 
+// G1 — Decision panel (Courses of Action). Renders the backend's ranked
+// next_best_actions as comparable option cards: risk seal, confidence,
+// attribution (from backend), entity chips, expandable "why", and "view in
+// graph" (focuses the supporting nodes). Nothing here is invented client-side.
+function coaSeal(a){ // map priority/effort to a seal
+  if(a.priority>=0.66) return {cls:"rec", label:t("decision.recommended")};
+  if(a.effort!=null && a.effort<=0.4) return {cls:"feas", label:t("decision.feasible")};
+  return {cls:"risk", label:t("decision.highrisk")};
+}
+function renderDecisionPanel(tab,g){ const w=$("#coaPanel"); if(!w)return;
+  const nba=(tab&&tab.graph.meta&&tab.graph.meta.nba)||[];
+  const asmt=(tab&&tab.graph.meta&&tab.graph.meta.assessment)||[];
+  if(!nba.length && !asmt.length){ w.innerHTML=`<div class="empty">${esc(t("decision.none"))}</div>`; return; }
+  const byId={}; (g.nodes||[]).forEach(n=>byId[n.id]=n);
+  w.innerHTML="";
+  // situation summary line from the top assessment
+  if(asmt.length){ const s=el("div","coa-situation"); s.innerHTML=`<span class="coa-sit-conf">${Math.round((asmt[0].confidence||0)*100)}%</span> ${esc(asmt[0].statement)}`; w.appendChild(s); }
+  const ranked=[...nba].sort((a,b)=>(b.priority||0)-(a.priority||0));
+  ranked.forEach((a,i)=>{
+    const seal=coaSeal(a);
+    const card=el("div","coa"); card.dataset.i=i;
+    const ids=(a.entity_ids||[]).filter(id=>byId[id]);
+    const chips=ids.slice(0,6).map(id=>{ const n=byId[id]; return `<span class="coa-chip"><span class="kdot" style="background:${kColor(n.kind)}"></span>${esc(n.label)}</span>`; }).join("");
+    card.innerHTML=`
+      <div class="coa-top"><span class="coa-seal ${seal.cls}">${esc(seal.label)}</span>
+        <span class="coa-conf" title="priority">${Math.round((a.priority||0)*100)}%</span></div>
+      <div class="coa-action">${esc(a.action)}</div>
+      <div class="coa-attr">${esc(t("decision.attributedTo"))}: <b>${esc(a.attributed_to||"—")}</b>${a.est_hours?` · ~${a.est_hours}h`:""}</div>
+      ${chips?`<div class="coa-chips">${chips}</div>`:""}
+      <div class="coa-foot"><span class="coa-why-toggle">▸ ${esc(t("decision.why"))}</span>${ids.length?`<span class="coa-view">◕ ${esc(t("decision.viewGraph"))}</span>`:""}</div>
+      <div class="coa-why" hidden>${esc(a.why||"")}</div>`;
+    card.querySelector(".coa-why-toggle").addEventListener("click",e=>{ const wy=card.querySelector(".coa-why"); wy.hidden=!wy.hidden; e.target.textContent=(wy.hidden?"▸ ":"▾ ")+t("decision.why"); });
+    const vg=card.querySelector(".coa-view"); if(vg) vg.addEventListener("click",()=>focusCoaEntities(ids));
+    w.appendChild(card);
+  });
+}
+// Focus the graph on the entities backing a course of action.
+function focusCoaEntities(ids){ if(!ids||!ids.length)return; showView("graph");
+  requestAnimationFrame(()=>{ initCy(); if(!cy)return; cy.resize(); const keep=new Set(ids);
+    cy.elements().removeClass("faded pathhl"); cy.nodes().forEach(n=>n.toggleClass("pathhl",keep.has(n.id())));
+    const eles=cy.nodes().filter(n=>keep.has(n.id())); if(eles.length){ cy.animate({fit:{eles:eles.closedNeighborhood(),padding:80},duration:350}); }
+    toast(`Focused ${ids.length} supporting ${ids.length>1?"entities":"entity"}`); });
+}
 // Pre-defined analysis flows (one-click prompts that steer the assessment).
 const FLOW_COMMON=[
   ["◆","Executive summary","Give a 3-sentence executive summary for a non-technical decision-maker: what's happening, why it matters, and the single most important next step."],
@@ -1865,6 +1908,7 @@ function renderFlows(){ const w=$("#intelFlows"); if(!w)return; const t=activeTa
 
 function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],edges:[]}; const m=computeMetrics(g);
   renderFlows();
+  renderDecisionPanel(t,g);
   if(t){ renderHypotheses(t,g,m); renderDecisionMatrix(t,g,m); }
   const top=$("#intelTop"); if(top){ top.innerHTML=""; const nodes=[...g.nodes].sort((a,b)=>b.risk-a.risk).slice(0,12); if(!nodes.length)top.innerHTML='<div class="empty">—</div>';
     nodes.forEach(n=>{ const li=el("div","li"); const l=el("div","l"); const d=el("span","kdot"); d.style.background=kColor(n.kind); l.appendChild(d); l.appendChild(el("span","label",n.label)); li.appendChild(l); li.appendChild(el("span","band "+(n.band||bandOf(n.risk)),(n.band||bandOf(n.risk)))); li.addEventListener("click",()=>focusEntity(n.id,true)); top.appendChild(li); }); }

@@ -24,6 +24,9 @@ pub struct Assessment {
     pub action: String,
     /// "observed" (from data) vs "inferred" (structural inference).
     pub basis: String,
+    /// Who/what produced this statement (attribution for the decision panel).
+    #[serde(default = "deterministic_engine")]
+    pub attributed_to: String,
 }
 
 /// Per-vertical vocabulary lens. Same structure, different words/emphasis.
@@ -75,6 +78,7 @@ pub fn assess(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain) -> Vec<Asse
         evidence_ids: vec![],
         action: format!("Review the top prioritized entities; {} if confirmed.", l.escalate),
         basis: "observed".into(),
+        attributed_to: deterministic_engine(),
     });
 
     // 2) Shared-hub coordination (structural inference).
@@ -97,6 +101,7 @@ pub fn assess(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain) -> Vec<Asse
             evidence_ids: vec![(*id).clone()],
             action: "Isolate this cluster and expand its members; confirm whether the shared hub is a genuine link or a benign aggregator.".into(),
             basis: "inferred".into(),
+            attributed_to: deterministic_engine(),
         });
     }
 
@@ -113,6 +118,7 @@ pub fn assess(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain) -> Vec<Asse
             evidence_ids: top.iter().map(|a| a.entity_id.clone()).collect(),
             action: format!("Verify the top {}{} first; {}.", l.actor, if top.len() > 1 { "s" } else { "" }, l.escalate),
             basis: "observed".into(),
+            attributed_to: deterministic_engine(),
         });
     }
 
@@ -130,6 +136,7 @@ pub fn assess(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain) -> Vec<Asse
             evidence_ids: vec![],
             action: "Resolve duplicates before drawing firm conclusions — treat cluster sizes as upper bounds.".into(),
             basis: "observed".into(),
+            attributed_to: deterministic_engine(),
         });
     }
 
@@ -153,7 +160,15 @@ pub struct NextAction {
     pub target: String,
     /// Entity ids this action concerns (for GUI focus), if any.
     pub entity_ids: Vec<String>,
+    /// Who/what produced this action (attribution for the decision panel).
+    #[serde(default = "deterministic_engine")]
+    pub attributed_to: String,
+    /// Rough effort→time hint in hours, for the planning timeline (G4).
+    #[serde(default)]
+    pub est_hours: f32,
 }
+
+fn deterministic_engine() -> String { "Deterministic engine".to_string() }
 
 /// Rank the next-best-actions by how much they cut uncertainty per unit effort.
 /// Deterministic: derived from real data-quality/structure gaps, not opinion.
@@ -165,7 +180,9 @@ pub fn next_best_actions(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain) 
 
     let mut mk = |action: String, why: String, red: f32, effort: f32, target: &str, ids: Vec<String>| {
         let effort = effort.max(0.05);
-        acts.push(NextAction { action, why, uncertainty_reduction: red, effort, priority: (red / effort).min(3.0) / 3.0, target: target.into(), entity_ids: ids });
+        // effort [0..1] → a coarse hours estimate for the planning timeline.
+        let est_hours = (0.5 + effort * 7.5).round();
+        acts.push(NextAction { action, why, uncertainty_reduction: red, effort, priority: (red / effort).min(3.0) / 3.0, target: target.into(), entity_ids: ids, attributed_to: deterministic_engine(), est_hours });
     };
 
     // 1) Entities with no source — provenance gaps cap trust.
