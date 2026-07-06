@@ -64,14 +64,26 @@ const state = {
   user: null, domains: [], dataTypes: [], provider: "auto",
   tabs: [], active: -1, notifications: [],
 };
+// Type palette — deliberately spread across the hue wheel so kinds don't all
+// read as "another blue": teal, blue, violet, amber, magenta, green, red…
 const KIND_COLOR = {
-  case:"#a78bfa", report:"#c084fc", person:"#38bdf8", victim:"#f472b6", suspect:"#ef4444",
-  account:"#22d3ee", device:"#2dd4bf", ip:"#f59e0b", url:"#818cf8", domain:"#60a5fa",
-  media:"#fb7185", evidence:"#fda4af", communication:"#4ade80", group:"#facc15", payment:"#34d399",
-  wallet:"#10b981", location:"#fbbf24", organization:"#93c5fd", malware:"#dc2626",
-  vulnerability:"#f97316", incident:"#e879f9", service:"#5eead4", repository:"#a3e635", unknown:"#94a3b8"
+  account:"#57D7E8", person:"#63B3FF", domain:"#8B7CFF", url:"#F5B84B",
+  ip:"#F59E0B", device:"#2DD4BF", wallet:"#34D399", payment:"#22C55E",
+  organization:"#93C5FD", group:"#FACC15", location:"#FBBF24",
+  case:"#A78BFA", report:"#C084FC", communication:"#4ADE80",
+  person_alt:"#63B3FF", victim:"#F472B6", suspect:"#F87171",
+  media:"#FB7185", evidence:"#FDA4AF", malware:"#EF4444",
+  vulnerability:"#FB923C", incident:"#E879F9", service:"#5EEAD4",
+  repository:"#A3E635", unknown:"#94A3B8"
 };
 const kColor = k => KIND_COLOR[k] || KIND_COLOR.unknown;
+const GRAPH_BG = "#070A0F", NODE_FILL = "#151D27";
+// Node sizing: bounded so nothing becomes a giant blob.
+const NODE_MIN=22, NODE_MAX=44, META_MIN=40, META_MAX=88;
+const nodeSize = risk => NODE_MIN + Math.sqrt(Math.max(0,Math.min(1,risk||0)))*(NODE_MAX-NODE_MIN);
+// Cluster size scales with log(count) between META_MIN and META_MAX.
+const metaSize = count => Math.min(META_MAX, META_MIN + Math.log2((count||2))*7);
+const edgeW = conf => 0.5 + (conf||0.5)*1.3;
 const KIND_SHAPE = { person:"ellipse", victim:"ellipse", suspect:"ellipse", account:"round-rectangle", device:"round-rectangle",
   ip:"diamond", url:"hexagon", domain:"hexagon", media:"round-tag", evidence:"round-tag", wallet:"pentagon", payment:"pentagon",
   group:"octagon", case:"round-rectangle", report:"round-rectangle", malware:"star", incident:"star", vulnerability:"star",
@@ -357,40 +369,74 @@ function initCy() {
   cy = cytoscape({
     container: $("#cy"),
     wheelSensitivity: 0.25,
+    // Performance: keep large graphs smooth and prevent WebView lockups.
+    hideEdgesOnViewport: true,
+    textureOnViewport: true,
+    motionBlur: false,
+    pixelRatio: 1,
     style: [
       { selector:"node", style:{
-        "background-color":"#0f151c", "background-image":"data(icon)", "background-width":"56%", "background-height":"56%", "background-fit":"none", "background-clip":"none",
+        "background-color": NODE_FILL, "background-image":"data(icon)", "background-width":"52%", "background-height":"52%", "background-fit":"none", "background-clip":"none",
         "width":"data(size)", "height":"data(size)", "shape":"ellipse",
-        "label":"data(label)", "font-size":"9px", "font-family":"var(--mono)", "color":"#9fabba", "text-wrap":"ellipsis",
-        "text-max-width":"92px", "text-valign":"bottom", "text-margin-y":4, "min-zoomed-font-size":7,
-        "border-width":"data(bw)", "border-color":"data(kc)", "border-opacity":1,
-        "transition-property":"opacity border-width", "transition-duration":"180ms" }},
-      { selector:"node[halo]", style:{ "underlay-color":"data(hc)", "underlay-padding":7, "underlay-opacity":0.45 }},
-      { selector:"node:selected", style:{ "border-width":3, "border-color":"#ffffff", "underlay-color":"#33c2dd", "underlay-padding":8, "underlay-opacity":0.4 }},
+        "label":"data(label)", "font-size":"9px", "font-weight":600, "font-family":"var(--mono)", "color":"#E6EDF7",
+        "text-wrap":"wrap", "text-max-width":"88px", "text-valign":"bottom", "text-margin-y":5, "min-zoomed-font-size":8,
+        "text-outline-color":"#070A0F", "text-outline-width":2, "text-outline-opacity":0.85,
+        "border-width":"data(bw)", "border-color":"data(kc)", "border-opacity":0.95,
+        "transition-property":"opacity border-width", "transition-duration":"140ms" }},
+      { selector:"node[halo]", style:{ "underlay-color":"data(hc)", "underlay-padding":6, "underlay-opacity":0.4 }},
+      // perf mode: solid coloured dot, no SVG icon
+      { selector:"node.plain", style:{ "background-image":"none", "background-color":"data(kc)" }},
+      // ---- edges: discreet by default ----
       { selector:"edge", style:{
-        "width":"data(w)", "line-color":"rgba(120,140,165,0.22)", "target-arrow-color":"rgba(120,140,165,0.3)",
-        "target-arrow-shape":"triangle", "arrow-scale":0.7, "curve-style":"bezier",
-        "label":"data(type)", "font-size":"7px", "font-family":"var(--mono)", "color":"rgba(150,170,190,0.5)", "text-rotation":"autorotate", "min-zoomed-font-size":10,
-        "transition-property":"opacity line-color", "transition-duration":"180ms" }},
-      { selector:"edge:selected", style:{ "line-color":"#33c2dd", "width":2 }},
-      { selector:".hyp", style:{ "line-style":"dashed", "line-color":"#8b7fe8", "border-color":"#8b7fe8", "border-style":"dashed" }},
+        "width":"data(w)", "line-color":"rgba(148,163,184,0.16)", "target-arrow-color":"rgba(148,163,184,0.24)",
+        "target-arrow-shape":"triangle", "arrow-scale":0.55, "curve-style":"bezier",
+        "label":"", "font-size":"7px", "font-family":"var(--mono)", "color":"rgba(200,214,230,0.7)",
+        "text-rotation":"autorotate", "text-background-color":"#070A0F", "text-background-opacity":0.7, "text-background-padding":2,
+        "transition-property":"opacity line-color width", "transition-duration":"140ms" }},
+      // ---- focus / hover / selection ----
+      { selector:"node.focused", style:{ "border-width":3.5, "border-color":"#E6EDF7", "underlay-color":"data(kc)", "underlay-padding":10, "underlay-opacity":0.55, "z-index":50 }},
+      { selector:"node:selected", style:{ "border-width":3.5, "border-color":"#E6EDF7", "underlay-color":"data(kc)", "underlay-padding":10, "underlay-opacity":0.55, "z-index":50 }},
+      { selector:"node.neighbor", style:{ "border-opacity":1, "z-index":40 }},
+      { selector:"edge.connected", style:{ "line-color":"data(kc)", "target-arrow-color":"data(kc)", "width":"mapData(w, 0, 3, 1.4, 3)", "opacity":1, "label":"data(type)", "min-zoomed-font-size":9, "z-index":40 }},
+      { selector:"node.dim", style:{ "opacity":0.12 }},
+      { selector:"edge.dim", style:{ "opacity":0.05 }},
       { selector:".faded", style:{ "opacity":0.1 }},
-      { selector:".fresh", style:{ "underlay-color":"#3fb457", "underlay-padding":10, "underlay-opacity":0.5 }},
-      { selector:"node.pathhl", style:{ "border-width":3, "border-color":"#33c2dd", "underlay-color":"#33c2dd", "underlay-padding":8, "underlay-opacity":0.5, "opacity":1 }},
-      { selector:"edge.pathhl", style:{ "line-color":"#33c2dd", "target-arrow-color":"#33c2dd", "width":3, "opacity":1 }},
-      { selector:"node.metanode", style:{ "shape":"round-hexagon", "background-color":"#1c2530", "border-color":"data(kc)", "border-width":2.5,
-        "background-image":"data(icon)", "background-width":"46%", "background-height":"46%",
-        "label":"data(label)", "font-size":"10px", "color":"#cdd7e2", "text-valign":"bottom", "text-margin-y":5 }},
+      { selector:".hyp", style:{ "line-style":"dashed", "line-color":"#8B7CFF", "border-color":"#8B7CFF", "border-style":"dashed" }},
+      { selector:".fresh", style:{ "underlay-color":"#34D399", "underlay-padding":10, "underlay-opacity":0.55 }},
+      { selector:"node.pathhl", style:{ "border-width":3, "border-color":"#57D7E8", "underlay-color":"#57D7E8", "underlay-padding":8, "underlay-opacity":0.5, "opacity":1, "z-index":60 }},
+      { selector:"edge.pathhl", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "width":3, "opacity":1, "label":"data(type)", "z-index":60 }},
+      // ---- meta cluster nodes: two-line label ----
+      { selector:"node.metanode", style:{ "shape":"round-hexagon", "background-color":"#12202B", "border-color":"data(kc)", "border-width":2.5,
+        "background-image":"data(icon)", "background-width":"40%", "background-height":"40%",
+        "label":"data(label)", "text-wrap":"wrap", "font-size":"11px", "color":"#E6EDF7", "text-valign":"bottom", "text-margin-y":6,
+        "text-outline-color":"#070A0F", "text-outline-width":2 }},
+      // show a global "zoomed-in" edge label only when very close
+      { selector:"core", style:{} },
     ],
   });
   cy.on("tap","node", ev=>{ const id=ev.target.id(); if(linkMode){ finishLink(id); return; } if(pathSource){ finishPath(id); return; } selectNode(id); });
   cy.on("dbltap","node", ev=>{ const id=ev.target.id(); const t=activeTab(); if(!t)return; if(t._metas&&t._metas[id]) expandCluster(id); else if((t.clusterMode||"none")!=="none") collapseNodeCluster(id); });
-  cy.on("tap", ev=>{ if(ev.target===cy){ cy.elements().removeClass("faded pathhl"); cy.$(":selected").unselect(); $("#context").hidden=true; } });
+  cy.on("tap", ev=>{ if(ev.target===cy){ clearFocus(); cy.$(":selected").unselect(); $("#context").hidden=true; } });
   cy.on("cxttap","node", ev=>{ const e=ev.originalEvent; if(linkMode) finishLink(ev.target.id()); else openCtxMenu(e.clientX,e.clientY,ev.target.id()); });
+  // Hover: transient focus on node + neighbors + connected edges, dim the rest.
+  cy.on("mouseover","node", ev=>{ if(!cyPinned) focusNeighborhood(ev.target, false); });
+  cy.on("mouseout","node", ev=>{ if(!cyPinned) clearFocus(); });
   cy.on("pan zoom", ()=>scheduleMinimap());
   cy.on("layoutstop render", ()=>scheduleMinimap());
+  // Responsiveness: keep the canvas sized to its container as the window/panels
+  // resize (dragging the window edge, opening/closing the dossier, etc.).
+  let _rzT; const onResize=()=>{ clearTimeout(_rzT); _rzT=setTimeout(()=>{ if(cy){ cy.resize(); scheduleMinimap(); } },120); };
+  window.addEventListener("resize", onResize);
+  if(window.ResizeObserver){ try{ new ResizeObserver(onResize).observe($("#cy")); }catch(e){} }
   return cy;
 }
+// Focus a node + its neighbors; dim everything else. `pin` fixes it until cleared.
+let cyPinned=false;
+function focusNeighborhood(node, pin){ if(!cy||!node||!node.length)return; if(pin!==undefined)cyPinned=pin;
+  const nb=node.closedNeighborhood(); const others=cy.elements().difference(nb);
+  cy.batch(()=>{ others.addClass("dim"); nb.removeClass("dim");
+    node.addClass("focused"); node.neighborhood("node").addClass("neighbor"); node.connectedEdges().addClass("connected"); }); }
+function clearFocus(){ if(!cy)return; cyPinned=false; cy.batch(()=>{ cy.elements().removeClass("dim focused neighbor connected faded pathhl"); }); }
 
 // ----- clustering (collapse/expand) -----
 function unionComponents(g){ const parent={}; g.nodes.forEach(n=>parent[n.id]=n.id);
@@ -399,7 +445,9 @@ function unionComponents(g){ const parent={}; g.nodes.forEach(n=>parent[n.id]=n.
   const idx={}; let k=0; const comp={}; g.nodes.forEach(n=>{ const r=find(n.id); if(idx[r]==null)idx[r]=k++; comp[n.id]=idx[r]; }); return comp;
 }
 function clusterKey(n, mode, comp){ return mode==="kind" ? "k:"+n.kind : "c:"+(comp[n.id]!=null?comp[n.id]:("s"+n.id)); }
-function metaLabel(cid, count){ return (cid.startsWith("k:")?cid.slice(2):("cluster"))+" ×"+count; }
+const fmtNum = n => (n||0).toLocaleString("en-US");
+// Two-line label: "account\n1,999"
+function metaLabel(cid, count){ return (cid.startsWith("k:")?cid.slice(2):"cluster")+"\n"+fmtNum(count); }
 // Build the render model applying cluster collapse; also returns metas map.
 function computeRenderModel(t){ const g=t.graph; const mode=t.clusterMode||"none";
   t._metas={};
@@ -408,12 +456,20 @@ function computeRenderModel(t){ const g=t.graph; const mode=t.clusterMode||"none
   const members={}; g.nodes.forEach(n=>{ const c=clusterKey(n,mode,comp); (members[c]=members[c]||[]).push(n); });
   const collapsed=t.collapsed||new Set();
   const toRender={}; const outNodes=[];
+  const caps=t._expandCap||{};
   Object.entries(members).forEach(([cid,list])=>{
-    if(collapsed.has(cid) && list.length>1){ const kinds={}; let maxRisk=0; list.forEach(n=>{ kinds[n.kind]=(kinds[n.kind]||0)+1; maxRisk=Math.max(maxRisk,n.risk||0); });
-      const dom=Object.entries(kinds).sort((a,b)=>b[1]-a[1])[0][0];
+    const domOf=arr=>{ const k={}; arr.forEach(n=>k[n.kind]=(k[n.kind]||0)+1); return Object.entries(k).sort((a,b)=>b[1]-a[1])[0][0]; };
+    if(collapsed.has(cid) && list.length>1){ const dom=domOf(list); const maxRisk=Math.max(...list.map(n=>n.risk||0),0);
       t._metas[cid]={ id:cid, label:metaLabel(cid,list.length), count:list.length, kind:dom, risk:maxRisk, members:list.map(n=>n.id) };
       list.forEach(n=>toRender[n.id]=cid);
       outNodes.push({ meta:true, id:cid, label:metaLabel(cid,list.length), kind:dom, risk:maxRisk, count:list.length });
+    } else if(caps[cid] && caps[cid].size < list.length){ // partially expanded: top-N individual + residual meta
+      const cap=caps[cid]; const shown=list.filter(n=>cap.has(n.id)); const rest=list.filter(n=>!cap.has(n.id));
+      shown.forEach(n=>{ toRender[n.id]=n.id; outNodes.push(n); });
+      const rid=cid+":rest"; const dom=domOf(rest); const maxRisk=Math.max(...rest.map(n=>n.risk||0),0);
+      t._metas[rid]={ id:rid, label:metaLabel(cid,rest.length), count:rest.length, kind:dom, risk:maxRisk, members:rest.map(n=>n.id) };
+      rest.forEach(n=>toRender[n.id]=rid);
+      outNodes.push({ meta:true, id:rid, label:"+ "+fmtNum(rest.length)+"\nmore", kind:dom, risk:maxRisk, count:rest.length });
     } else { list.forEach(n=>{ toRender[n.id]=n.id; outNodes.push(n); }); }
   });
   const seen={}; const outEdges=[];
@@ -425,7 +481,30 @@ function setClusterMode(mode){ const t=activeTab(); if(!t)return; t.clusterMode=
   if(mode==="none"){ t.collapsed=new Set(); } else { // collapse all clusters by default
     const g=t.graph; const comp=mode==="component"?unionComponents(g):{}; const set=new Set(); g.nodes.forEach(n=>set.add(clusterKey(n,mode,comp))); t.collapsed=set; }
   renderGraph(); }
-function expandCluster(cid){ const t=activeTab(); if(!t||!t.collapsed)return; t.collapsed.delete(cid); renderGraph(); toast("Cluster expanded"); }
+function expandCluster(cid){ const t=activeTab(); if(!t||!t.collapsed)return;
+  const meta=t._metas&&t._metas[cid]; const size=meta?meta.count:0;
+  // Expanding a huge cluster (e.g. 1,999 accounts) would dump thousands of nodes
+  // and freeze the WebView. Offer a bounded view instead of blowing up.
+  if(size>600){
+    openModal(`Expand ${meta.label.replace("\n"," · ")}?`, `<p class="muted">This cluster has <b>${fmtNum(size)}</b> members. Rendering all at once can be heavy.</p>
+      <div class="field">How to expand<select id="expMode" class="select">
+        <option value="risk">Top 300 by risk (recommended)</option>
+        <option value="all">All ${fmtNum(size)} (may be slow)</option>
+      </select></div>`,
+      [{label:"Cancel",cls:"ghost",act:closeModal},{label:"Expand",cls:"primary",act:()=>{ const mode=$("#expMode").value; closeModal(); doExpand(cid, mode==="all"?null:300); }}]);
+    return;
+  }
+  doExpand(cid, null);
+}
+function doExpand(cid, cap){ const t=activeTab(); if(!t)return; t.collapsed.delete(cid);
+  if(cap){ // keep only the top-`cap` members of this cluster visible; re-collapse the rest into a residual meta
+    const meta=t._metas[cid]; const members=new Set(meta.members);
+    const ranked=t.graph.nodes.filter(n=>members.has(n.id)).sort((a,b)=>(b.risk||0)-(a.risk||0));
+    t._expandCap=t._expandCap||{}; t._expandCap[cid]=new Set(ranked.slice(0,cap).map(n=>n.id));
+  } else if(t._expandCap){ delete t._expandCap[cid]; }
+  renderGraph();
+  toast(cap?`Expanded top ${cap} of cluster`:"Cluster expanded");
+}
 function collapseNodeCluster(id){ const t=activeTab(); if(!t)return; const mode=t.clusterMode||"none"; if(mode==="none")return; const comp=mode==="component"?unionComponents(t.graph):{}; const n=t.graph.nodes.find(x=>x.id===id); if(!n)return; const cid=clusterKey(n,mode,comp); (t.collapsed=t.collapsed||new Set()).add(cid); renderGraph(); }
 
 function renderGraph() {
@@ -437,17 +516,21 @@ function renderGraph() {
   const model = computeRenderModel(t);
   const g = { nodes: model.nodes, edges: model.edges };
   const nodeById = {}; g.nodes.forEach(n=>nodeById[n.id]=n);
+  // Perf mode: beyond this many rendered nodes, drop per-node SVG icons (heavy to
+  // decode ×N) for solid coloured dots, and use a fast non-animated layout.
+  const perf = g.nodes.length > 500;
+  t._perf = perf;
   const els = [];
   g.nodes.forEach(n=>{
-    if(n.meta){ els.push({ data:{ id:n.id, label:n.label, icon:nodeIcon("group"), kc:kColor(n.kind), hc:bandColor(bandOf(n.risk)), size:34+Math.min(26,Math.log2(n.count||2)*6) }, classes:"metanode" }); return; }
+    if(n.meta){ els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon("group"), kc:kColor(n.kind), hc:bandColor(bandOf(n.risk)), size: metaSize(n.count) }, classes:"metanode"+(perf?" plain":"") }); return; }
     const band = n.band||bandOf(n.risk);
     const hot = band==="critical"||band==="high";
-    els.push({ data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind), kc:kColor(n.kind), hc:bandColor(band),
-      size:24+(n.risk||0)*26, bw:hot?2.5:1.5, halo:hot?1:undefined }, classes: n.hypothesis?"hyp":"" });
+    els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind), kc:kColor(n.kind), hc:bandColor(band),
+      size: nodeSize(n.risk), bw:hot?2.5:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
   });
-  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:0.6+(e.conf||0.5)*1.8 }, classes:e.hypothesis?"hyp":"" }); });
+  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:e.hypothesis?"hyp":"" }); });
   cy.elements().remove(); cy.add(els);
-  runLayout();
+  runLayout(perf);
   const full=t.graph; const clustered=(t.clusterMode||"none")!=="none";
   $("#graphStats").textContent = clustered ? `${g.nodes.length} shown · ${full.nodes.length} entities · ${full.edges.length} edges` : `${full.nodes.length} nodes · ${full.edges.length} edges`;
   const cs=$("#graphCluster"); if(cs) cs.value=t.clusterMode||"none";
@@ -457,13 +540,24 @@ function renderGraph() {
   else { t._modeInit=true; syncModeButtons(); }
   renderLegend(); renderGraphFilters(); setTimeout(scheduleMinimap, 700);
 }
-function runLayout() {
+function runLayout(perf) {
   if (!cy) return;
+  const n = cy.nodes().length;
+  if(perf===undefined) perf = n>500;
   const name = $("#graphLayout").value || "fcose";
-  const opts = name==="fcose"
-    ? { name:"fcose", animate:true, animationDuration:600, randomize:true, nodeRepulsion:8000, idealEdgeLength:70, padding:40 }
-    : { name, animate:true, padding:40 };
-  try { cy.layout(opts).run(); } catch(e){ cy.layout({name:"cose",animate:true}).run(); }
+  let opts;
+  if(perf){
+    // Large graph: draft-quality, NON-animated fcose (or grid fallback) so the
+    // WebView doesn't lock up laying out thousands of nodes.
+    opts = n>2500
+      ? { name:"grid", animate:false, padding:40 }
+      : { name:"fcose", quality:"draft", animate:false, randomize:true, nodeRepulsion:6000, idealEdgeLength:60, padding:40, samplingType:false };
+  } else {
+    opts = name==="fcose"
+      ? { name:"fcose", animate:true, animationDuration:500, randomize:true, nodeRepulsion:8000, idealEdgeLength:70, padding:40 }
+      : { name, animate:true, padding:40 };
+  }
+  try { cy.layout(opts).run(); } catch(e){ try{ cy.layout({name:"grid",animate:false}).run(); }catch(_){} }
 }
 function clearGraph(){ if(cy) cy.elements().remove(); }
 
@@ -480,7 +574,7 @@ function nodeData(id){ const t=activeTab(); if(!t)return null;
   return t.graph.nodes.find(n=>n.id===id); }
 function selectNode(id) {
   const n = nodeData(id); if(!n) return;
-  if (cy) { cy.$(":selected").unselect(); const nel=cy.$id(id); if(nel&&nel.length){ nel.select(); cy.elements().addClass("faded"); nel.closedNeighborhood().removeClass("faded"); } }
+  if (cy) { clearFocus(); cy.$(":selected").unselect(); const nel=cy.$id(id); if(nel&&nel.length){ nel.select(); focusNeighborhood(nel, true); } }
   const c=$("#context"); c.hidden=false;
   $("#ctxKind").textContent = n.kind + (n.sensitive?" · sensitive":"");
   $("#ctxName").textContent = n.label;

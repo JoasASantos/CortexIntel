@@ -174,7 +174,7 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .gt-right { display: flex; align-items: center; gap: 7px; }
 .gt-right input { background: var(--bg-2); border: 1px solid var(--stroke); color: var(--text); border-radius: var(--r); padding: 6px 9px; font-size: 12px; outline: none; }
 .mini-select { background: var(--bg-2); border: 1px solid var(--stroke); color: var(--text); border-radius: var(--r); padding: 6px 8px; font-size: 12px; outline: none; }
-#cy { position: absolute; inset: 0; background: radial-gradient(1100px 640px at 62% -8%, rgba(51,194,221,0.045), transparent 55%), var(--bg); }
+#cy { position: absolute; inset: 0; background: radial-gradient(1100px 640px at 62% -8%, rgba(51,194,221,0.04), transparent 55%), #070A0F; }
 .graph-filters { position: absolute; top: 60px; left: 12px; right: 12px; z-index: 5; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; background: var(--panel-glass); backdrop-filter: blur(16px); border: 1px solid var(--stroke); border-radius: var(--r); padding: 6px 10px; }
 .gf-label { font-size: 9.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.7px; display: flex; align-items: center; gap: 6px; }
 .gf-presets { display: flex; gap: 5px; }
