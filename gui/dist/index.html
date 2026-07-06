@@ -121,7 +121,16 @@
         <section class="view" id="view-graph" hidden>
           <div class="graph-wrap">
             <div class="graph-toolbar">
-              <div class="gt-left"><strong>Graph</strong><span class="muted" id="graphStats">0 nodes · 0 edges</span></div>
+              <div class="gt-left">
+                <div class="mode-switch" id="graphModes">
+                  <button class="gmode active" data-mode="overview" title="High-level clusters">Overview</button>
+                  <button class="gmode" data-mode="risk" title="High &amp; critical only">Risk</button>
+                  <button class="gmode" data-mode="neighborhood" title="Around the selected entity">Neighborhood</button>
+                  <button class="gmode" data-mode="timeline" title="By time">Timeline</button>
+                  <button class="gmode" data-mode="full" title="Everything">Full</button>
+                </div>
+                <span class="muted" id="graphStats">0 nodes · 0 edges</span>
+              </div>
               <div class="gt-right">
                 <input id="graphFilter" placeholder="Filter…" />
                 <select id="graphCluster" class="mini-select" title="Collapse into clusters"><option value="none">Cluster: off</option><option value="kind">By type</option><option value="component">By component</option></select>

@@ -38,12 +38,16 @@ struct UserDb {
     users: Vec<User>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct Session {
     user_id: String,
     email: String,
     role: String,
     expires_at: u64,
+}
+
+fn sessions_file() -> std::path::PathBuf {
+    crate::store::base_dir().join("sessions.json")
 }
 
 /// Public, non-secret view of the signed-in user.
@@ -66,11 +70,25 @@ fn now() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
 }
 
-// In-memory session table (process-lifetime).
+// Session table, persisted to disk so a login survives app restarts (the
+// desktop app restarts the embedded server each launch).
 fn sessions() -> &'static Mutex<HashMap<String, Session>> {
     use std::sync::OnceLock;
     static S: OnceLock<Mutex<HashMap<String, Session>>> = OnceLock::new();
-    S.get_or_init(|| Mutex::new(HashMap::new()))
+    S.get_or_init(|| {
+        let loaded: HashMap<String, Session> = std::fs::read_to_string(sessions_file())
+            .ok()
+            .and_then(|s| serde_json::from_str(&s).ok())
+            .unwrap_or_default();
+        // Drop already-expired sessions on load.
+        let n = now();
+        let live: HashMap<String, Session> = loaded.into_iter().filter(|(_, s)| s.expires_at > n).collect();
+        Mutex::new(live)
+    })
+}
+
+fn persist_sessions(map: &HashMap<String, Session>) {
+    let _ = crate::store::write_json(&sessions_file(), map);
 }
 
 fn load_db() -> UserDb {
@@ -192,7 +210,11 @@ fn issue_session(user: &User) -> AuthResult {
         role: user.role.clone(),
         expires_at: now() + SESSION_TTL_SECS,
     };
-    sessions().lock().unwrap().insert(token.clone(), sess);
+    {
+        let mut map = sessions().lock().unwrap();
+        map.insert(token.clone(), sess);
+        persist_sessions(&map);
+    }
     AuthResult {
         token,
         user: AuthUser {
@@ -210,6 +232,7 @@ pub fn validate(token: &str) -> Option<AuthUser> {
     let s = map.get(token)?.clone();
     if s.expires_at < now() {
         map.remove(token);
+        persist_sessions(&map);
         return None;
     }
     let db = load_db();
@@ -222,7 +245,9 @@ pub fn validate(token: &str) -> Option<AuthUser> {
 }
 
 pub fn logout(token: &str) {
-    sessions().lock().unwrap().remove(token);
+    let mut map = sessions().lock().unwrap();
+    map.remove(token);
+    persist_sessions(&map);
 }
 
 /// Whether any account exists yet (drives register-first UX).

@@ -5,18 +5,56 @@
 use anyhow::{Context, Result};
 use std::path::PathBuf;
 
-/// Base data directory, created on first use.
+/// Base data directory, created on first use. Resolves to the first location
+/// that is (or can be made) writable, so the desktop app never fails to persist
+/// just because one candidate path is not writable in its launch context.
+/// Order: `CORTEX_HOME_DIR` → `~/.cortexintel` → OS app-data → temp.
 pub fn base_dir() -> PathBuf {
-    if let Ok(p) = std::env::var("CORTEX_HOME_DIR") {
-        return PathBuf::from(p);
+    use std::sync::OnceLock;
+    static RESOLVED: OnceLock<PathBuf> = OnceLock::new();
+    RESOLVED
+        .get_or_init(|| {
+            let mut candidates: Vec<PathBuf> = Vec::new();
+            if let Ok(p) = std::env::var("CORTEX_HOME_DIR") {
+                candidates.push(PathBuf::from(p));
+            }
+            if let Some(h) = dirs::home_dir() {
+                candidates.push(h.join(".cortexintel"));
+            }
+            if let Some(d) = dirs::data_dir() {
+                candidates.push(d.join("CortexIntel"));
+            }
+            candidates.push(std::env::temp_dir().join("cortexintel"));
+
+            for c in &candidates {
+                if is_writable(c) {
+                    return c.clone();
+                }
+            }
+            // Last resort: temp (should always work).
+            std::env::temp_dir().join("cortexintel")
+        })
+        .clone()
+}
+
+/// True if the directory exists and is writable, or can be created + written to.
+fn is_writable(dir: &std::path::Path) -> bool {
+    if std::fs::create_dir_all(dir).is_err() {
+        return false;
     }
-    let mut d = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
-    d.push(".cortexintel");
-    d
+    let probe = dir.join(".cortex_write_probe");
+    match std::fs::write(&probe, b"ok") {
+        Ok(_) => {
+            let _ = std::fs::remove_file(&probe);
+            true
+        }
+        Err(_) => false,
+    }
 }
 
 pub fn ensure_dir(p: &std::path::Path) -> Result<()> {
-    std::fs::create_dir_all(p).with_context(|| format!("creating {}", p.display()))?;
+    std::fs::create_dir_all(p)
+        .with_context(|| format!("cannot create data directory {} (permission denied?). Set CORTEX_HOME_DIR to a writable path.", p.display()))?;
     harden(p);
     Ok(())
 }

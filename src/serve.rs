@@ -358,6 +358,7 @@ fn health() -> serde_json::Value {
         "backends": backends,
         "plugins": plugins::list(),
         "data_dir": crate::store::base_dir().display().to_string(),
+        "data_dir_writable": crate::store::ensure_dir(&crate::store::base_dir()).is_ok(),
         "has_accounts": auth::has_accounts(),
     })
 }

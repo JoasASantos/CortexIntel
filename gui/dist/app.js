@@ -438,6 +438,10 @@ function renderGraph() {
   const full=t.graph; const clustered=(t.clusterMode||"none")!=="none";
   $("#graphStats").textContent = clustered ? `${g.nodes.length} shown · ${full.nodes.length} entities · ${full.edges.length} edges` : `${full.nodes.length} nodes · ${full.edges.length} edges`;
   const cs=$("#graphCluster"); if(cs) cs.value=t.clusterMode||"none";
+  // Large graphs default to Overview (progressive reveal) once, so 10k+ nodes
+  // don't dump as noise. The user can switch to Full/Risk/etc. anytime.
+  if(!t._modeInit && full.nodes.length>=LARGE_GRAPH){ t._modeInit=true; setTimeout(()=>setGraphMode("overview"),150); }
+  else { t._modeInit=true; syncModeButtons(); }
   renderLegend(); renderGraphFilters(); setTimeout(scheduleMinimap, 700);
 }
 function runLayout() {
@@ -539,7 +543,8 @@ async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   add("spark","Expand via AI",()=>askAbout(`Expand the investigation around "${n.label}" (${n.kind}). Propose linked entities and leads.`));
   add("fit","Isolate neighborhood",()=>isolate(id));
   add("graph","Focus neighbors",()=>{if(cy)cy.animate({fit:{eles:cy.$id(id).closedNeighborhood(),padding:80},duration:350});});
-  add("graph","Find path from here…",()=>startPath(id),true);
+  add("graph","Neighborhood mode from here",()=>setGraphMode("neighborhood",{seed:id,hops:2}),true);
+  add("graph","Find path from here…",()=>startPath(id));
   add("link","Connect to another node…",()=>startLink(id));
   add("alerts","Create alert",()=>{pushNotif("alert",`Alert on ${n.label}`);toast("Alert created");});
   add("trash","Remove node",()=>removeNode(id));
@@ -1070,9 +1075,56 @@ function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind
 }
 $("#btnAddEntity")&&$("#btnAddEntity").addEventListener("click",addEntityModal);
 $("#btnAddEntity2")&&$("#btnAddEntity2").addEventListener("click",addEntityModal);
-$("#btnReset").addEventListener("click",()=>{ if(cy){ cy.elements().style("display","element").removeClass("faded pathhl"); cy.$(":selected").unselect(); cy.fit(cy.elements(),50); } $("#graphFilter").value=""; $("#context").hidden=true; const t=activeTab(); if(t)$("#graphStats").textContent=`${t.graph.nodes.length} nodes · ${t.graph.edges.length} edges`; toast("View reset"); });
+$("#btnReset").addEventListener("click",()=>{ if(cy){ cy.elements().style("display","element").removeClass("faded pathhl"); cy.$(":selected").unselect(); cy.fit(cy.elements(),50); } $("#graphFilter").value=""; $("#context").hidden=true; clearTimeScrub(); modeHint(""); const t=activeTab(); if(t){ t.graphMode="full"; t.clusterMode="none"; $("#graphCluster")&&($("#graphCluster").value="none"); syncModeButtons(); $("#graphStats").textContent=`${t.graph.nodes.length} nodes · ${t.graph.edges.length} edges`; } toast("View reset"); });
 $("#graphLayout").addEventListener("change",runLayout);
-$("#graphCluster")&&$("#graphCluster").addEventListener("change",e=>setClusterMode(e.target.value));
+$("#graphCluster")&&$("#graphCluster").addEventListener("change",e=>{ const t=activeTab(); if(t)t.graphMode="custom"; syncModeButtons(); setClusterMode(e.target.value); });
+
+// ---------- progressive view modes ----------
+// Reveal information on demand so 10k+ node graphs stay legible.
+const LARGE_GRAPH = 800;
+function modeHint(txt){ let h=$("#modeHint"); if(txt){ if(!h){ h=el("div","mode-hint"); h.id="modeHint"; $(".graph-wrap").appendChild(h);} h.innerHTML=txt; h.hidden=false; } else if(h) h.hidden=true; }
+function syncModeButtons(){ const t=activeTab(); const m=t?(t.graphMode||"full"):"full"; $$(".gmode").forEach(b=>b.classList.toggle("active",b.dataset.mode===m)); }
+function parseTs(n){ for(const k of ["created_at","created at","timestamp","first_seen_at","observed_at","received_at","date"]){ const v=(n.attributes||{})[k]; if(v){ const d=Date.parse(v); if(!isNaN(d))return d; } } return null; }
+function clearTimeScrub(){ const s=$("#timeScrub"); if(s)s.remove(); }
+function setGraphMode(mode, opts){ const t=activeTab(); if(!t||!t.graph.nodes.length){ toast("No graph to view","err"); return; }
+  t.graphMode=mode; syncModeButtons(); clearTimeScrub(); modeHint("");
+  showView("graph");
+  // Overview clusters; every other mode needs the un-clustered graph. If we're
+  // leaving a clustered state, rebuild the individual nodes first.
+  const wasClustered=(t.clusterMode||"none")!=="none";
+  if(mode==="overview"){ t.clusterMode="none"; setClusterMode("kind"); $("#graphCluster")&&($("#graphCluster").value="kind"); modeHint(`<b>Overview</b> — entities grouped by type · double-click a cluster to drill in`); syncModeButtons(); return; }
+  t.clusterMode="none"; $("#graphCluster")&&($("#graphCluster").value="none");
+  if(wasClustered) renderGraph(); // rebuild individual nodes into cy
+  const delay = wasClustered ? 350 : 0;
+  setTimeout(()=>requestAnimationFrame(()=>{ initCy(); if(!cy)return; cy.resize(); cy.elements().style("display","element").removeClass("faded");
+    if(mode==="full"){ modeHint(`<b>Full</b> — all ${t.graph.nodes.length} entities`); cy.fit(cy.elements(),50); }
+    else if(mode==="risk"){ const keep=new Set(); t.graph.nodes.forEach(n=>{ const b=n.band||bandOf(n.risk); if(b==="high"||b==="critical")keep.add(n.id); });
+      t.graph.edges.forEach(e=>{ if(keep.has(e.source))keep.add(e.target); if(keep.has(e.target))keep.add(e.source); });
+      cy.nodes().forEach(n=>n.style("display",keep.has(n.id())?"element":"none")); cy.edges().forEach(ed=>ed.style("display",(keep.has(ed.source().id())&&keep.has(ed.target().id()))?"element":"none"));
+      if(keep.size) cy.fit(cy.nodes(":visible"),60); modeHint(keep.size?`<b>Risk lens</b> — ${keep.size} high/critical entities and their neighbors`:`<b>Risk lens</b> — no high/critical entities in this graph`); }
+    else if(mode==="neighborhood"){ let seedId=(opts&&opts.seed)|| (cy.$(":selected").length?cy.$(":selected")[0].id():null) || [...t.graph.nodes].sort((a,b)=>b.risk-a.risk)[0].id;
+      const hops=(opts&&opts.hops)||2; const seed=cy.$id(seedId); if(!seed.length){ modeHint("Select an entity for Neighborhood"); return; }
+      let nb=seed.closedNeighborhood(); for(let i=1;i<hops;i++) nb=nb.closedNeighborhood();
+      cy.elements().style("display","none"); nb.style("display","element"); cy.fit(nb,70); selectNode(seedId); t._nbSeed=seedId;
+      modeHint(`<b>Neighborhood</b> — ${hops} hop(s) around "${nodeData(seedId).label}" · right-click another node → Neighborhood`); }
+    else if(mode==="timeline"){ buildTimeline(t); }
+  }), delay);
+}
+function buildTimeline(t){ const withTs=t.graph.nodes.map(n=>({n,ts:parseTs(n)})).filter(x=>x.ts!=null);
+  if(withTs.length<2){ modeHint(`<b>Timeline</b> — not enough timestamped entities (need created_at/timestamp attributes)`); cy.fit(cy.elements(),50); return; }
+  const times=withTs.map(x=>x.ts).sort((a,b)=>a-b); const min=times[0], max=times[times.length-1];
+  const fmt=d=>new Date(d).toISOString().slice(0,10);
+  const scrub=el("div","time-scrub"); scrub.id="timeScrub";
+  scrub.innerHTML=`<span class="ts-label" id="tsLabel">${fmt(min)} → cutoff</span><input type="range" id="tsRange" min="${min}" max="${max}" value="${max}" step="${Math.max(1,Math.floor((max-min)/200))}"><span class="ts-label" id="tsMax" style="text-align:right">${fmt(max)}</span>`;
+  $(".graph-wrap").appendChild(scrub);
+  const apply=cutoff=>{ const keep=new Set(); t.graph.nodes.forEach(n=>{ const ts=parseTs(n); if(ts==null||ts<=cutoff)keep.add(n.id); });
+    cy.nodes().forEach(n=>n.style("display",keep.has(n.id())?"element":"none")); cy.edges().forEach(ed=>ed.style("display",(keep.has(ed.source().id())&&keep.has(ed.target().id()))?"element":"none"));
+    $("#tsLabel").textContent=`up to ${fmt(cutoff)}`; };
+  $("#tsRange").addEventListener("input",e=>apply(parseInt(e.target.value)));
+  apply(max); cy.fit(cy.nodes(":visible"),50);
+  modeHint(`<b>Timeline</b> — drag the slider to reveal entities up to a point in time (${withTs.length} timestamped)`);
+}
+$$(".gmode").forEach(b=>b.addEventListener("click",()=>setGraphMode(b.dataset.mode)));
 $("#graphFilter").addEventListener("input",e=>{ const q=e.target.value.trim().toLowerCase(); if(!cy)return;
   if(!q){ cy.nodes().style("display","element"); } else { cy.nodes().forEach(n=>{ const nd=nodeData(n.id()); const show=nd&&(nd.label+" "+nd.kind).toLowerCase().includes(q); n.style("display",show?"element":"none"); }); }
 });

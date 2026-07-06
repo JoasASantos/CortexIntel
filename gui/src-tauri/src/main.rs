@@ -8,6 +8,16 @@
 const PORT: u16 = 8799;
 
 fn main() {
+    // Pin the data directory to the per-user OS app-data location so the desktop
+    // app always writes to a path it can create (e.g. macOS
+    // ~/Library/Application Support/CortexIntel), avoiding permission failures
+    // like an unwritable /var/root/.cortexintel.
+    if std::env::var_os("CORTEX_HOME_DIR").is_none() {
+        if let Some(d) = dirs::data_dir() {
+            std::env::set_var("CORTEX_HOME_DIR", d.join("CortexIntel"));
+        }
+    }
+
     // Start the embedded engine server on a background thread. Binding is fast,
     // and the frontend retries /api/ping, so the window can load immediately.
     std::thread::spawn(|| {
