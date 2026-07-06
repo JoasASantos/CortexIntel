@@ -137,6 +137,98 @@ pub fn assess(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain) -> Vec<Asse
     out
 }
 
+/// A ranked next-best-action: the collection/verification that most reduces the
+/// investigation's uncertainty, with the reason and estimated payoff.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NextAction {
+    pub action: String,
+    pub why: String,
+    /// Estimated uncertainty reduction if done [0..1].
+    pub uncertainty_reduction: f32,
+    /// Estimated effort [0..1] (higher = costlier).
+    pub effort: f32,
+    /// Composite priority = value / effort, normalized [0..1].
+    pub priority: f32,
+    /// Where to do it (a GUI destination hint).
+    pub target: String,
+    /// Entity ids this action concerns (for GUI focus), if any.
+    pub entity_ids: Vec<String>,
+}
+
+/// Rank the next-best-actions by how much they cut uncertainty per unit effort.
+/// Deterministic: derived from real data-quality/structure gaps, not opinion.
+pub fn next_best_actions(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain) -> Vec<NextAction> {
+    let l = lens(domain);
+    let deg = degrees(g);
+    let n = g.entity_count().max(1);
+    let mut acts: Vec<NextAction> = Vec::new();
+
+    let mut mk = |action: String, why: String, red: f32, effort: f32, target: &str, ids: Vec<String>| {
+        let effort = effort.max(0.05);
+        acts.push(NextAction { action, why, uncertainty_reduction: red, effort, priority: (red / effort).min(3.0) / 3.0, target: target.into(), entity_ids: ids });
+    };
+
+    // 1) Entities with no source — provenance gaps cap trust.
+    let no_src: Vec<&crate::ontology::Entity> = g.entities.values().filter(|e| e.sources.is_empty()).collect();
+    if !no_src.is_empty() {
+        let frac = no_src.len() as f32 / n as f32;
+        mk(
+            format!("Trace the source of {} entities lacking provenance", no_src.len()),
+            "Unsourced entities can't be trusted; establishing provenance directly raises confidence in every judgment that depends on them.".into(),
+            (0.35 + frac * 0.4).min(0.8), 0.4, "entities",
+            no_src.iter().take(20).map(|e| e.id.clone()).collect(),
+        );
+    }
+
+    // 2) Ambiguous shared hub — resolving benign-vs-real is high leverage.
+    let hub_kinds = [EntityKind::Ip, EntityKind::Device, EntityKind::Wallet, EntityKind::Domain];
+    if let Some((id, d)) = g.entities.iter()
+        .filter(|(_, e)| hub_kinds.contains(&e.kind))
+        .map(|(id, _)| (id, *deg.get(id).unwrap_or(&0)))
+        .filter(|(_, d)| *d >= 3)
+        .max_by_key(|(_, d)| *d) {
+        let e = &g.entities[id];
+        mk(
+            format!("Verify whether the shared {} \"{}\" is a real link or a benign aggregator", e.kind.as_str(), e.label),
+            format!("{} entities hinge on this hub — {}. Confirming it collapses or confirms the whole cluster's meaning.", d, l.hub_meaning),
+            0.6, 0.3, "graph", vec![id.clone()],
+        );
+    }
+
+    // 3) Isolated entities — correlation is incomplete.
+    let isolated = g.entities.keys().filter(|id| *deg.get(*id).unwrap_or(&0) == 0).count();
+    if isolated > 0 {
+        mk(
+            format!("Enrich {} isolated entities to reveal relationships", isolated),
+            "Entities with no known relations mean the picture is under-connected; enriching them can surface links that change clusters and risk.".into(),
+            (0.25 + (isolated as f32 / n as f32) * 0.35).min(0.7), 0.55, "sources", vec![],
+        );
+    }
+
+    // 4) Unconfirmed AI hypotheses — verify before relying on them.
+    let hyp: Vec<&crate::ontology::Entity> = g.entities.values().filter(|e| e.tags.iter().any(|t| t == "hypothesis")).collect();
+    if !hyp.is_empty() {
+        mk(
+            format!("Confirm or reject {} AI-proposed entities", hyp.len()),
+            "AI hypotheses are inference, not evidence; validating them removes the biggest source of speculative risk in the graph.".into(),
+            0.5, 0.35, "entities", hyp.iter().take(20).map(|e| e.id.clone()).collect(),
+        );
+    }
+
+    // 5) If the case is high/critical, the single highest-value move is verifying the top actor.
+    if let Some(top) = risk.assessments.iter().filter(|a| a.risk_score >= 0.6).max_by(|a, b| a.risk_score.partial_cmp(&b.risk_score).unwrap()) {
+        mk(
+            format!("Verify the highest-risk {} \"{}\" ({:.2})", l.actor, top.entity_label, top.risk_score),
+            "The top-risk entity drives the case score; confirming or clearing it moves the decision the most.".into(),
+            0.55, 0.3, "graph", vec![top.entity_id.clone()],
+        );
+    }
+
+    acts.sort_by(|a, b| b.priority.partial_cmp(&a.priority).unwrap());
+    acts.truncate(6);
+    acts
+}
+
 /// Render assessments as a Markdown "Assessment" section.
 pub fn to_markdown(items: &[Assessment]) -> String {
     if items.is_empty() {
@@ -153,6 +245,22 @@ pub fn to_markdown(items: &[Assessment]) -> String {
             s.push_str(&format!("Evidence: {}.  \n", a.evidence.join("; ")));
         }
         s.push_str(&format!("Action: {}\n\n", a.action));
+    }
+    s
+}
+
+/// Render the ranked next-best-actions as a Markdown section.
+pub fn nba_to_markdown(items: &[NextAction]) -> String {
+    if items.is_empty() {
+        return String::new();
+    }
+    let mut s = String::from("## Next best actions\n\n");
+    s.push_str("_Ranked by how much each step reduces uncertainty per unit of effort._\n\n");
+    for (i, a) in items.iter().enumerate() {
+        s.push_str(&format!(
+            "**{}. {}**  \n_Uncertainty ↓ {:.0}% · effort {:.0}% · priority {:.0}%_  \n{}\n\n",
+            i + 1, a.action, a.uncertainty_reduction * 100.0, a.effort * 100.0, a.priority * 100.0, a.why
+        ));
     }
     s
 }

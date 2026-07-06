@@ -262,8 +262,9 @@ pub fn run(
         None,
     );
 
-    // Information → intelligence: deterministic natural-language assessment.
+    // Information → intelligence: deterministic assessment + next-best-actions.
     let assessment = crate::assessment::assess(&graph, &risk_report, config.domain);
+    let next_actions = crate::assessment::next_best_actions(&graph, &risk_report, config.domain);
 
     let finished_at = Utc::now();
     let output = RunOutput {
@@ -275,6 +276,7 @@ pub fn run(
         audit: &audit,
         retention: &retention,
         assessment: &assessment,
+        next_actions: &next_actions,
         started_at,
         finished_at,
     };

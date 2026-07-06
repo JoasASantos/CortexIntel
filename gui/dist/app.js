@@ -358,7 +358,7 @@ function consolidatedToGraph(c) {
   nodes = nodes.map(n=>({ id:n.id, kind:n.kind, label:n.label, risk:n.risk_score||0, band:n.risk_band||bandOf(n.risk_score||0),
     attributes:n.attributes||{}, tags:n.tags||[], sources:n.sources||[], sensitive:!!n.sensitive }));
   const edges=(c.relationships||[]).map(r=>({source:r.source_id,target:r.target_id,type:r.rel_type,conf:r.confidence||0.5}));
-  return {nodes, edges, meta:{risk:c.ai_assessments,investigation:c.investigation,governance:c.governance,audit:c.audit_events||[]}};
+  return {nodes, edges, meta:{risk:c.ai_assessments,investigation:c.investigation,governance:c.governance,audit:c.audit_events||[],assessment:c.assessment||[],nba:c.next_best_actions||[]}};
 }
 
 // ---------- cytoscape ----------
@@ -1450,7 +1450,21 @@ function renderDecisionMatrix(t,g,m){ const tb=$("#intelDecision tbody"); if(!tb
     tr.innerHTML=`<td>${esc(o.action)}</td><td>${bar(o.impact,"var(--accent)")}</td><td>${bar(o.conf,"var(--green)")}</td><td>${bar(o.riskWrong,"var(--red)")}</td><td>${bar(o.effort,"var(--amber)")}</td><td class="dm-score">${pct(o.score)}</td><td><span class="chip">${esc(o.route)}</span></td>`;
     tr.style.cursor="pointer"; tr.addEventListener("click",o.go); tb.appendChild(tr); });
   // Next best action
-  const nba=$("#intelNba"); if(nba){ if(!opts.length){ nba.innerHTML='<div class="empty">—</div>'; }
+  const nba=$("#intelNba"); if(nba){
+    // Prefer the backend's uncertainty-reduction ranking (B2); fall back to the
+    // decision-matrix top option.
+    const backNba=(activeTab()&&activeTab().graph.meta&&activeTab().graph.meta.nba)||[];
+    if(backNba.length){ nba.innerHTML="";
+      const top=backNba[0]; nba.innerHTML=`<div class="nba-title">${esc(top.action)}</div>
+        <div class="nba-meta"><span class="nba-tag">uncertainty ↓ ${pct(top.uncertainty_reduction)}</span><span class="nba-tag">effort ${pct(top.effort)}</span><span class="nba-tag">priority ${pct(top.priority)}</span><span class="nba-tag">→ ${esc(top.target)}</span></div>
+        <div class="nba-residual">Why: ${esc(top.why)}</div>`;
+      const goTo=a=>{ if(a.entity_ids&&a.entity_ids.length){ focusEntity(a.entity_ids[0],true); } else if(a.target==="entities"){ showView("entities"); renderEntities&&renderEntities(); } else if(a.target==="sources"){ showView("settings"); openSettingsTab&&openSettingsTab("datasources"); } else { showView("graph"); } };
+      const btn=el("button","btn primary"); btn.style.marginTop="10px"; btn.textContent="Take this action"; btn.addEventListener("click",()=>goTo(top)); nba.appendChild(btn);
+      if(backNba.length>1){ const more=el("div"); more.style.marginTop="12px";
+        backNba.slice(1,5).forEach((a,i)=>{ const r=el("div","li"); r.style.cursor="pointer"; r.innerHTML=`<span class="label">${i+2}. ${esc(a.action)}</span><span class="chip">↓${pct(a.uncertainty_reduction)}</span>`; r.addEventListener("click",()=>goTo(a)); more.appendChild(r); });
+        nba.appendChild(more); }
+    }
+    else if(!opts.length){ nba.innerHTML='<div class="empty">Run an analysis to rank next actions.</div>'; }
     else { const b=opts[0]; const residual=(1-b.conf); nba.innerHTML=`<div class="nba-title">${esc(b.action)}</div>
       <div class="nba-meta"><span class="nba-tag">impact ${pct(b.impact)}</span><span class="nba-tag">confidence ${pct(b.conf)}</span><span class="nba-tag">risk-if-wrong ${pct(b.riskWrong)}</span><span class="nba-tag">route ${esc(b.route)}</span></div>
       <div class="nba-residual">Residual uncertainty ~${pct(residual)} — this is decision support, not certainty. ${m.readiness==="ready"?"Data supports acting now.":"Consider resolving gaps first (see Data Quality)."}</div>
@@ -1482,13 +1496,19 @@ function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],
     // fold in AI-recommended actions if present
     const intel=t&&t.intel; if(intel&&intel.recommended_actions) intel.recommended_actions.forEach(a=>{ if(!items.includes(a))items.push(a); });
     acts.innerHTML=""; if(!items.length)acts.innerHTML='<div class="empty">Run an analysis or generate intelligence.</div>'; items.slice(0,14).forEach(a=>{ const li=el("div","li"); li.appendChild(el("span","label","▸ "+a)); acts.appendChild(li); }); }
-  // AI exec assessment + judgments (from last generate)
-  const intel=t&&t.intel;
+  // Assessment: the deterministic backend product shows immediately; the LLM
+  // "generate" enriches the exec summary + competing hypotheses on top.
+  const intel=t&&t.intel; const backAsmt=(t&&t.graph.meta&&t.graph.meta.assessment)||[];
   const brief=$("#intelBrief"), jud=$("#intelJudgments"), conf=$("#intelConf");
-  if(brief){ brief.innerHTML = intel? `<p>${esc(intel.answer||"")}</p>` : '<div class="empty">Generate intelligence to synthesize an assessment.</div>'; }
-  if(conf){ conf.textContent = intel&&intel.confidence? ("confidence: "+intel.confidence):""; }
-  if(jud){ jud.innerHTML=""; const js=(intel&&(intel.key_judgments||intel.key_points))||[]; if(!js.length)jud.innerHTML='<div class="empty">Generate intelligence to derive judgments.</div>';
-    js.slice(0,8).forEach((j,i)=>{ const d=el("div","judgment"); const txt=typeof j==="string"?j:(j.text||JSON.stringify(j)); const c=(typeof j==="object"&&j.confidence)?j.confidence:(intel.confidence||""); d.innerHTML=`<b>J${i+1}.</b> ${esc(txt)}${c?`<span class="conf">${esc(c)}</span>`:""}`; jud.appendChild(d); }); }
+  if(brief){ if(intel){ brief.innerHTML=`<p>${esc(intel.answer||"")}</p>`; } else if(backAsmt.length){ brief.innerHTML=`<p>${esc(backAsmt[0].statement)}</p><p class="muted" style="margin:6px 0 0">Deterministic assessment — click ✦ Generate for an AI-enriched synthesis.</p>`; } else { brief.innerHTML='<div class="empty">Run an analysis, then Generate for a synthesized assessment.</div>'; } }
+  if(conf){ conf.textContent = intel&&intel.confidence? ("confidence: "+intel.confidence) : (backAsmt.length? ("confidence: "+Math.round(backAsmt[0].confidence*100)+"%") : ""); }
+  if(jud){ jud.innerHTML="";
+    // Prefer LLM key judgments; else show the deterministic assessment statements.
+    const llmJs=(intel&&(intel.key_judgments||intel.key_points))||[];
+    if(llmJs.length){ llmJs.slice(0,8).forEach((j,i)=>{ const d=el("div","judgment"); const txt=typeof j==="string"?j:(j.text||JSON.stringify(j)); const c=(typeof j==="object"&&j.confidence)?j.confidence:(intel.confidence||""); d.innerHTML=`<b>J${i+1}.</b> ${esc(txt)}${c?`<span class="conf">${esc(c)}</span>`:""}`; jud.appendChild(d); }); }
+    else if(backAsmt.length){ backAsmt.slice(0,8).forEach((a,i)=>{ const d=el("div","judgment"); d.innerHTML=`<b>J${i+1}.</b> ${esc(a.statement)} <span class="conf">${Math.round(a.confidence*100)}% · ${esc(a.basis)}</span>`+(a.evidence&&a.evidence.length?`<div class="pts muted" style="margin-top:4px;font-size:11px">evidence: ${esc(a.evidence.join("; "))}</div>`:"");
+      if(a.evidence_ids&&a.evidence_ids.length){ d.style.cursor="pointer"; d.addEventListener("click",()=>focusEntity(a.evidence_ids[0],true)); } jud.appendChild(d); }); }
+    else jud.innerHTML='<div class="empty">Run an analysis to derive judgments.</div>'; }
 }
 async function generateIntelligence(customPrompt){ const t=activeTab(); if(!t||!t.graph.nodes.length){toast("Open a project with a graph","err");return;}
   showView("intelligence"); $("#intelBrief").innerHTML='<div class="empty">✦ synthesizing intelligence…</div>'; setSync("busy","intel");
