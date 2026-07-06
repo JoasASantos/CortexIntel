@@ -347,9 +347,13 @@ function initCy() {
       { selector:".fresh", style:{ "underlay-color":"#3fb457", "underlay-padding":10, "underlay-opacity":0.5 }},
       { selector:"node.pathhl", style:{ "border-width":3, "border-color":"#33c2dd", "underlay-color":"#33c2dd", "underlay-padding":8, "underlay-opacity":0.5, "opacity":1 }},
       { selector:"edge.pathhl", style:{ "line-color":"#33c2dd", "target-arrow-color":"#33c2dd", "width":3, "opacity":1 }},
+      { selector:"node.metanode", style:{ "shape":"round-hexagon", "background-color":"#1c2530", "border-color":"data(kc)", "border-width":2.5,
+        "background-image":"data(icon)", "background-width":"46%", "background-height":"46%",
+        "label":"data(label)", "font-size":"10px", "color":"#cdd7e2", "text-valign":"bottom", "text-margin-y":5 }},
     ],
   });
   cy.on("tap","node", ev=>{ const id=ev.target.id(); if(linkMode){ finishLink(id); return; } if(pathSource){ finishPath(id); return; } selectNode(id); });
+  cy.on("dbltap","node", ev=>{ const id=ev.target.id(); const t=activeTab(); if(!t)return; if(t._metas&&t._metas[id]) expandCluster(id); else if((t.clusterMode||"none")!=="none") collapseNodeCluster(id); });
   cy.on("tap", ev=>{ if(ev.target===cy){ cy.elements().removeClass("faded pathhl"); cy.$(":selected").unselect(); $("#context").hidden=true; } });
   cy.on("cxttap","node", ev=>{ const e=ev.originalEvent; if(linkMode) finishLink(ev.target.id()); else openCtxMenu(e.clientX,e.clientY,ev.target.id()); });
   cy.on("pan zoom", ()=>scheduleMinimap());
@@ -357,16 +361,54 @@ function initCy() {
   return cy;
 }
 
+// ----- clustering (collapse/expand) -----
+function unionComponents(g){ const parent={}; g.nodes.forEach(n=>parent[n.id]=n.id);
+  const find=x=>{ while(parent[x]!==x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+  g.edges.forEach(e=>{ if(parent[e.source]!=null&&parent[e.target]!=null){ const a=find(e.source),b=find(e.target); if(a!==b)parent[a]=b; } });
+  const idx={}; let k=0; const comp={}; g.nodes.forEach(n=>{ const r=find(n.id); if(idx[r]==null)idx[r]=k++; comp[n.id]=idx[r]; }); return comp;
+}
+function clusterKey(n, mode, comp){ return mode==="kind" ? "k:"+n.kind : "c:"+(comp[n.id]!=null?comp[n.id]:("s"+n.id)); }
+function metaLabel(cid, count){ return (cid.startsWith("k:")?cid.slice(2):("cluster"))+" ×"+count; }
+// Build the render model applying cluster collapse; also returns metas map.
+function computeRenderModel(t){ const g=t.graph; const mode=t.clusterMode||"none";
+  t._metas={};
+  if(mode==="none") return {nodes:g.nodes, edges:g.edges};
+  const comp = mode==="component" ? unionComponents(g) : {};
+  const members={}; g.nodes.forEach(n=>{ const c=clusterKey(n,mode,comp); (members[c]=members[c]||[]).push(n); });
+  const collapsed=t.collapsed||new Set();
+  const toRender={}; const outNodes=[];
+  Object.entries(members).forEach(([cid,list])=>{
+    if(collapsed.has(cid) && list.length>1){ const kinds={}; let maxRisk=0; list.forEach(n=>{ kinds[n.kind]=(kinds[n.kind]||0)+1; maxRisk=Math.max(maxRisk,n.risk||0); });
+      const dom=Object.entries(kinds).sort((a,b)=>b[1]-a[1])[0][0];
+      t._metas[cid]={ id:cid, label:metaLabel(cid,list.length), count:list.length, kind:dom, risk:maxRisk, members:list.map(n=>n.id) };
+      list.forEach(n=>toRender[n.id]=cid);
+      outNodes.push({ meta:true, id:cid, label:metaLabel(cid,list.length), kind:dom, risk:maxRisk, count:list.length });
+    } else { list.forEach(n=>{ toRender[n.id]=n.id; outNodes.push(n); }); }
+  });
+  const seen={}; const outEdges=[];
+  g.edges.forEach(e=>{ const s=toRender[e.source], tt=toRender[e.target]; if(s==null||tt==null||s===tt) return; const key=s+"|"+tt;
+    if(seen[key]){ seen[key].conf=Math.max(seen[key].conf,e.conf||0.5); return; } const ed={source:s,target:tt,type:e.type,conf:e.conf||0.5}; seen[key]=ed; outEdges.push(ed); });
+  return {nodes:outNodes, edges:outEdges};
+}
+function setClusterMode(mode){ const t=activeTab(); if(!t)return; t.clusterMode=mode;
+  if(mode==="none"){ t.collapsed=new Set(); } else { // collapse all clusters by default
+    const g=t.graph; const comp=mode==="component"?unionComponents(g):{}; const set=new Set(); g.nodes.forEach(n=>set.add(clusterKey(n,mode,comp))); t.collapsed=set; }
+  renderGraph(); }
+function expandCluster(cid){ const t=activeTab(); if(!t||!t.collapsed)return; t.collapsed.delete(cid); renderGraph(); toast("Cluster expanded"); }
+function collapseNodeCluster(id){ const t=activeTab(); if(!t)return; const mode=t.clusterMode||"none"; if(mode==="none")return; const comp=mode==="component"?unionComponents(t.graph):{}; const n=t.graph.nodes.find(x=>x.id===id); if(!n)return; const cid=clusterKey(n,mode,comp); (t.collapsed=t.collapsed||new Set()).add(cid); renderGraph(); }
+
 function renderGraph() {
   const t = activeTab();
   const container = $("#cy");
   $("#graphEmpty").hidden = !!(t && t.graph.nodes.length);
   if (!t || !t.graph.nodes.length) { if (cy) cy.elements().remove(); $("#graphStats").textContent="0 nodes · 0 edges"; return; }
   initCy();
-  const g = t.graph;
+  const model = computeRenderModel(t);
+  const g = { nodes: model.nodes, edges: model.edges };
   const nodeById = {}; g.nodes.forEach(n=>nodeById[n.id]=n);
   const els = [];
   g.nodes.forEach(n=>{
+    if(n.meta){ els.push({ data:{ id:n.id, label:n.label, icon:nodeIcon("group"), kc:kColor(n.kind), hc:bandColor(bandOf(n.risk)), size:34+Math.min(26,Math.log2(n.count||2)*6) }, classes:"metanode" }); return; }
     const band = n.band||bandOf(n.risk);
     const hot = band==="critical"||band==="high";
     els.push({ data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind), kc:kColor(n.kind), hc:bandColor(band),
@@ -375,7 +417,9 @@ function renderGraph() {
   g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:0.6+(e.conf||0.5)*1.8 }, classes:e.hypothesis?"hyp":"" }); });
   cy.elements().remove(); cy.add(els);
   runLayout();
-  $("#graphStats").textContent = `${g.nodes.length} nodes · ${g.edges.length} edges`;
+  const full=t.graph; const clustered=(t.clusterMode||"none")!=="none";
+  $("#graphStats").textContent = clustered ? `${g.nodes.length} shown · ${full.nodes.length} entities · ${full.edges.length} edges` : `${full.nodes.length} nodes · ${full.edges.length} edges`;
+  const cs=$("#graphCluster"); if(cs) cs.value=t.clusterMode||"none";
   renderLegend(); renderGraphFilters(); setTimeout(scheduleMinimap, 700);
 }
 function runLayout() {
@@ -396,7 +440,9 @@ function renderLegend() {
 }
 
 // ---------- entity selection ----------
-function nodeData(id){ const t=activeTab(); return t? t.graph.nodes.find(n=>n.id===id):null; }
+function nodeData(id){ const t=activeTab(); if(!t)return null;
+  if(t._metas&&t._metas[id]){ const m=t._metas[id]; return { id:m.id, kind:m.kind, label:m.label, risk:m.risk, band:bandOf(m.risk), meta:true, members:m.members, attributes:{cluster:"collapsed", members:String(m.count)}, tags:["cluster"], sources:[] }; }
+  return t.graph.nodes.find(n=>n.id===id); }
 function selectNode(id) {
   const n = nodeData(id); if(!n) return;
   if (cy) { cy.$(":selected").unselect(); const nel=cy.$id(id); if(nel&&nel.length){ nel.select(); cy.elements().addClass("faded"); nel.closedNeighborhood().removeClass("faded"); } }
@@ -465,7 +511,10 @@ let linkMode=null; // source id while connecting
 async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   const n=nodeData(id); if(!n)return;
   const add=(icon,label,fn,sep)=>{ if(sep){ const s=el("div","mi sep"); m.appendChild(s);} const mi=el("div","mi"); mi.innerHTML=svg(icon)+`<span>${esc(label)}</span>`; mi.addEventListener("click",()=>{fn();m.hidden=true;}); m.appendChild(mi); };
+  if(n.meta){ add("graph",`Expand cluster (${n.members.length})`,()=>expandCluster(id)); add("fit","Focus cluster",()=>{ if(cy) cy.animate({fit:{eles:cy.$id(id),padding:120},duration:300}); });
+    m.style.left=Math.min(x,window.innerWidth-230)+"px"; m.style.top=Math.min(y,window.innerHeight-120)+"px"; m.hidden=false; return; }
   add("entities","Open dossier",()=>selectNode(id));
+  if((activeTab()?.clusterMode||"none")!=="none") add("boxes"in ICONS?"boxes":"entities","Collapse this cluster",()=>collapseNodeCluster(id));
   add("spark","Expand via AI",()=>askAbout(`Expand the investigation around "${n.label}" (${n.kind}). Propose linked entities and leads.`));
   add("fit","Isolate neighborhood",()=>isolate(id));
   add("graph","Focus neighbors",()=>{if(cy)cy.animate({fit:{eles:cy.$id(id).closedNeighborhood(),padding:80},duration:350});});
@@ -819,6 +868,7 @@ function clearPath(){ pathSource=null; pathBanner(""); if(cy) cy.elements().remo
 $("#btnPath")&&$("#btnPath").addEventListener("click",()=>{ const sel=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; if(sel){ startPath(sel); } else { toast("Select a node, then click Path — or right-click a node → Find path from here"); } });
 $("#btnReset").addEventListener("click",()=>{ if(cy){ cy.nodes().style("display","element"); cy.$(":selected").unselect(); cy.fit(cy.elements(),50); } $("#graphFilter").value=""; $("#context").hidden=true; toast("View reset"); });
 $("#graphLayout").addEventListener("change",runLayout);
+$("#graphCluster")&&$("#graphCluster").addEventListener("change",e=>setClusterMode(e.target.value));
 $("#graphFilter").addEventListener("input",e=>{ const q=e.target.value.trim().toLowerCase(); if(!cy)return;
   if(!q){ cy.nodes().style("display","element"); } else { cy.nodes().forEach(n=>{ const nd=nodeData(n.id()); const show=nd&&(nd.label+" "+nd.kind).toLowerCase().includes(q); n.style("display",show?"element":"none"); }); }
 });
