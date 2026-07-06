@@ -70,6 +70,26 @@ pub trait DataSource {
     fn describe(&self) -> String;
 }
 
+/// Read a file and decode it to UTF-8, tolerating non-UTF-8 encodings common
+/// across regions (Latin-1/ISO-8859-1, Windows-1252, UTF-16, etc.). Valid UTF-8
+/// is used as-is; otherwise the encoding is detected and transcoded so accented
+/// Latin, Cyrillic, Greek and similar data ingest cleanly instead of mojibake.
+pub fn read_text_decoded(path: &Path) -> Result<String> {
+    let bytes = std::fs::read(path).with_context(|| format!("reading {}", path.display()))?;
+    if let Ok(s) = std::str::from_utf8(&bytes) {
+        return Ok(strip_bom(s).to_string());
+    }
+    let mut det = chardetng::EncodingDetector::new();
+    det.feed(&bytes, true);
+    let enc = det.guess(None, true);
+    let (cow, _, _) = enc.decode(&bytes);
+    Ok(strip_bom(&cow).to_string())
+}
+
+fn strip_bom(s: &str) -> &str {
+    s.strip_prefix('\u{feff}').unwrap_or(s)
+}
+
 /// Autodetect a connector from a path's extension.
 pub fn source_for_path(path: &Path, declared: Option<DataType>) -> Result<Box<dyn DataSource>> {
     let ext = path
@@ -110,11 +130,11 @@ pub struct CsvSource {
 
 impl DataSource for CsvSource {
     fn load(&self) -> Result<RecordBatch> {
+        let text = read_text_decoded(&self.path)?;
         let mut rdr = csv::ReaderBuilder::new()
             .delimiter(self.delimiter)
             .flexible(true)
-            .from_path(&self.path)
-            .with_context(|| format!("cannot open CSV {}", self.path.display()))?;
+            .from_reader(text.as_bytes());
         let headers = rdr
             .headers()
             .context("reading CSV headers")?
@@ -166,8 +186,7 @@ pub struct JsonSource {
 
 impl DataSource for JsonSource {
     fn load(&self) -> Result<RecordBatch> {
-        let raw = std::fs::read_to_string(&self.path)
-            .with_context(|| format!("cannot read JSON {}", self.path.display()))?;
+        let raw = read_text_decoded(&self.path)?;
         let origin = self.path.display().to_string();
         let values: Vec<serde_json::Value> = if self.lines {
             raw.lines()

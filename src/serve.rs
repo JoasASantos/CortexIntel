@@ -8,8 +8,50 @@
 
 use crate::{api, auth, connectors, keys, plugins, projects, transforms};
 use anyhow::{anyhow, Result};
+use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::sync::{Mutex, OnceLock};
+
+/// Async job for long-running LLM work (ask/run/connector) so the HTTP
+/// connection returns immediately and the frontend polls — no idle-timeout
+/// "failed to fetch" on slow model calls.
+#[derive(Clone, serde::Serialize)]
+struct Job {
+    status: String, // running | done | error
+    #[serde(skip_serializing_if = "Option::is_none")]
+    result: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    error: Option<String>,
+}
+
+fn jobs() -> &'static Mutex<HashMap<String, Job>> {
+    static J: OnceLock<Mutex<HashMap<String, Job>>> = OnceLock::new();
+    J.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn start_job(kind: String, payload: serde_json::Value) -> String {
+    let id = format!("job-{}", uuid::Uuid::new_v4().simple());
+    jobs().lock().unwrap().insert(id.clone(), Job { status: "running".into(), result: None, error: None });
+    let jid = id.clone();
+    std::thread::spawn(move || {
+        let res: Result<serde_json::Value> = (|| match kind.as_str() {
+            "ask" => api::ask(serde_json::from_value(payload)?),
+            "run" => api::run_analysis(serde_json::from_value(payload)?),
+            "connector_run" => api::connector_run(serde_json::from_value(payload)?),
+            "report_pdf" => api::report_pdf(payload.get("project_id").and_then(|v| v.as_str()).unwrap_or("")),
+            other => Err(anyhow!("unknown job kind '{other}'")),
+        })();
+        let mut map = jobs().lock().unwrap();
+        if let Some(j) = map.get_mut(&jid) {
+            match res {
+                Ok(v) => { j.status = "done".into(); j.result = Some(v); }
+                Err(e) => { j.status = "error".into(); j.error = Some(e.to_string()); }
+            }
+        }
+    });
+    id
+}
 
 // Embedded frontend assets.
 const INDEX_HTML: &str = include_str!("../gui/dist/index.html");
@@ -167,6 +209,24 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         },
         ("POST", "/api/run") => finish(stream, parse_body(&req.body).and_then(api::run_analysis)),
         ("POST", "/api/ask") => finish(stream, parse_body(&req.body).and_then(api::ask)),
+        // Async jobs (used by the UI for long LLM calls)
+        ("POST", "/api/jobs") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let kind = b.get("kind").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let payload = b.get("payload").cloned().unwrap_or(serde_json::json!({}));
+            if !["ask", "run", "connector_run", "report_pdf"].contains(&kind.as_str()) {
+                return json_err(stream, "invalid job kind");
+            }
+            let id = start_job(kind, payload);
+            json_ok(stream, &serde_json::json!({ "job_id": id }))
+        }
+        ("GET", "/api/jobs/status") => match param(&req.query, "id") {
+            Some(id) => match jobs().lock().unwrap().get(&id) {
+                Some(j) => json_ok(stream, j),
+                None => json_err(stream, "unknown job"),
+            },
+            None => json_err(stream, "missing id"),
+        },
         ("POST", "/api/report/pdf") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, api::report_pdf(b.get("project_id").and_then(|v| v.as_str()).unwrap_or("")))

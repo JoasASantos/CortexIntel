@@ -31,6 +31,8 @@ indexmap = { version = "2", features = ["serde"] }
 argon2 = "0.5"
 rand = "0.8"
 dirs = "5"
+encoding_rs = "0.8"
+chardetng = "0.1"
 
 [profile.release]
 opt-level = 2

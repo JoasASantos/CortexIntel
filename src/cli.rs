@@ -160,11 +160,14 @@ pub fn main() -> Result<()> {
 /// Launch the native Tauri app if present; otherwise serve + open the browser.
 fn desktop(port: u16) -> Result<()> {
     banner();
-    let candidates = [
-        "/Applications/CortexIntel.app",
-        "gui/src-tauri/target/release/bundle/macos/CortexIntel.app",
+    let mut candidates: Vec<String> = vec![
+        "/Applications/CortexIntel.app".into(),
+        "gui/src-tauri/target/release/bundle/macos/CortexIntel.app".into(),
     ];
-    for app in candidates {
+    if let Ok(home) = std::env::var("CORTEX_HOME") {
+        candidates.push(format!("{home}/gui/src-tauri/target/release/bundle/macos/CortexIntel.app"));
+    }
+    for app in &candidates {
         if std::path::Path::new(app).exists() {
             println!("launching native app: {app}");
             std::process::Command::new("open").arg(app).spawn()?;

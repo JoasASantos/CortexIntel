@@ -116,6 +116,7 @@
                 <input id="graphFilter" placeholder="Filter…" />
                 <select id="graphCluster" class="mini-select" title="Collapse into clusters"><option value="none">Cluster: off</option><option value="kind">By type</option><option value="component">By component</option></select>
                 <select id="graphLayout" class="mini-select"><option value="fcose">Force (fcose)</option><option value="concentric">Concentric</option><option value="breadthfirst">Hierarchy</option><option value="circle">Circle</option><option value="grid">Grid</option></select>
+                <button class="btn ghost" id="btnAddEntity">+ Entity</button>
                 <button class="btn ghost" id="btnFit">Fit</button>
                 <button class="btn ghost" id="btnPath">Path</button>
                 <button class="btn ghost" id="btnReset">Reset</button>
@@ -142,8 +143,8 @@
             <div class="legend" id="legend"></div>
             <div class="graph-empty" id="graphEmpty">
               <div class="ge-inner"><div class="ge-icon">◕</div><h2>No graph yet</h2>
-                <p>Run an analysis or connect a source to build the correlation graph.</p>
-                <button class="btn primary" id="btnRun2">▶ Run analysis</button></div>
+                <p>Run an analysis, connect a source, or add entities manually (people, media, IPs…) to start building the graph.</p>
+                <div class="row-actions" style="justify-content:center"><button class="btn primary" id="btnRun2">▶ Run analysis</button><button class="btn ghost" id="btnAddEntity2">+ Add entity</button></div></div>
             </div>
             <!-- AI copilot dock -->
             <div class="ask-dock" id="askDock" hidden>
@@ -166,9 +167,10 @@
         <!-- Intelligence (Palantir-grade product) -->
         <section class="view" id="view-intelligence" hidden>
           <div class="view-head"><h1>Intelligence</h1><p class="muted">Decision-ready product synthesized from the current investigation: assessment, judgments, clusters, actors, gaps.</p></div>
-          <div class="row-actions" style="margin-bottom:14px">
-            <button class="btn primary" id="btnGenIntel">✦ Generate intelligence</button>
-            <button class="btn ghost" id="btnAsk3">Ask a question</button>
+          <div class="intel-ask">
+            <input id="intelPrompt" placeholder="Ask / steer the intelligence — e.g. 'focus on money-flow risk and cross-border links'  (Enter to run)" />
+            <button class="btn primary" id="btnIntelSend">✦ Generate</button>
+            <button class="btn ghost" id="btnIntelPdf">⬇ PDF report</button>
             <span class="intel-meta" id="intelMeta"></span>
           </div>
           <div class="card intel-exec"><div class="card-head"><h3>Executive assessment</h3><span class="conf-pill" id="intelConf"></span></div>
@@ -200,10 +202,11 @@
         <section class="view" id="view-reports" hidden>
           <div class="view-head"><h1>Reports</h1><p class="muted">Investigative brief, governance & PDF export (Typst).</p></div>
           <div class="row-actions" style="margin-bottom:14px">
-            <button class="btn primary" id="btnReportPdf">⬇ Export PDF (Typst)</button>
+            <button class="btn primary" id="btnReportPdf">⬇ Generate PDF (Typst)</button>
             <button class="btn ghost" id="btnReportRefresh">Refresh</button>
           </div>
-          <div class="card"><div class="report-body" id="reportBody"><div class="empty">Run an analysis to produce a report.</div></div></div>
+          <div class="card"><div class="card-head"><h3>Generated reports</h3></div><div class="list" id="reportsList"><div class="empty">No reports generated yet — click "Generate PDF".</div></div></div>
+          <div class="card"><div class="card-head"><h3>Current brief</h3></div><div class="report-body" id="reportBody"><div class="empty">Run an analysis to produce a report.</div></div></div>
         </section>
 
         <!-- Settings (tabbed: everything config & integration lives here) -->

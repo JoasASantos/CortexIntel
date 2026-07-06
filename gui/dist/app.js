@@ -28,6 +28,24 @@ async function api(path, { method = "GET", body = null, raw = false, auth = true
   return data;
 }
 
+// Run a long job (ask/run/connector_run/report_pdf) via async job + polling,
+// so slow LLM calls never hit connection idle-timeouts ("failed to fetch").
+async function runJob(kind, payload){
+  if(MODE!=="http"){ // mock/static: call the equivalent endpoint directly
+    const map={ask:"/api/ask",run:"/api/run",connector_run:"/api/connectors/run",report_pdf:"/api/report/pdf"};
+    return api(map[kind]||"/api/run",{method:"POST",body:payload});
+  }
+  const {job_id}=await api("/api/jobs",{method:"POST",body:{kind,payload}});
+  const started=Date.now();
+  for(;;){
+    await new Promise(r=>setTimeout(r,1300));
+    let s; try{ s=await api("/api/jobs/status?id="+encodeURIComponent(job_id)); }
+    catch(e){ if(Date.now()-started>600000) throw e; continue; } // tolerate a transient poll failure
+    if(s.status==="done") return s.result;
+    if(s.status==="error") throw new Error(s.error||"job failed");
+  }
+}
+
 // ---------- state ----------
 const state = {
   user: null, domains: [], dataTypes: [], provider: "auto",
@@ -286,10 +304,10 @@ function onboardCountry(){
 function newProjectModal() {
   const domainOpts = state.domains.map(d=>`<option value="${d.slug}">${esc(d.title)}</option>`).join("");
   openModal("New project", `
-    <div class="field">Project name<input id="npName" placeholder="e.g. CourseStack Students" /></div>
+    <div class="field">Project name<input id="npName" placeholder="e.g. Case 2026-114 · Q3 review · Threat sweep" /></div>
     <div class="field">Business vertical<select id="npDomain" class="select">${domainOpts}</select></div>
     <div class="field">Description<textarea id="npDesc" rows="2" placeholder="what this project investigates"></textarea></div>
-    <div class="field">Instruction for AI (optional)<textarea id="npAI" rows="2" placeholder="focus/context for the AI, e.g. 'prioritize shared-infrastructure fraud rings; ignore internal test accounts'"></textarea></div>
+    <div class="field">Instruction for AI (optional)<textarea id="npAI" rows="2" placeholder="focus/context for the AI, e.g. 'prioritize shared-infrastructure clusters; ignore internal test records'"></textarea></div>
     <div class="field">Import a file now (optional)<div style="display:flex;gap:8px"><input id="npFile" placeholder="no file selected" readonly style="flex:1" /><button class="btn ghost" id="npBrowse">Browse…</button></div></div>
     <div class="modal-note" id="npNote"></div>
   `, [
@@ -299,7 +317,7 @@ function newProjectModal() {
       try {
         const p = await api("/api/projects",{method:"POST",body:{name,domain:$("#npDomain").value,description:$("#npDesc").value,ai_instructions:$("#npAI").value}});
         closeModal(); await loadProjects(); await openProject(p.id); pushNotif("project",`Project "${p.name}" created`);
-        if(npUploadPath){ const tb=activeTab(); if(tb){ setSync("busy","running"); try{ const result=await api("/api/run",{method:"POST",body:{inputs:[npUploadPath],domain:p.domain,provider:state.provider,maxRecords:4000,projectId:p.id}}); tb.result=result; tb.graph=consolidatedToGraph(result); tb.project=await api(`/api/projects/get?id=${encodeURIComponent(p.id)}`).catch(()=>tb.project); setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy();if(cy)cy.fit(cy.elements(),50);},700);}catch(e){setSync("err","failed");toast(e.message,"err");} } }
+        if(npUploadPath){ const tb=activeTab(); if(tb){ setSync("busy","running"); try{ const result=await runJob("run",{inputs:[npUploadPath],domain:p.domain,provider:state.provider,maxRecords:4000,projectId:p.id}); tb.result=result; tb.graph=consolidatedToGraph(result); tb.project=await api(`/api/projects/get?id=${encodeURIComponent(p.id)}`).catch(()=>tb.project); setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy();if(cy)cy.fit(cy.elements(),50);},700);}catch(e){setSync("err","failed");toast(e.message,"err");} } }
       } catch(e){ toast(e.message,"err"); }
     }}
   ]);
@@ -598,7 +616,7 @@ function runModal(){
     <div class="field">Data type (category → type, or auto)<select id="rType" class="select">${typeOpts}</select></div>
     <div class="field">LLM provider<select id="rProvider" class="select">
       <option value="auto">Auto — smart routing (Opus/Sonnet ⇄ Codex)</option><option value="claude">Claude (Opus/Sonnet)</option><option value="codex">Codex (gpt-5.5)</option><option value="mock">Offline mock</option></select></div>
-    <div class="field">Input source(s)<div style="display:flex;gap:8px"><input id="rInputs" placeholder="/path/file.csv  (or Browse)" style="flex:1" /><button class="btn ghost" id="rBrowse">Browse…</button></div></div>
+    <div class="field">Input source(s)<div style="display:flex;gap:8px"><input id="rInputs" placeholder="/path/to/data.csv or .json  (or Browse)" style="flex:1" /><button class="btn ghost" id="rBrowse">Browse…</button></div></div>
     <div class="field">Max records (graph cap)<input id="rMax" type="number" value="4000" /></div>
     ${MODE==="mock"?'<div class="modal-note">Preview mode: loads the embedded sample.</div>':''}
   `,[
@@ -618,7 +636,7 @@ async function doRun(){
   if(MODE!=="mock" && !params.inputs.length){ toast("Provide an input path","err"); return; }
   setSync("busy","running"); toast("Running pipeline…");
   try {
-    const result = await api("/api/run",{method:"POST",body:params});
+    const result = await runJob("run",params);
     t.result=result; t.graph=consolidatedToGraph(result);
     t.project = await api(`/api/projects/get?id=${encodeURIComponent(t.project.id)}`).catch(()=>t.project);
     setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy(); if(cy)cy.fit(cy.elements(),50);},700);
@@ -650,7 +668,7 @@ async function askAbout(q){
   const thinking=el("div","ask-msg a","✦ thinking…"); log.appendChild(thinking); log.scrollTop=log.scrollHeight;
   try {
     const graph = t? {nodes:t.graph.nodes, edges:t.graph.edges}:{nodes:[],edges:[]};
-    const res = await api("/api/ask",{method:"POST",body:{question:q, domain:t?t.project.domain:"generic", provider:state.provider, graph, aiInstructions:t?t.project.ai_instructions:""}});
+    const res = await runJob("ask",{question:q, domain:t?t.project.domain:"generic", provider:state.provider, graph, aiInstructions:t?t.project.ai_instructions:""});
     thinking.remove();
     const a=el("div","ask-msg a");
     let h=`<div>${esc(res.answer||"(no answer)")}</div>`;
@@ -667,11 +685,22 @@ async function askAbout(q){
 function mergeProposals(res){
   const t=activeTab(); if(!t) return;
   const byLabel={}; t.graph.nodes.forEach(n=>byLabel[n.label.toLowerCase()]=n.id);
-  (res.entities||[]).forEach(e=>{ const key=(e.label||"").toLowerCase(); if(!key||byLabel[key])return;
-    const id="ai-"+Math.abs(hashStr(key)); byLabel[key]=id;
+  const newIds=[];
+  (res.entities||[]).forEach(e=>{ const key=(e.label||"").toLowerCase(); if(!key)return; if(byLabel[key]){ newIds.push(byLabel[key]); return; }
+    const id="ai-"+Math.abs(hashStr(key)); byLabel[key]=id; newIds.push(id);
     t.graph.nodes.push({id,kind:(e.kind||"unknown"),label:e.label,risk:0.4,band:"medium",attributes:e.attributes||{},tags:["hypothesis"],sources:["ai-copilot"],hypothesis:!!e.hypothesis}); });
   (res.relationships||[]).forEach(r=>{ const s=byLabel[(r.source||"").toLowerCase()],tg=byLabel[(r.target||"").toLowerCase()]; if(s&&tg) t.graph.edges.push({source:s,target:tg,type:r.type||"related",conf:r.confidence||0.5,hypothesis:!!r.hypothesis}); });
-  renderGraph(); toast("Added AI proposals to graph","ok");
+  if(!newIds.length){ toast("Nothing new to add","err"); return; }
+  // Clear any active isolate/filter so the additions are actually visible, then
+  // center + flash the new nodes with their neighborhood.
+  if(t.clusterMode&&t.clusterMode!=="none"){ t.clusterMode="none"; }
+  renderGraph(); showView("graph");
+  requestAnimationFrame(()=>{ initCy(); if(!cy)return; cy.resize(); cy.nodes().style("display","element"); cy.edges().style("display","element");
+    const eles=cy.collection(); newIds.forEach(id=>{ const e=cy.$id(id); if(e&&e.length){ eles.merge(e); eles.merge(e.connectedEdges().connectedNodes()); } });
+    if(eles.length){ cy.animate({fit:{eles:eles, padding:90}, duration:400}); flashFresh(newIds); }
+  });
+  pushNotif("ai",`Added ${newIds.length} AI-proposed entities`);
+  toast(`Added ${newIds.length} entities to graph`,"ok");
 }
 function hashStr(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return h; }
 // Apply an AI-returned focus directly to the graph (isolate/highlight), no manual filtering.
@@ -682,11 +711,18 @@ function applyFocus(focus){ if(!focus||!cy||focus.action==="none") return; const
   const match=n=>{ let ok=false; if(labels.size&&labels.has(n.label.toLowerCase()))ok=true; if(kinds.size&&kinds.has(n.kind.toLowerCase()))ok=true; if(minRisk!=null&&(n.risk||0)>=minRisk)ok=true; if(!labels.size&&!kinds.size&&minRisk==null)ok=true; return ok; };
   const keep=new Set(); t.graph.nodes.forEach(n=>{ if(match(n)) keep.add(n.id); });
   if(!keep.size) return;
+  // Grow to include the immediate neighbors of matched nodes so the isolated
+  // view is a coherent subgraph, not disconnected dots.
+  t.graph.edges.forEach(e=>{ if(keep.has(e.source))keep.add(e.target); if(keep.has(e.target))keep.add(e.source); });
   showView("graph"); requestAnimationFrame(()=>{ initCy(); if(!cy)return; cy.resize();
-    if(focus.action==="isolate"){ cy.nodes().forEach(nd=>nd.style("display",keep.has(nd.id())?"element":"none")); cy.fit(cy.nodes(":visible"),60); }
-    else { cy.elements().addClass("faded"); keep.forEach(id=>{ const e=cy.$id(id); if(e){ e.removeClass("faded"); e.connectedEdges().removeClass("faded"); } }); cy.fit(cy.nodes(":visible").length?cy.nodes().filter(n=>keep.has(n.id())):cy.elements(),60); }
+    // Always ISOLATE (hide the rest) so the analyst gets a clean subgraph.
+    cy.elements().removeClass("faded");
+    cy.nodes().forEach(nd=>nd.style("display", keep.has(nd.id())?"element":"none"));
+    cy.edges().forEach(ed=>ed.style("display",(keep.has(ed.source().id())&&keep.has(ed.target().id()))?"element":"none"));
+    cy.fit(cy.nodes(":visible"),70);
   });
-  toast(`AI focus applied — ${keep.size} entities`,"ok");
+  $("#graphStats").textContent = `${keep.size} isolated · ${t.graph.nodes.length} entities · use Reset to restore`;
+  toast(`AI isolated ${keep.size} entities — Reset to restore full graph`,"ok");
 }
 
 // ---------- connectors ----------
@@ -702,7 +738,7 @@ function renderConnectorCards(){ const w=$("#connectorCards"); if(!w)return; w.i
   CONNECTORS.forEach(c=>{ const card=el("div","card conn"); card.innerHTML=`<div class="ct">⇄ ${esc(c.name)}</div><div class="cd">${esc(c.desc)}</div>`; card.addEventListener("click",()=>connectorModal(c)); w.appendChild(card); }); }
 function connectorModal(c){
   let fields="";
-  if(c.kind==="csv"||c.kind==="json"){ fields=`<div class="field">File path<input id="cPath" placeholder="/opt/CourseStackIntelligence/Students.csv" /></div>`; }
+  if(c.kind==="csv"||c.kind==="json"){ fields=`<div class="field">File path<input id="cPath" placeholder="/path/to/data.csv or .json" /></div>`; }
   else if(c.kind==="postgres"||c.kind==="mysql"){ fields=`
     <div class="field">Host / IP<input id="cHost" placeholder="127.0.0.1" /></div>
     <div class="field">Port<input id="cPort" placeholder="${c.kind==="postgres"?"5432":"3306"}" /></div>
@@ -734,7 +770,7 @@ async function connectorAction(c,mode){
     closeModal();
     const params={inputs:[cfg.path],domain:t?t.project.domain:"generic",provider:state.provider,maxRecords:4000,projectId:t?t.project.id:null};
     setSync("busy","running");
-    try{ const result=await api("/api/run",{method:"POST",body:params}); t.result=result; t.graph=consolidatedToGraph(result); t.project=await api(`/api/projects/get?id=${encodeURIComponent(t.project.id)}`).catch(()=>t.project); setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy();if(cy)cy.fit(cy.elements(),50);},700); pushNotif("import",`Imported ${cfg.path}`); toast("Imported & processed","ok"); }
+    try{ const result=await runJob("run",params); t.result=result; t.graph=consolidatedToGraph(result); t.project=await api(`/api/projects/get?id=${encodeURIComponent(t.project.id)}`).catch(()=>t.project); setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy();if(cy)cy.fit(cy.elements(),50);},700); pushNotif("import",`Imported ${cfg.path}`); toast("Imported & processed","ok"); }
     catch(e){ setSync("err","failed"); toast(e.message,"err"); }
     return;
   }
@@ -866,7 +902,42 @@ function finishPath(targetId){ const src=pathSource; pathSource=null; pathBanner
 }
 function clearPath(){ pathSource=null; pathBanner(""); if(cy) cy.elements().removeClass("pathhl faded"); }
 $("#btnPath")&&$("#btnPath").addEventListener("click",()=>{ const sel=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; if(sel){ startPath(sel); } else { toast("Select a node, then click Path — or right-click a node → Find path from here"); } });
-$("#btnReset").addEventListener("click",()=>{ if(cy){ cy.nodes().style("display","element"); cy.$(":selected").unselect(); cy.fit(cy.elements(),50); } $("#graphFilter").value=""; $("#context").hidden=true; toast("View reset"); });
+
+// ---------- add entity manually (incl. media for analysis) ----------
+let aeUploadPath=null;
+function addEntityModal(){ const t=activeTab(); if(!t){ toast("Open or create a project first","err"); return; }
+  const kinds=["person","account","organization","ip","domain","url","media","evidence","device","wallet","payment","group","location","communication","malware","incident","vulnerability","suspect","victim","case","report","service","repository"];
+  const kopts=kinds.map(k=>`<option value="${k}">${k}</option>`).join("");
+  openModal("Add entity", `
+    <div class="field">Type<select id="aeKind" class="select">${kopts}</select></div>
+    <div class="field">Label / value<input id="aeLabel" placeholder="name, email, IP, domain, file name…" /></div>
+    <div class="field" id="aeMediaField" hidden>Media file (image / video / audio) — uploaded for metadata & authenticity analysis
+      <div style="display:flex;gap:8px"><input id="aeFile" placeholder="no file selected" readonly style="flex:1"/><button class="btn ghost" id="aeBrowse">Browse…</button></div>
+      <select id="aeMediaType" class="select" style="margin-top:8px"><option value="image">image</option><option value="video">video</option><option value="audio">audio</option><option value="document">document</option></select>
+      <div class="disclaimer" style="margin-top:8px">Media is referenced by path/hash. Sensitive material is gated; run the media transforms (metadata, deepfake, sensitive-content) to analyze.</div>
+    </div>
+    <div class="field">Attributes (key: value per line, optional)<textarea id="aeAttrs" rows="2" placeholder="source: hotline&#10;country: BR"></textarea></div>
+  `,[
+    {label:"Cancel",cls:"ghost",act:closeModal},
+    {label:"Add entity",cls:"primary",act:doAddEntity}
+  ]);
+  aeUploadPath=null;
+  setTimeout(()=>{ const ks=$("#aeKind"); const upd=()=>{ $("#aeMediaField").hidden=!["media","evidence"].includes(ks.value); }; ks&&ks.addEventListener("change",upd); upd();
+    const b=$("#aeBrowse"); if(b)b.addEventListener("click",()=>browseUpload(p=>{ aeUploadPath=p; $("#aeFile").value=p.split("/").pop(); if(!$("#aeLabel").value) $("#aeLabel").value=p.split("/").pop(); }, "image/*,video/*,audio/*,.pdf,.png,.jpg,.jpeg,.mp4,.mov,.mp3,.wav")); },40);
+}
+function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind").value; let label=$("#aeLabel").value.trim();
+  if(!label && !aeUploadPath){ toast("Label or file required","err"); return; }
+  const attrs={}; ($("#aeAttrs").value||"").split("\n").forEach(l=>{ const i=l.indexOf(":"); if(i>0){ const k=l.slice(0,i).trim(); if(k)attrs[k]=l.slice(i+1).trim(); } });
+  if(["media","evidence"].includes(kind)){ attrs.media_type=$("#aeMediaType").value; if(aeUploadPath){ attrs.path=aeUploadPath; attrs.file=aeUploadPath.split("/").pop(); if(!label)label=aeUploadPath.split("/").pop(); } }
+  if(!label) label=kind+" (manual)";
+  const id="man-"+Math.abs(hashStr(kind+label+String(state.tabs.length)+Object.keys(attrs).join()));
+  t.graph.nodes.push({ id, kind, label, risk:0.3, band:"low", attributes:attrs, tags:["manual"], sources:["manual"], sensitive:["media","evidence","victim","communication"].includes(kind) });
+  closeModal(); renderGraph(); renderGraphFilters(); showView("graph"); setTimeout(()=>{ selectNode(id); if(cy){const e=cy.$id(id); if(e){e.addClass("fresh"); setTimeout(()=>e.removeClass("fresh"),1800);} } },250);
+  pushNotif("entity","Manual entity added: "+label); toast("Entity added — run transforms to analyze","ok");
+}
+$("#btnAddEntity")&&$("#btnAddEntity").addEventListener("click",addEntityModal);
+$("#btnAddEntity2")&&$("#btnAddEntity2").addEventListener("click",addEntityModal);
+$("#btnReset").addEventListener("click",()=>{ if(cy){ cy.elements().style("display","element").removeClass("faded pathhl"); cy.$(":selected").unselect(); cy.fit(cy.elements(),50); } $("#graphFilter").value=""; $("#context").hidden=true; const t=activeTab(); if(t)$("#graphStats").textContent=`${t.graph.nodes.length} nodes · ${t.graph.edges.length} edges`; toast("View reset"); });
 $("#graphLayout").addEventListener("change",runLayout);
 $("#graphCluster")&&$("#graphCluster").addEventListener("change",e=>setClusterMode(e.target.value));
 $("#graphFilter").addEventListener("input",e=>{ const q=e.target.value.trim().toLowerCase(); if(!cy)return;
@@ -876,7 +947,7 @@ $("#globalSearch").addEventListener("keydown",e=>{ if(e.key==="Enter"){ const q=
 
 // ---------- command palette ----------
 const COMMANDS=[
-  ["New project","⌘N",newProjectModal],["Run analysis","⌘R",runModal],["Ask AI copilot","⌘/",openAsk],
+  ["New project","⌘N",newProjectModal],["Run analysis","⌘R",runModal],["Add entity","",addEntityModal],["Ask AI copilot","⌘/",openAsk],
   ["Generate intelligence","",()=>{showView("intelligence");renderIntelligence();generateIntelligence();}],
   ["Go to Dashboard","",()=>showView("dashboard")],["Go to Graph","",()=>showView("graph")],["Go to Intelligence","",()=>{showView("intelligence");renderIntelligence();}],["Go to Entities","",()=>showView("entities")],
   ["Go to Timeline","",()=>showView("timeline")],["Go to Reports","",()=>showView("reports")],
@@ -896,7 +967,7 @@ $("#paletteInput").addEventListener("keydown",e=>{ const items=$("#paletteList")
 $("#paletteBackdrop").addEventListener("click",e=>{ if(e.target===$("#paletteBackdrop")) closePalette(); });
 
 // nav hooks that need lazy render
-$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); }));
+$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
 $("#profileBtn").addEventListener("click",()=>{showView("settings");openSettingsTab("account");});
 
 // ---------- settings tabs ----------
@@ -1032,28 +1103,39 @@ function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],
   if(jud){ jud.innerHTML=""; const js=(intel&&(intel.key_judgments||intel.key_points))||[]; if(!js.length)jud.innerHTML='<div class="empty">Generate intelligence to derive judgments.</div>';
     js.slice(0,8).forEach((j,i)=>{ const d=el("div","judgment"); const txt=typeof j==="string"?j:(j.text||JSON.stringify(j)); const c=(typeof j==="object"&&j.confidence)?j.confidence:(intel.confidence||""); d.innerHTML=`<b>J${i+1}.</b> ${esc(txt)}${c?`<span class="conf">${esc(c)}</span>`:""}`; jud.appendChild(d); }); }
 }
-async function generateIntelligence(){ const t=activeTab(); if(!t||!t.graph.nodes.length){toast("Open a project with a graph","err");return;}
-  $("#intelBrief").innerHTML='<div class="empty">✦ synthesizing intelligence…</div>'; setSync("busy","intel"); showView("intelligence");
-  try{ const res=await api("/api/ask",{method:"POST",body:{question:"Act as lead analyst and produce a decision-ready INTELLIGENCE PRODUCT for this graph. Provide: (1) a 2-3 sentence executive assessment in 'answer'; (2) 'key_points' as 4-6 crisp KEY JUDGMENTS, each with a confidence word; (3) 'recommended_actions' prioritized; (4) an overall 'confidence' (low|medium|high). Separate confirmed facts from inference.",domain:t.project.domain,provider:state.provider,graph:{nodes:t.graph.nodes,edges:t.graph.edges},aiInstructions:t.project.ai_instructions}});
-    t.intel=res; setSync("ok","complete"); pushNotif("ai","Intelligence product generated"); renderIntelligence();
-    $("#intelMeta").textContent = `· ${t.graph.nodes.length} entities · ${computeClusters(t.graph).length} clusters`;
+async function generateIntelligence(customPrompt){ const t=activeTab(); if(!t||!t.graph.nodes.length){toast("Open a project with a graph","err");return;}
+  showView("intelligence"); $("#intelBrief").innerHTML='<div class="empty">✦ synthesizing intelligence…</div>'; setSync("busy","intel");
+  const base="Act as lead analyst and produce a decision-ready INTELLIGENCE PRODUCT for this graph. Provide: (1) a 2-3 sentence executive assessment in 'answer'; (2) 'key_points' as 4-6 crisp KEY JUDGMENTS, each with a confidence word; (3) 'recommended_actions' prioritized; (4) an overall 'confidence' (low|medium|high). Separate confirmed facts from inference.";
+  const q = customPrompt&&customPrompt.trim() ? (`Analyst directive: ${customPrompt.trim()}\n\n`+base) : base;
+  try{ const res=await runJob("ask",{question:q,domain:t.project.domain,provider:state.provider,graph:{nodes:t.graph.nodes,edges:t.graph.edges},aiInstructions:t.project.ai_instructions});
+    t.intel=res; if(customPrompt&&customPrompt.trim()) t.intel._prompt=customPrompt.trim();
+    setSync("ok","complete"); pushNotif("ai","Intelligence product generated"); renderIntelligence();
+    $("#intelMeta").textContent = `· ${t.graph.nodes.length} entities · ${computeClusters(t.graph).length} clusters`+(customPrompt&&customPrompt.trim()?` · steered`:``);
+    applyFocus(res.focus);
   }catch(e){ $("#intelBrief").innerHTML='<div class="empty">error: '+esc(e.message)+'</div>'; setSync("err","failed"); }
 }
-$("#btnGenIntel")&&$("#btnGenIntel").addEventListener("click",generateIntelligence);
-$("#btnAsk3")&&$("#btnAsk3").addEventListener("click",openAsk);
-// ---------- report PDF (Typst) ----------
-$("#btnReportRefresh")&&$("#btnReportRefresh").addEventListener("click",renderReport);
-$("#btnReportPdf")&&$("#btnReportPdf").addEventListener("click",async()=>{
-  const t=activeTab(); if(!t||!t.result){ toast("Run an analysis first","err"); return; }
+$("#btnIntelSend")&&$("#btnIntelSend").addEventListener("click",()=>generateIntelligence($("#intelPrompt").value));
+$("#intelPrompt")&&$("#intelPrompt").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); generateIntelligence($("#intelPrompt").value); } });
+$("#btnIntelPdf")&&$("#btnIntelPdf").addEventListener("click",()=>exportReportPdf());
+// ---------- report PDF (Typst) + generated-reports list ----------
+$("#btnReportRefresh")&&$("#btnReportRefresh").addEventListener("click",()=>{renderReport();renderReports();});
+$("#btnReportPdf")&&$("#btnReportPdf").addEventListener("click",()=>exportReportPdf());
+async function exportReportPdf(){ const t=activeTab(); if(!t||!t.result){ toast("Run an analysis first","err"); return; }
   if(MODE!=="http"){ toast("PDF export runs in the app/server (Typst).","err"); return; }
   setSync("busy","report"); toast("Rendering PDF via Typst…");
-  try{ const r=await api("/api/report/pdf",{method:"POST",body:{project_id:t.project.id}});
-    // stream the PDF to the browser for download
-    const resp=await fetch("/api/report/download?path="+encodeURIComponent(r.path),{headers:{Authorization:"Bearer "+TOKEN}});
-    const blob=await resp.blob(); const a=el("a"); a.href=URL.createObjectURL(blob); a.download=(t.project.name.replace(/\s+/g,"_"))+"_intel.pdf"; a.click(); URL.revokeObjectURL(a.href);
-    setSync("ok","complete"); pushNotif("report","Intelligence PDF exported"); toast("PDF exported","ok");
+  try{ const r=await runJob("report_pdf",{project_id:t.project.id});
+    const name=(t.project.name.replace(/\s+/g,"_"))+"_intel_"+new Date().toISOString().slice(0,16).replace(/[:T]/g,"")+".pdf";
+    t.reports=t.reports||[]; t.reports.unshift({name, path:r.path, at:new Date().toISOString().replace("T"," ").slice(0,16)});
+    setSync("ok","complete"); pushNotif("report","PDF report created"); toast("Report created — see Reports","ok");
+    showView("reports"); renderReports();
   }catch(e){ setSync("err","failed"); toast("PDF: "+e.message,"err"); }
-});
+}
+async function downloadReport(path,name){ try{ const resp=await fetch("/api/report/download?path="+encodeURIComponent(path),{headers:{Authorization:"Bearer "+TOKEN}}); if(!resp.ok)throw new Error("not found"); const blob=await resp.blob(); const a=el("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }catch(e){ toast("Download failed: "+e.message,"err"); } }
+function renderReports(){ const w=$("#reportsList"); if(!w)return; const t=activeTab(); const reps=(t&&t.reports)||[];
+  w.innerHTML=""; if(!reps.length){ w.innerHTML='<div class="empty">No reports generated yet — click "Generate PDF".</div>'; return; }
+  reps.forEach(r=>{ const li=el("div","li"); const l=el("div","l"); l.innerHTML=svg("reports")+`<span class="label">${esc(r.name)}</span>`; li.appendChild(l);
+    const b=el("button","btn ghost","⬇ Download"); b.addEventListener("click",()=>downloadReport(r.path,r.name)); const wrap=el("div"); wrap.style.display="flex"; wrap.style.gap="8px"; wrap.style.alignItems="center"; wrap.appendChild(el("span","chip",r.at)); wrap.appendChild(b); li.appendChild(wrap); w.appendChild(li); });
+}
 
 // ---------- keyboard ----------
 window.addEventListener("keydown",e=>{ const meta=e.metaKey||e.ctrlKey;
