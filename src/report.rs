@@ -23,6 +23,7 @@ pub struct RunOutput<'a> {
     pub retention: &'a RetentionPolicy,
     pub assessment: &'a [crate::assessment::Assessment],
     pub next_actions: &'a [crate::assessment::NextAction],
+    pub resolution: &'a crate::resolve::ResolutionOutcome,
     pub started_at: DateTime<Utc>,
     pub finished_at: DateTime<Utc>,
 }
@@ -85,6 +86,7 @@ impl<'a> RunOutput<'a> {
             "ai_assessments": self.risk,
             "assessment": self.assessment,
             "next_best_actions": self.next_actions,
+            "identity_resolution": self.resolution,
             "investigation": self.investigation,
             "audit_events": self.audit.events,
             "governance": {
@@ -184,6 +186,24 @@ impl<'a> RunOutput<'a> {
                         action,
                         if auth { "  _(requires authorization)_" } else { "" }
                     ));
+                }
+                s.push('\n');
+            }
+        }
+
+        if !self.resolution.merged.is_empty() || !self.resolution.suggestions.is_empty() {
+            s.push_str("## Identity resolution\n\n");
+            if !self.resolution.merged.is_empty() {
+                s.push_str(&format!("Auto-merged {} alias(es) into canonical entities:\n\n", self.resolution.merged.len()));
+                for m in self.resolution.merged.iter().take(20) {
+                    s.push_str(&format!("- **{}** ← {} ({:.0}%) — {}\n", m.canonical_label, m.alias_label, m.confidence * 100.0, m.signals.join("; ")));
+                }
+                s.push('\n');
+            }
+            if !self.resolution.suggestions.is_empty() {
+                s.push_str(&format!("{} merge suggestion(s) for human review:\n\n", self.resolution.suggestions.len()));
+                for m in self.resolution.suggestions.iter().take(20) {
+                    s.push_str(&format!("- {} ? {} ({:.0}%) — {}\n", m.canonical_label, m.alias_label, m.confidence * 100.0, m.signals.join("; ")));
                 }
                 s.push('\n');
             }

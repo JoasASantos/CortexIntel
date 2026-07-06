@@ -161,6 +161,21 @@ pub struct Entity {
     #[serde(default)]
     pub sources: Vec<String>,
     pub sensitive: bool,
+    /// Identity resolution: alias entities merged into this canonical one.
+    /// Each alias preserves its original label + provenance so the merge is
+    /// reversible and auditable (Workstream E).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub aliases: Vec<Alias>,
+}
+
+/// An alias folded into a canonical entity by identity resolution.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Alias {
+    pub label: String,
+    pub sources: Vec<String>,
+    /// Signals that justified merging this alias (explainable).
+    pub signals: Vec<String>,
+    pub confidence: f32,
 }
 
 impl Entity {
@@ -178,6 +193,7 @@ impl Entity {
             risk_band: None,
             sources: Vec::new(),
             sensitive: kind.is_sensitive(),
+            aliases: Vec::new(),
         }
     }
 
@@ -286,6 +302,48 @@ impl KnowledgeGraph {
         }
         self.rel_index.insert(key, ());
         self.relationships.push(rel);
+    }
+
+    /// Identity resolution: fold `alias_id` into `canonical_id`. Reconnects the
+    /// alias's relationships to the canonical entity, records the alias (with its
+    /// provenance + the signals that justified the merge) so it is reversible,
+    /// and removes the alias node. No-op if either id is missing or they're equal.
+    pub fn merge_entities(&mut self, canonical_id: &str, alias_id: &str, signals: Vec<String>, confidence: f32) -> bool {
+        if canonical_id == alias_id || !self.entities.contains_key(canonical_id) || !self.entities.contains_key(alias_id) {
+            return false;
+        }
+        let alias = self.entities.get(alias_id).unwrap().clone();
+        // Record the alias on the canonical entity.
+        if let Some(c) = self.entities.get_mut(canonical_id) {
+            for (k, v) in &alias.attributes {
+                c.attributes.entry(k.clone()).or_insert_with(|| v.clone());
+            }
+            for s in &alias.sources {
+                if !c.sources.contains(s) { c.sources.push(s.clone()); }
+            }
+            // carry the alias's own nested aliases up too
+            let mut all_sources = alias.sources.clone();
+            for a in &alias.aliases { all_sources.extend(a.sources.clone()); c.aliases.push(a.clone()); }
+            c.aliases.push(Alias { label: alias.label.clone(), sources: all_sources, signals, confidence });
+            if !c.tags.contains(&"resolved-identity".to_string()) { c.tags.push("resolved-identity".into()); }
+        }
+        // Rewire relationships from alias → canonical, dropping self-loops/dupes.
+        self.rel_index.clear();
+        let mut kept: Vec<Relationship> = Vec::new();
+        let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+        let taken = std::mem::take(&mut self.relationships);
+        for mut r in taken {
+            if r.source_id == alias_id { r.source_id = canonical_id.to_string(); }
+            if r.target_id == alias_id { r.target_id = canonical_id.to_string(); }
+            if r.source_id == r.target_id { continue; }
+            let key = format!("{}|{}|{}", r.source_id, r.rel_type, r.target_id);
+            if seen.insert(key.clone()) { self.rel_index.insert(key, ()); kept.push(r); }
+        }
+        self.relationships = kept;
+        // Remove the alias node from the entity map + dedup index.
+        self.entities.shift_remove(alias_id);
+        self.dedup_index.retain(|_, v| v != alias_id);
+        true
     }
 
     pub fn entity_count(&self) -> usize {

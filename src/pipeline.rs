@@ -188,6 +188,28 @@ pub fn run(
     );
     println!("      +{} correlation edges", (added + llm_added).to_string().green());
 
+    // Identity resolution (E): fold same-entity aliases into canonical nodes
+    // before risk/assessment, so scoring/intelligence see one entity, not three.
+    let resolution = crate::resolve::resolve(&mut graph);
+    if !resolution.merged.is_empty() || !resolution.suggestions.is_empty() {
+        println!(
+            "      identity resolution: {} merged, {} suggestion(s)",
+            resolution.merged.len(),
+            resolution.suggestions.len()
+        );
+        audit.record(
+            Utc::now(),
+            "resolve_identities",
+            "identity-resolution",
+            &format!("{} auto-merged, {} suggested", resolution.merged.len(), resolution.suggestions.len()),
+            "entity resolution",
+            false,
+            false,
+            None,
+            None,
+        );
+    }
+
     step("5/7", "Risk prioritization");
     let mut risk_report = risk::score_graph(&graph, config.domain, &extra_signals);
     if let Some(v) = llm_risk(&graph_summary(&graph, &risk_report), config, router) {
@@ -301,6 +323,7 @@ pub fn run(
         retention: &retention,
         assessment: &assessment,
         next_actions: &next_actions,
+        resolution: &resolution,
         started_at,
         finished_at,
     };

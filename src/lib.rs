@@ -21,6 +21,7 @@ pub mod projects;
 pub mod prompts;
 pub mod report;
 pub mod reportpdf;
+pub mod resolve;
 pub mod risk;
 pub mod serve;
 pub mod sources;
