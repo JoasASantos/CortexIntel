@@ -9,11 +9,15 @@
 /cortex-demo
 *.log
 
-# Test & tooling artifacts
+# Test & tooling artifacts — NEVER commit screenshots (may contain real data)
 /.playwright-mcp
-/cortex-graph*.png
-/v2-*.png
+/*.png
+/*.jpg
+/*.jpeg
+/*.pdf
 /gui/src-tauri/app-icon.png
+# (app icons under gui/src-tauri/icons/ are the generated logo and ARE tracked)
+!/gui/src-tauri/icons/**
 
 # OS / editor
 .DS_Store

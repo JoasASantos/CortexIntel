@@ -1,4 +1,4 @@
-//! Transforms — Maltego-style, pluggable enrichment steps that take a seed
+//! Transforms — pluggable enrichment steps that take a seed
 //! entity and return new entities/relationships. Transforms execute in one of
 //! three runtimes:
 //!
@@ -201,7 +201,7 @@ fn fnv(s: &str) -> u64 {
 }
 
 // ---------------------------------------------------------------------------
-// Curated transform store (Maltego-style hub), grouped by category.
+// Curated transform store (enrichment hub), grouped by category.
 // ---------------------------------------------------------------------------
 
 /// Public catalog. Entries with `requires_api_key` need a key configured for

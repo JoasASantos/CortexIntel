@@ -449,3 +449,33 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .st-badge.reviewed { background: rgba(51,194,221,0.14); color: var(--accent); }
 .ent-foot { margin-top: 8px; font-size: 11px; }
 .ctx-scores { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+
+/* ===================== Hypotheses / Decision matrix / NBA ===================== */
+.hyp-card { border: 1px solid var(--stroke); border-radius: var(--r); padding: 11px 13px; margin-bottom: 8px; background: var(--panel-2); }
+.hyp-card.lead { border-color: var(--accent-2); box-shadow: inset 3px 0 0 var(--accent); }
+.hyp-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hyp-title { font-size: 13px; font-weight: 600; }
+.hyp-title .rank { font-family: var(--mono); color: var(--muted-2); margin-right: 7px; }
+.hyp-scores { display: flex; align-items: center; gap: 10px; flex: none; }
+.likelihood { display: flex; align-items: center; gap: 7px; }
+.lk-track { width: 90px; height: 6px; border-radius: 4px; background: var(--panel-3); overflow: hidden; }
+.lk-track > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+.lk-n { font-family: var(--mono); font-size: 11px; color: var(--text-2); width: 34px; text-align: right; }
+.hyp-body { margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hyp-col h5 { margin: 0 0 4px; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
+.hyp-col ul { margin: 0; padding-left: 15px; font-size: 11.5px; color: var(--text-2); }
+.hyp-col ul.missing { color: var(--amber); }
+.hyp-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 9px; }
+.hyp-next { font-size: 11.5px; color: var(--muted); }
+.hyp-next b { color: var(--accent); }
+.dm-wrap { overflow-x: auto; }
+.dmtable td, .dmtable th { white-space: nowrap; }
+.dmtable .dm-bar { display: inline-block; width: 52px; height: 6px; border-radius: 3px; background: var(--panel-3); overflow: hidden; vertical-align: middle; margin-right: 6px; }
+.dmtable .dm-bar > span { display: block; height: 100%; }
+.dmtable tr.best td { background: rgba(51,194,221,0.06); }
+.dmtable tr.best .dm-score { color: var(--accent); font-weight: 700; }
+.nba { border-left: 2px solid var(--green); }
+.nba .nba-title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.nba .nba-meta { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.nba .nba-tag { font-size: 10px; font-family: var(--mono); text-transform: uppercase; padding: 3px 8px; border-radius: 5px; background: var(--panel-3); color: var(--text-2); }
+.nba .nba-residual { font-size: 11.5px; color: var(--amber); margin-top: 6px; }

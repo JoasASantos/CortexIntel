@@ -292,7 +292,7 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, plugins::remove(b.get("id").and_then(|v| v.as_str()).unwrap_or("")).map(|_| serde_json::json!({"ok":true})))
         }
-        // Transforms (Maltego-style store + execution)
+        // Transforms (pluggable enrichment store + execution)
         ("GET", "/api/transforms/catalog") => json_ok(stream, &transforms::catalog()),
         ("GET", "/api/transforms") => json_ok(stream, &transforms::list()),
         ("POST", "/api/transforms/install") => {

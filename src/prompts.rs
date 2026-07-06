@@ -101,7 +101,7 @@ pub fn audit_system(domain: Domain) -> String {
 
 /// The interactive analyst copilot: turns a natural-language question about the
 /// current graph into explainable intelligence, and may propose new entities /
-/// relationships / leads to expand the investigation (Maltego/Palantir-style).
+/// relationships / leads to expand the investigation (graph pivot style).
 pub fn analyst_system(domain: Domain) -> String {
     format!(
         "{}\n\nYou are an interactive intelligence copilot. The analyst asks questions in natural \

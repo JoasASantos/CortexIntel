@@ -191,7 +191,7 @@
           <div class="ent-foot muted" id="entFoot"></div>
         </section>
 
-        <!-- Intelligence (Palantir-grade product) -->
+        <!-- Intelligence (decision-grade product) -->
         <section class="view" id="view-intelligence" hidden>
           <div class="view-head"><h1>Intelligence</h1><p class="muted">Decision-ready product synthesized from the current investigation: assessment, judgments, clusters, actors, gaps.</p></div>
           <div class="intel-ask">
@@ -202,15 +202,17 @@
           </div>
           <div class="card intel-exec"><div class="card-head"><h3>Executive assessment</h3><span class="conf-pill" id="intelConf"></span></div>
             <div class="report-body" id="intelBrief"><div class="empty">Generate intelligence to synthesize an assessment.</div></div></div>
-          <div class="intel-grid">
-            <div class="card"><div class="card-head"><h3>Key judgments</h3></div><div id="intelJudgments"><div class="empty">—</div></div></div>
-            <div class="card"><div class="card-head"><h3>Risk clusters</h3></div><div id="intelClusters"><div class="empty">—</div></div></div>
-          </div>
+          <div class="card"><div class="card-head"><h3>Key judgments</h3><span class="conf-pill">facts vs. inference</span></div><div id="intelJudgments"><div class="empty">—</div></div></div>
+          <div class="card"><div class="card-head"><h3>Competing hypotheses</h3><span class="conf-pill">ranked by likelihood</span></div>
+            <div id="intelHypotheses"><div class="empty">Generate intelligence to derive competing hypotheses.</div></div></div>
           <div class="intel-grid">
             <div class="card"><div class="card-head"><h3>Priority actors & entities</h3></div><div class="list" id="intelTop"><div class="empty">—</div></div></div>
             <div class="card"><div class="card-head"><h3>Intelligence gaps</h3></div><div id="intelGaps"><div class="empty">—</div></div></div>
           </div>
-          <div class="card"><div class="card-head"><h3>Recommended actions</h3></div><div class="list" id="intelActions"><div class="empty">—</div></div></div>
+          <div class="card"><div class="card-head"><h3>Decision matrix</h3><span class="conf-pill">impact · confidence · risk · effort</span></div>
+            <div class="dm-wrap"><table class="tbl dmtable" id="intelDecision"><thead><tr><th>Action</th><th>Impact</th><th>Confidence</th><th>Risk if wrong</th><th>Effort</th><th>Score</th><th>Route</th></tr></thead><tbody></tbody></table></div></div>
+          <div class="card nba" id="intelNbaCard"><div class="card-head"><h3>Next best action</h3></div><div id="intelNba"><div class="empty">Generate intelligence to get a recommended decision.</div></div></div>
+          <div class="card"><div class="card-head"><h3>Risk clusters</h3></div><div id="intelClusters"><div class="empty">—</div></div></div>
         </section>
 
         <!-- Timeline -->

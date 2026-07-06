@@ -64,7 +64,7 @@ const KIND_SHAPE = { person:"ellipse", victim:"ellipse", suspect:"ellipse", acco
   group:"octagon", case:"round-rectangle", report:"round-rectangle", malware:"star", incident:"star", vulnerability:"star",
   location:"triangle", organization:"barrel", service:"round-rectangle", repository:"round-rectangle" };
 const kShape = k => KIND_SHAPE[k] || "ellipse";
-// Entity glyphs drawn inside each node (Maltego/BloodHound style).
+// Entity glyphs drawn inside each node (link-analysis style).
 const ENTITY_GLYPH = {
   person:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.4-5.5 7-5.5s7 1.9 7 5.5"/>',
   victim:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.4-5.5 7-5.5s7 1.9 7 5.5"/><path d="M9 8h6"/>',
@@ -1222,7 +1222,7 @@ function mergeTransformResult(seed, res){ const tb=activeTab(); if(!tb)return; c
 }
 function flashFresh(ids){ if(!cy||!ids||!ids.length)return; setTimeout(()=>{ ids.forEach(id=>{ const e=cy.$id(id); if(e&&e.length){ e.addClass("fresh"); setTimeout(()=>e.removeClass("fresh"),1800); } }); },100); }
 
-// ---------- intelligence view (Palantir-grade) ----------
+// ---------- intelligence view (decision-grade) ----------
 function graphDegrees(g){ const deg={}; g.nodes.forEach(n=>deg[n.id]=0); g.edges.forEach(e=>{ if(deg[e.source]!=null)deg[e.source]++; if(deg[e.target]!=null)deg[e.target]++; }); return deg; }
 function computeClusters(g){ const deg=graphDegrees(g); const byId={}; g.nodes.forEach(n=>byId[n.id]=n);
   const adj={}; g.nodes.forEach(n=>adj[n.id]=[]); g.edges.forEach(e=>{ if(adj[e.source]&&adj[e.target]){ adj[e.source].push(e.target); adj[e.target].push(e.source); } });
@@ -1231,7 +1231,76 @@ function computeClusters(g){ const deg=graphDegrees(g); const byId={}; g.nodes.f
     const dom=Object.entries(kinds).sort((a,b)=>b[1]-a[1])[0]; const maxRisk=Math.max(h.risk||0,...nb.map(id=>byId[id]?.risk||0));
     return { id:h.id, hub:h, size:nb.length, dominant:dom?dom[0]:"mixed", band:bandOf(maxRisk) }; });
 }
-function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],edges:[]};
+// ---- competing hypotheses engine (structural + AI refinement) ----
+function structuralHypotheses(g,m){ const H=[]; const deg=m.deg;
+  // H1: shared-infrastructure cluster (accounts/persons sharing an IP/domain/device/wallet)
+  const hubs=g.nodes.filter(n=>["ip","domain","device","wallet","group"].includes(n.kind)).map(n=>({n,d:deg[n.id]||0})).filter(x=>x.d>=3).sort((a,b)=>b.d-a.d);
+  if(hubs.length){ const h=hubs[0]; const lk=Math.min(0.9,0.4+h.d*0.05);
+    H.push({title:`Coordinated activity via shared ${h.n.kind} "${h.n.label}"`, likelihood:lk, confidence:h.d>=6?"medium":"low",
+      evidence:[`${h.d} entities connect to ${h.n.label}`,"Shared infrastructure is a correlation signal"], missing:["Timestamps to confirm co-occurrence","Ownership/attribution of the hub"],
+      next:"Isolate this cluster and expand its members", act:()=>focusEntity(h.n.id,true)}); }
+  // H2: duplicate/identity collision
+  if(m.duplicates){ H.push({title:`Duplicate or conflated identities (${m.duplicates} candidates)`, likelihood:Math.min(0.85,0.3+m.duplicates*0.03), confidence:"medium",
+    evidence:[`${m.dupGroups.length} label collisions across ${m.duplicates} entities`],missing:["Unique identifiers (doc, phone, hash) to merge/split"],
+    next:"Review duplicates in Entity Registry", act:()=>{showView("entities");entityFilter="dupes";renderEntities();}}); }
+  // H3: risk concentration in few hubs
+  const topDeg=g.nodes.map(n=>deg[n.id]||0).sort((a,b)=>b-a); const totDeg=topDeg.reduce((s,x)=>s+x,0)||1; const top5=topDeg.slice(0,5).reduce((s,x)=>s+x,0);
+  if(g.nodes.length>20 && top5/totDeg>0.35){ H.push({title:"Risk/connectivity concentrated in a few hubs", likelihood:0.6, confidence:"medium",
+    evidence:[`Top 5 nodes hold ${Math.round(top5/totDeg*100)}% of connections`],missing:["Whether hubs are legitimate aggregators or true coordination"],
+    next:"Inspect top hubs before drawing conclusions", act:()=>{showView("graph");$("#graphCluster")&&($("#graphCluster").value="kind");setClusterMode("kind");}}); }
+  // H4: insufficient data (always a competing hypothesis when quality/coverage low)
+  if(m.avgQual<0.55||m.coverage<0.6||m.sourceDiversity<2){ H.push({title:"Insufficient/low-quality data — patterns may be artifacts", likelihood:0.5+ (0.55-Math.min(0.55,m.avgQual)), confidence:"low",
+    evidence:[`avg quality ${pct(m.avgQual)}, coverage ${pct(m.coverage)}, ${m.sourceDiversity} source(s)`],missing:["Additional sources","Metadata/timestamps for isolated entities"],
+    next:"Enrich data before acting on inferences", act:()=>{showView("entities");entityFilter="missing";renderEntities();}}); }
+  return H;
+}
+function decisionMatrix(m,g,H){ const opts=[]; const total=m.total||1;
+  const norm=(v,max)=>Math.max(0,Math.min(1,v/max));
+  if(m.highRisk) opts.push({action:`Escalate ${m.highRisk} high-risk entities for review`, impact:0.9, conf:m.avgConf, riskWrong:0.35, effort:0.3, route:"Graph", go:()=>isolateCritical()});
+  if(m.duplicates) opts.push({action:`Resolve ${m.duplicates} likely duplicates`, impact:0.55, conf:0.7, riskWrong:0.2, effort:0.45, route:"Entities", go:()=>{showView("entities");entityFilter="dupes";renderEntities();}});
+  if(m.missingSource+m.missingMeta) opts.push({action:`Enrich ${m.missingSource+m.missingMeta} entities missing evidence`, impact:0.5, conf:0.8, riskWrong:0.1, effort:0.6, route:"Entities", go:()=>{showView("entities");entityFilter="missing";renderEntities();}});
+  const lead=H[0]; if(lead&&lead.act) opts.push({action:`Act on lead hypothesis: ${lead.title}`, impact:0.8, conf:lead.likelihood, riskWrong:1-lead.likelihood, effort:0.4, route:"Graph", go:lead.act});
+  opts.push({action:"Gather more data before deciding", impact:0.3, conf:0.9, riskWrong:0.05, effort:0.5, route:"Sources", go:()=>{showView("settings");openSettingsTab("datasources");}});
+  // weighted score: reward impact*confidence, penalize risk-if-wrong and effort
+  opts.forEach(o=>{ o.score=(0.45*o.impact + 0.30*o.conf - 0.20*o.riskWrong - 0.05*o.effort); });
+  opts.sort((a,b)=>b.score-a.score); return opts;
+}
+function renderHypotheses(t,g,m){ const w=$("#intelHypotheses"); if(!w)return;
+  let H=structuralHypotheses(g,m);
+  // merge AI-provided hypotheses if present
+  const ai=(t.intel&&(t.intel.hypotheses))||[];
+  ai.forEach(h=>{ if(typeof h==="string"){ H.push({title:h,likelihood:0.5,confidence:t.intel.confidence||"low",evidence:[],missing:[],next:""}); }
+    else if(h&&h.title){ H.push({title:h.title,likelihood:h.likelihood||h.score||0.5,confidence:h.confidence||"low",evidence:h.evidence||[],missing:h.missing_evidence||h.missing||[],next:h.next_action||h.next||""}); } });
+  H.sort((a,b)=>b.likelihood-a.likelihood);
+  if(!H.length){ w.innerHTML='<div class="empty">No competing hypotheses — add data or generate intelligence.</div>'; return; }
+  w.innerHTML="";
+  H.slice(0,6).forEach((h,i)=>{ const d=el("div","hyp-card"+(i===0?" lead":"")); const ev=(h.evidence||[]).slice(0,4), ms=(h.missing||[]).slice(0,3);
+    d.innerHTML=`<div class="hyp-top"><div class="hyp-title"><span class="rank">H${i+1}</span>${esc(h.title)}${i===0?' <span class="tag ok">lead</span>':''}</div>
+      <div class="hyp-scores"><span class="likelihood"><span class="lk-track"><span style="width:${Math.round(h.likelihood*100)}%"></span></span><span class="lk-n">${pct(h.likelihood)}</span></span><span class="chip">conf ${esc(h.confidence)}</span></div></div>
+      <div class="hyp-body"><div class="hyp-col"><h5>Supporting evidence</h5><ul>${ev.length?ev.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>—</li>"}</ul></div>
+      <div class="hyp-col"><h5>Missing evidence</h5><ul class="missing">${ms.length?ms.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>—</li>"}</ul></div></div>
+      ${h.next?`<div class="hyp-foot"><span class="hyp-next">Next: <b>${esc(h.next)}</b></span></div>`:""}`;
+    if(h.act){ d.style.cursor="pointer"; d.addEventListener("click",e=>{ if(e.target.tagName!=="A")h.act(); }); }
+    w.appendChild(d); });
+  t._hyp=H;
+}
+function renderDecisionMatrix(t,g,m){ const tb=$("#intelDecision tbody"); if(!tb)return; const H=t._hyp||structuralHypotheses(g,m);
+  const opts=decisionMatrix(m,g,H); t._decision=opts; tb.innerHTML="";
+  const bar=(v,col)=>`<span class="dm-bar"><span style="width:${Math.round(v*100)}%;background:${col}"></span></span>${pct(v)}`;
+  opts.forEach((o,i)=>{ const tr=el("tr"); if(i===0)tr.className="best";
+    tr.innerHTML=`<td>${esc(o.action)}</td><td>${bar(o.impact,"var(--accent)")}</td><td>${bar(o.conf,"var(--green)")}</td><td>${bar(o.riskWrong,"var(--red)")}</td><td>${bar(o.effort,"var(--amber)")}</td><td class="dm-score">${pct(o.score)}</td><td><span class="chip">${esc(o.route)}</span></td>`;
+    tr.style.cursor="pointer"; tr.addEventListener("click",o.go); tb.appendChild(tr); });
+  // Next best action
+  const nba=$("#intelNba"); if(nba){ if(!opts.length){ nba.innerHTML='<div class="empty">—</div>'; }
+    else { const b=opts[0]; const residual=(1-b.conf); nba.innerHTML=`<div class="nba-title">${esc(b.action)}</div>
+      <div class="nba-meta"><span class="nba-tag">impact ${pct(b.impact)}</span><span class="nba-tag">confidence ${pct(b.conf)}</span><span class="nba-tag">risk-if-wrong ${pct(b.riskWrong)}</span><span class="nba-tag">route ${esc(b.route)}</span></div>
+      <div class="nba-residual">Residual uncertainty ~${pct(residual)} — this is decision support, not certainty. ${m.readiness==="ready"?"Data supports acting now.":"Consider resolving gaps first (see Data Quality)."}</div>
+      <button class="btn primary" id="nbaGo" style="margin-top:10px">Take this action</button>`;
+      $("#nbaGo")&&$("#nbaGo").addEventListener("click",b.go); } }
+}
+
+function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],edges:[]}; const m=computeMetrics(g);
+  if(t){ renderHypotheses(t,g,m); renderDecisionMatrix(t,g,m); }
   const top=$("#intelTop"); if(top){ top.innerHTML=""; const nodes=[...g.nodes].sort((a,b)=>b.risk-a.risk).slice(0,12); if(!nodes.length)top.innerHTML='<div class="empty">—</div>';
     nodes.forEach(n=>{ const li=el("div","li"); const l=el("div","l"); const d=el("span","kdot"); d.style.background=kColor(n.kind); l.appendChild(d); l.appendChild(el("span","label",n.label)); li.appendChild(l); li.appendChild(el("span","band "+(n.band||bandOf(n.risk)),(n.band||bandOf(n.risk)))); li.addEventListener("click",()=>focusEntity(n.id,true)); top.appendChild(li); }); }
   const cl=$("#intelClusters"); if(cl){ cl.innerHTML=""; const clusters=computeClusters(g); if(!clusters.length)cl.innerHTML='<div class="empty">No dense clusters yet.</div>';
@@ -1264,7 +1333,7 @@ function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],
 }
 async function generateIntelligence(customPrompt){ const t=activeTab(); if(!t||!t.graph.nodes.length){toast("Open a project with a graph","err");return;}
   showView("intelligence"); $("#intelBrief").innerHTML='<div class="empty">✦ synthesizing intelligence…</div>'; setSync("busy","intel");
-  const base="Act as lead analyst and produce a decision-ready INTELLIGENCE PRODUCT for this graph. Provide: (1) a 2-3 sentence executive assessment in 'answer'; (2) 'key_points' as 4-6 crisp KEY JUDGMENTS, each with a confidence word; (3) 'recommended_actions' prioritized; (4) an overall 'confidence' (low|medium|high). Separate confirmed facts from inference.";
+  const base="Act as lead analyst and produce a decision-ready INTELLIGENCE PRODUCT for this graph. Provide: (1) a 2-3 sentence executive assessment in 'answer'; (2) 'key_points' as 4-6 crisp KEY JUDGMENTS, each with a confidence word; (3) 'hypotheses' as an array of COMPETING hypotheses, each {title, likelihood 0..1, confidence, evidence:[...], missing_evidence:[...], next_action}; (4) 'recommended_actions' prioritized; (5) overall 'confidence' (low|medium|high). Never state certainty the data doesn't support; separate confirmed facts from inference.";
   const q = customPrompt&&customPrompt.trim() ? (`Analyst directive: ${customPrompt.trim()}\n\n`+base) : base;
   try{ const res=await runJob("ask",{question:q,domain:t.project.domain,provider:state.provider,graph:{nodes:t.graph.nodes,edges:t.graph.edges},aiInstructions:t.project.ai_instructions});
     t.intel=res; if(customPrompt&&customPrompt.trim()) t.intel._prompt=customPrompt.trim();
