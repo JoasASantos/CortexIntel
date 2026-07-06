@@ -514,15 +514,43 @@ function expandCluster(cid){ const t=activeTab(); if(!t||!t.collapsed)return;
   // Expanding a huge cluster (e.g. 1,999 accounts) would dump thousands of nodes
   // and freeze the WebView. Offer a bounded view instead of blowing up.
   if(size>600){
-    openModal(`Expand ${meta.label.replace("\n"," · ")}?`, `<p class="muted">This cluster has <b>${fmtNum(size)}</b> members. Rendering all at once can be heavy.</p>
+    openModal(`Expand ${meta.label.replace("\n"," · ")}?`, `<p class="muted">This cluster has <b>${fmtNum(size)}</b> members. Rendering all at once can be heavy — choose how much to show.</p>
       <div class="field">How to expand<select id="expMode" class="select">
         <option value="risk">Top 300 by risk (recommended)</option>
+        <option value="custom">Custom amount by risk…</option>
+        <option value="prompt">By instruction (AI)…</option>
         <option value="all">All ${fmtNum(size)} (may be slow)</option>
-      </select></div>`,
-      [{label:"Cancel",cls:"ghost",act:closeModal},{label:"Expand",cls:"primary",act:()=>{ const mode=$("#expMode").value; closeModal(); doExpand(cid, mode==="all"?null:300); }}]);
+      </select></div>
+      <div class="field" id="expCustomWrap" hidden>Amount to show<input id="expCount" type="number" min="1" max="${size}" value="300" /></div>
+      <div class="field" id="expPromptWrap" hidden>Instruction<input id="expPrompt" placeholder='e.g. "only suspended accounts", "high-risk in Finance", "flagged transfers"' /><div class="modal-note">The instruction filters this cluster's members by their labels, tags and attributes.</div></div>`,
+      [{label:"Cancel",cls:"ghost",act:closeModal},{label:"Expand",cls:"primary",act:()=>{
+        const mode=$("#expMode").value;
+        if(mode==="all"){ closeModal(); doExpand(cid, null); }
+        else if(mode==="risk"){ closeModal(); doExpand(cid, 300); }
+        else if(mode==="custom"){ let c=parseInt($("#expCount").value,10); if(!(c>0)) c=300; closeModal(); doExpand(cid, Math.min(c,size)); }
+        else if(mode==="prompt"){ const q=$("#expPrompt").value.trim(); if(!q){ toast("Enter an instruction","err"); return; } closeModal(); doExpandByPrompt(cid, q); }
+      }}]);
+    // toggle the custom / prompt inputs by selected mode
+    setTimeout(()=>{ const sel=$("#expMode"); if(!sel)return; const sync=()=>{ $("#expCustomWrap").hidden=sel.value!=="custom"; $("#expPromptWrap").hidden=sel.value!=="prompt"; }; sel.addEventListener("change",sync); sync(); },40);
     return;
   }
   doExpand(cid, null);
+}
+// Expand a cluster by a natural-language instruction: keep only members whose
+// label / tags / attributes match the query terms. Deterministic (offline) — no
+// invented members, only members already in the cluster that match the filter.
+function doExpandByPrompt(cid, q){
+  const t=activeTab(); if(!t)return;
+  const meta=t._metas&&t._metas[cid]; if(!meta)return;
+  const members=new Set(meta.members);
+  const terms=q.toLowerCase().split(/[\s,]+/).filter(w=>w.length>1);
+  const hay=n=>[n.label,(n.tags||[]).join(" "),Object.entries(n.attributes||{}).map(([k,v])=>k+" "+v).join(" ")].join(" ").toLowerCase();
+  const matched=t.graph.nodes.filter(n=>members.has(n.id)).filter(n=>{ const h=hay(n); return terms.every(term=>h.includes(term)); });
+  if(!matched.length){ toast(`No members match "${q}" — showing top 300 by risk instead`,"err"); doExpand(cid, 300); return; }
+  t.collapsed.delete(cid);
+  t._expandCap=t._expandCap||{}; t._expandCap[cid]=new Set(matched.map(n=>n.id));
+  renderGraph();
+  toast(`Expanded ${matched.length} member(s) matching "${q}"`);
 }
 function doExpand(cid, cap){ const t=activeTab(); if(!t)return; t.collapsed.delete(cid);
   if(cap){ // keep only the top-`cap` members of this cluster visible; re-collapse the rest into a residual meta
@@ -561,7 +589,10 @@ function renderGraph() {
   // If the graph container isn't visible yet (0×0), layout would be degenerate;
   // defer it to when the Graph view is shown (see showView).
   const cyEl=$("#cy"); const hidden = !cyEl || cyEl.offsetWidth===0 || cyEl.offsetHeight===0;
-  if(hidden){ t._needsRelayout=true; try{ cy.layout({name:"grid",animate:false}).run(); }catch(e){} }
+  // Even while hidden we lay out into an explicit bounding box (never a 0×0
+  // container, which collapses every node to one point). A full-quality relayout
+  // still runs once the view is shown.
+  if(hidden){ t._needsRelayout=true; try{ cy.layout({name:"grid",animate:false,boundingBox:layoutBox(cy.nodes().length)}).run(); }catch(e){} }
   else { t._needsRelayout=false; runLayout(perf); }
   const full=t.graph; const clustered=(t.clusterMode||"none")!=="none";
   $("#graphStats").textContent = clustered ? `${g.nodes.length} shown · ${full.nodes.length} entities · ${full.edges.length} edges` : `${full.nodes.length} nodes · ${full.edges.length} edges`;
@@ -572,24 +603,34 @@ function renderGraph() {
   else { t._modeInit=true; syncModeButtons(); }
   renderLegend(); renderGraphFilters(); setTimeout(scheduleMinimap, 700);
 }
+// Deterministic layout area sized to the node count. Passed as `boundingBox` so
+// the layout spreads nodes even when #cy is momentarily hidden or 0×0 (WKWebView
+// on the desktop app reports zero size longer than Chromium) — without it, every
+// node collapses onto a single point and the canvas looks empty. See runLayout.
+function layoutBox(n){
+  const cols = Math.max(1, Math.ceil(Math.sqrt(n * 1.8)));
+  const rows = Math.max(1, Math.ceil(n / cols));
+  return { x1:0, y1:0, w: cols*46, h: rows*46 };
+}
 function runLayout(perf) {
   if (!cy) return;
   const n = cy.nodes().length;
   if(perf===undefined) perf = n>500;
   const name = $("#graphLayout").value || "fcose";
+  const box = layoutBox(n);
   let opts;
   if(perf){
     // Large graph: draft-quality, NON-animated fcose (or grid fallback) so the
     // WebView doesn't lock up laying out thousands of nodes.
     opts = n>2500
-      ? { name:"grid", animate:false, padding:40 }
-      : { name:"fcose", quality:"draft", animate:false, randomize:true, nodeRepulsion:6000, idealEdgeLength:60, padding:40, samplingType:false };
+      ? { name:"grid", animate:false, padding:40, boundingBox:box }
+      : { name:"fcose", quality:"draft", animate:false, randomize:true, nodeRepulsion:6000, idealEdgeLength:60, padding:40, samplingType:false, boundingBox:box };
   } else {
     opts = name==="fcose"
-      ? { name:"fcose", animate:true, animationDuration:500, randomize:true, nodeRepulsion:8000, idealEdgeLength:70, padding:40 }
-      : { name, animate:true, padding:40 };
+      ? { name:"fcose", animate:true, animationDuration:500, randomize:true, nodeRepulsion:8000, idealEdgeLength:70, padding:40, boundingBox:box }
+      : { name, animate:true, padding:40, boundingBox:box };
   }
-  try { cy.layout(opts).run(); } catch(e){ try{ cy.layout({name:"grid",animate:false}).run(); }catch(_){} }
+  try { cy.layout(opts).run(); } catch(e){ try{ cy.layout({name:"grid",animate:false,boundingBox:box}).run(); }catch(_){} }
 }
 function clearGraph(){ if(cy) cy.elements().remove(); }
 
@@ -711,13 +752,19 @@ window.addEventListener("click",()=>{ $("#ctxmenu").hidden=true; closeAllSelects
 let currentView="dashboard";
 function showView(name){ currentView=name; $$(".view").forEach(v=>v.hidden=true); const v=$("#view-"+name); if(v)v.hidden=false;
   $$(".nav li").forEach(li=>li.classList.toggle("active",li.dataset.view===name));
-  if(name==="graph"){ requestAnimationFrame(()=>{ initCy(); if(!cy) return; cy.resize();
-    // If the graph was rendered while its container was hidden (0×0), the layout
-    // produced degenerate positions — re-run it now that we have real dimensions.
-    const t=activeTab();
-    if(t && t._needsRelayout && cy.nodes().length){ t._needsRelayout=false; runLayout(t._perf); setTimeout(()=>{ if(cy) cy.fit(cy.elements(":visible"),50); }, 60); }
-    else if(cy.nodes().length){ cy.fit(cy.elements(":visible"),50); }
-  }); } }
+  if(name==="graph"){
+    // Double rAF: wait until the view is actually laid out (container has real
+    // dimensions) before resize/layout/fit. A single frame or an early setTimeout
+    // races the reflow on the desktop WebView, leaving the viewport zoomed on an
+    // empty corner of the graph (looks blank). A trailing settle() re-fits after
+    // the layout has committed.
+    const settle=()=>{ initCy(); if(!cy) return; cy.resize();
+      const t=activeTab();
+      if(t && t._needsRelayout && cy.nodes().length){ t._needsRelayout=false; runLayout(t._perf); }
+      if(cy.nodes().length) cy.fit(cy.elements(":visible"),50);
+    };
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ settle(); setTimeout(settle,140); }));
+  } }
 $$(".nav li").forEach(li=>li.addEventListener("click",()=>showView(li.dataset.view)));
 
 function renderAll(){ renderGraph(); renderDashboard(); renderEntities(); renderReport(); renderTimeline(); renderAlerts(); renderSavedConnectors(); renderIntelligence(); }
@@ -1021,6 +1068,8 @@ async function askAbout(q){
     const adds=(res.entities&&res.entities.length)||(res.relationships&&res.relationships.length);
     if(adds){ const n=(res.entities||[]).length,r=(res.relationships||[]).length; h+=`<div class="adds" id="addProp">＋ Add ${n} entities / ${r} relations to graph</div>`; }
     a.innerHTML=h; log.appendChild(a); log.scrollTop=log.scrollHeight;
+    const plain=[res.answer||"", ...(res.key_points||[]), ...(res.recommended_actions||[]).map(p=>"• "+p)].filter(Boolean).join("\n");
+    addCopyBtn(a, plain);
     if(adds){ $("#addProp").addEventListener("click",()=>mergeProposals(res)); }
     applyFocus(res.focus);
     pushNotif("ai","AI copilot answered a query");
@@ -1785,6 +1834,16 @@ function browseUpload(cb, accept){ const inp=$("#filePicker"); if(accept)inp.set
     catch(e){ setSync("err","failed"); toast("Upload failed: "+e.message,"err"); } };
   inp.click(); }
 function downloadText(name,text){ const b=new Blob([text],{type:"application/json"}); const a=el("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
+// Copy helper with a WebView-safe fallback (clipboard API is often blocked in the
+// desktop WebView, so fall back to a hidden textarea + execCommand).
+async function copyToClipboard(text){
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(text); return true; } }catch(e){}
+  try{ const ta=el("textarea"); ta.value=text; ta.style.cssText="position:fixed;left:-9999px;top:0"; document.body.appendChild(ta); ta.select(); const ok=document.execCommand("copy"); ta.remove(); return ok; }catch(e){ return false; }
+}
+// Append a small "Copy" affordance to a message bubble.
+function addCopyBtn(bubble, text){ const b=el("span","msg-copy","⧉ copy"); b.title="Copy text";
+  b.addEventListener("click",async()=>{ const ok=await copyToClipboard(text); toast(ok?"Copied":"Copy failed",ok?"ok":"err"); b.textContent=ok?"✓ copied":"⧉ copy"; setTimeout(()=>b.textContent="⧉ copy",1500); });
+  bubble.appendChild(b); }
 
 // ---------- mock backend (artifact preview / static) ----------
 function mockApi(path, method, body){

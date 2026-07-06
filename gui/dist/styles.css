@@ -58,6 +58,16 @@ body {
   user-select: none;
   letter-spacing: 0.1px;
 }
+/* Chrome (nav, toolbars, chips) stays non-selectable, but readable content must
+   be selectable & copyable — AI answers, reports, intelligence, entity details,
+   modal bodies, timeline and node context. */
+.ask-msg, .ask-msg *, .askbar-msg, .askbar-msg *, #askLog, #askGlobalBody,
+.report-body, .report-body *, #view-intelligence, #view-intelligence *,
+.entity-detail, .entity-detail *, .modal-body, .modal-body *,
+#context, #context *, .tl-item, .tl-item *, .assessment, .assessment *,
+.dossier, .dossier *, pre, code, .mono-block {
+  user-select: text; -webkit-user-select: text; cursor: auto;
+}
 svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; flex: none; vertical-align: middle; }
 .muted { color: var(--muted); font-size: 12px; margin: 0 0 14px; }
 ::-webkit-scrollbar { width: 9px; height: 9px; }
@@ -207,6 +217,8 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .ask-msg.a .pts { margin: 6px 0 0; padding-left: 16px; color: var(--muted); }
 .ask-msg.a .adds { margin-top: 8px; font-size: 11px; color: var(--green); cursor: pointer; display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border: 1px solid rgba(63,180,87,0.3); border-radius: var(--r-s); }
 .ask-msg.a .adds:hover { background: rgba(63,180,87,0.1); }
+.msg-copy { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; margin-left: 2px; font-size: 10.5px; color: var(--muted); cursor: pointer; border: 1px solid var(--stroke-2); border-radius: var(--r-s); padding: 3px 7px; user-select: none; }
+.msg-copy:hover { color: var(--text); border-color: var(--accent-2); }
 .ask-input { display: flex; gap: 7px; padding: 9px; border-top: 1px solid var(--stroke); }
 .ask-input textarea { flex: 1; resize: none; max-height: 120px; background: var(--bg-2); border: 1px solid var(--stroke); color: var(--text); border-radius: var(--r); padding: 8px 10px; font-size: 12.5px; font-family: var(--font); outline: none; }
 .ask-input textarea:focus { border-color: var(--accent-2); }
