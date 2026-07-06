@@ -219,7 +219,8 @@ const ENTITY_GLYPH = {
   unknown:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 013.7 2.1c0 1.6-2.2 2-2.2 3.2M12 17.2h.01"/>',
 };
 function nodeIcon(kind){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
-  const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#eef4fa' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
+  // Dark glyph so it reads on any entity-type fill colour (Maltego-style badge).
+  const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#0B1220' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
   return "data:image/svg+xml;utf8,"+encodeURIComponent(s); }
 const bandOf = s => s>=0.85?"critical":s>=0.6?"high":s>=0.35?"medium":"low";
 const bandColor = b => ({low:"#34d399",medium:"#f59e0b",high:"#fb7185",critical:"#ef4444"}[b]||"#34d399");
@@ -507,13 +508,15 @@ function initCy() {
     motionBlur: false,
     pixelRatio: 1,
     style: [
+      // Maltego-style: a solid colour-coded circular badge (fill = entity-type
+      // colour) with a dark glyph that reads on any hue, and a soft light ring.
       { selector:"node", style:{
-        "background-color": NODE_FILL, "background-image":"data(icon)", "background-width":"52%", "background-height":"52%", "background-fit":"none", "background-clip":"none",
+        "background-color":"data(kc)", "background-image":"data(icon)", "background-width":"58%", "background-height":"58%", "background-fit":"none", "background-clip":"none",
         "width":"data(size)", "height":"data(size)", "shape":"ellipse",
         "label":"data(label)", "font-size":"9px", "font-weight":600, "font-family":"SF Mono, Menlo, monospace", "color":"#E6EDF7",
         "text-wrap":"wrap", "text-max-width":"88px", "text-valign":"bottom", "text-margin-y":5, "min-zoomed-font-size":8,
         "text-outline-color":"#070A0F", "text-outline-width":2, "text-outline-opacity":0.85,
-        "border-width":"data(bw)", "border-color":"data(kc)", "border-opacity":0.95,
+        "border-width":"data(bw)", "border-color":"rgba(255,255,255,0.35)", "border-opacity":1,
         "transition-property":"opacity border-width", "transition-duration":"140ms" }},
       { selector:"node[halo]", style:{ "underlay-color":"data(hc)", "underlay-padding":6, "underlay-opacity":0.4 }},
       // perf mode: solid coloured dot, no SVG icon
