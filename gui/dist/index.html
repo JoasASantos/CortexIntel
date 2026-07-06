@@ -160,16 +160,23 @@
           <table class="tbl" id="entitiesTable"><thead><tr><th>Risk</th><th>Kind</th><th>Label</th><th>Tags</th></tr></thead><tbody></tbody></table>
         </section>
 
-        <!-- Intelligence -->
+        <!-- Intelligence (Palantir-grade product) -->
         <section class="view" id="view-intelligence" hidden>
-          <div class="view-head"><h1>Intelligence</h1><p class="muted">AI-synthesized picture: findings, leads and prioritized actions from the current graph.</p></div>
+          <div class="view-head"><h1>Intelligence</h1><p class="muted">Decision-ready product synthesized from the current investigation: assessment, judgments, clusters, actors, gaps.</p></div>
           <div class="row-actions" style="margin-bottom:14px">
             <button class="btn primary" id="btnGenIntel">✦ Generate intelligence</button>
             <button class="btn ghost" id="btnAsk3">Ask a question</button>
+            <span class="intel-meta" id="intelMeta"></span>
           </div>
-          <div class="cards two">
-            <div class="card"><div class="card-head"><h3>Intelligence brief</h3></div><div class="report-body" id="intelBrief"><div class="empty">Generate intelligence to populate.</div></div></div>
-            <div class="card"><div class="card-head"><h3>Prioritized entities</h3></div><div class="list" id="intelTop"><div class="empty">—</div></div></div>
+          <div class="card intel-exec"><div class="card-head"><h3>Executive assessment</h3><span class="conf-pill" id="intelConf"></span></div>
+            <div class="report-body" id="intelBrief"><div class="empty">Generate intelligence to synthesize an assessment.</div></div></div>
+          <div class="intel-grid">
+            <div class="card"><div class="card-head"><h3>Key judgments</h3></div><div id="intelJudgments"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3>Risk clusters</h3></div><div id="intelClusters"><div class="empty">—</div></div></div>
+          </div>
+          <div class="intel-grid">
+            <div class="card"><div class="card-head"><h3>Priority actors & entities</h3></div><div class="list" id="intelTop"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3>Intelligence gaps</h3></div><div id="intelGaps"><div class="empty">—</div></div></div>
           </div>
           <div class="card"><div class="card-head"><h3>Recommended actions</h3></div><div class="list" id="intelActions"><div class="empty">—</div></div></div>
         </section>
@@ -188,8 +195,12 @@
 
         <!-- Reports -->
         <section class="view" id="view-reports" hidden>
-          <div class="view-head"><h1>Reports</h1><p class="muted">Investigative brief & governance.</p></div>
-          <div class="card"><div class="report-body" id="reportBody"><div class="empty">—</div></div></div>
+          <div class="view-head"><h1>Reports</h1><p class="muted">Investigative brief, governance & PDF export (Typst).</p></div>
+          <div class="row-actions" style="margin-bottom:14px">
+            <button class="btn primary" id="btnReportPdf">⬇ Export PDF (Typst)</button>
+            <button class="btn ghost" id="btnReportRefresh">Refresh</button>
+          </div>
+          <div class="card"><div class="report-body" id="reportBody"><div class="empty">Run an analysis to produce a report.</div></div></div>
         </section>
 
         <!-- Settings (tabbed: everything config & integration lives here) -->

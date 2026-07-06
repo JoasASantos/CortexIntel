@@ -360,3 +360,9 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .linkmode { position: absolute; top: 108px; left: 50%; transform: translateX(-50%); z-index: 9; background: var(--purple); color: #0e0a24; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 20px; box-shadow: var(--sh); }
 @media (max-width: 900px){ .ask-dock { width: 92vw; right: 4vw; } .intel-grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce){ * { animation: none !important; transition: none !important; } }
+
+/* intelligence extras */
+.intel-exec { border-left: 2px solid var(--accent); }
+.conf-pill, .intel-meta { font-size: 10.5px; color: var(--muted); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.5px; }
+.intel-meta { align-self: center; }
+.judgment b { color: var(--accent); }

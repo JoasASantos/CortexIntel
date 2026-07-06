@@ -18,6 +18,7 @@ pub mod plugins;
 pub mod projects;
 pub mod prompts;
 pub mod report;
+pub mod reportpdf;
 pub mod risk;
 pub mod serve;
 pub mod sources;
@@ -310,6 +311,16 @@ pub mod api {
             max_records: p.max_records,
             project_id: p.project_id,
         })
+    }
+
+    /// Render a project's consolidated analysis to a PDF (via Typst) and return
+    /// the PDF path.
+    pub fn report_pdf(project_id: &str) -> Result<serde_json::Value> {
+        let p = crate::projects::load(project_id)?;
+        let c = p.last_result.ok_or_else(|| anyhow!("project has no analysis yet — run one first"))?;
+        let now = chrono::Utc::now().format("%Y-%m-%d %H:%M UTC").to_string();
+        let path = crate::reportpdf::to_pdf(&c, &p.name, &p.domain, &p.owner, &now)?;
+        Ok(serde_json::json!({ "path": path }))
     }
 
     /// Load a previously written graph.json from an output directory.

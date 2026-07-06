@@ -167,6 +167,17 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         },
         ("POST", "/api/run") => finish(stream, parse_body(&req.body).and_then(api::run_analysis)),
         ("POST", "/api/ask") => finish(stream, parse_body(&req.body).and_then(api::ask)),
+        ("POST", "/api/report/pdf") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, api::report_pdf(b.get("project_id").and_then(|v| v.as_str()).unwrap_or("")))
+        }
+        ("GET", "/api/report/download") => match param(&req.query, "path") {
+            Some(path) if path.ends_with(".pdf") && path.contains("report-") => match std::fs::read(&path) {
+                Ok(bytes) => respond(stream, 200, "application/pdf", &bytes),
+                Err(e) => json_err(stream, &e.to_string()),
+            },
+            _ => json_err(stream, "invalid path"),
+        },
         // Projects
         ("GET", "/api/projects") => json_ok(stream, &projects::list()),
         ("GET", "/api/projects/get") => match param(&req.query, "id") {

@@ -46,6 +46,36 @@ const KIND_SHAPE = { person:"ellipse", victim:"ellipse", suspect:"ellipse", acco
   group:"octagon", case:"round-rectangle", report:"round-rectangle", malware:"star", incident:"star", vulnerability:"star",
   location:"triangle", organization:"barrel", service:"round-rectangle", repository:"round-rectangle" };
 const kShape = k => KIND_SHAPE[k] || "ellipse";
+// Entity glyphs drawn inside each node (Maltego/BloodHound style).
+const ENTITY_GLYPH = {
+  person:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.4-5.5 7-5.5s7 1.9 7 5.5"/>',
+  victim:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.4-5.5 7-5.5s7 1.9 7 5.5"/><path d="M9 8h6"/>',
+  suspect:'<circle cx="11" cy="8" r="3.6"/><path d="M4 20c0-3.6 3.4-5.5 7-5.5 1 0 2 .1 2.8.4"/><path d="M16 15l5 5M21 15l-5 5"/>',
+  account:'<circle cx="12" cy="12" r="4"/><path d="M16 12v1.5a2.5 2.5 0 005 0V12a9 9 0 10-3.4 7.1"/>',
+  device:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  ip:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.4 2.6 15.6 0 18M12 3c-2.6 2.4-2.6 15.6 0 18"/>',
+  domain:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.4 2.6 15.6 0 18M12 3c-2.6 2.4-2.6 15.6 0 18"/>',
+  url:'<path d="M9 15l6-6M10.5 6.5l1-1a4 4 0 015.7 5.7l-1 1M13.5 17.5l-1 1a4 4 0 01-5.7-5.7l1-1"/>',
+  media:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5-4 4 3 3-2 4 3"/>',
+  evidence:'<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/>',
+  communication:'<path d="M21 15a2 2 0 01-2 2H8l-4 4V5a2 2 0 012-2h13a2 2 0 012 2z"/>',
+  group:'<circle cx="9" cy="9" r="2.8"/><circle cx="16" cy="10" r="2.3"/><path d="M4 19c0-2.8 2.5-4.5 5-4.5s5 1.7 5 4.5M14 19c0-2 1.3-3.2 3.5-3.2"/>',
+  payment:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/>',
+  wallet:'<path d="M4 7h13a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M16 12h4M4 7l11-3v3"/>',
+  location:'<path d="M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/>',
+  organization:'<rect x="4" y="3" width="15" height="18" rx="1"/><path d="M8 8h2M13 8h2M8 12h2M13 12h2M10 20v-3h3v3"/>',
+  malware:'<circle cx="12" cy="12" r="3.6"/><path d="M12 8.4V4M8.4 12H4M15.6 12H20M9.4 9.4L6.5 6.5M14.6 9.4l2.9-2.9M9.4 14.6l-2.9 2.9M14.6 14.6l2.9 2.9"/>',
+  incident:'<path d="M10.3 4L3 17.5A2 2 0 004.7 20.5h14.6A2 2 0 0021 17.5L13.7 4a2 2 0 00-3.4 0z"/><path d="M12 9.5v4M12 16.5h.01"/>',
+  vulnerability:'<path d="M12 3l8 4v5c0 5-4 8-8 9-4-1-8-4-8-9V7z"/><path d="M12 9v3.5M12 15.5h.01"/>',
+  case:'<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/>',
+  report:'<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 16h4"/>',
+  service:'<path d="M18 10a4 4 0 00-7.7-1.4A3.5 3.5 0 108.5 16H18a3 3 0 000-6z"/>',
+  repository:'<circle cx="7" cy="6" r="2.2"/><circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="8" r="2.2"/><path d="M7 8.2v7.6M17 10.2c0 3.5-4.5 2.8-6.5 4.3"/>',
+  unknown:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 013.7 2.1c0 1.6-2.2 2-2.2 3.2M12 17.2h.01"/>',
+};
+function nodeIcon(kind){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
+  const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#eef4fa' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
+  return "data:image/svg+xml;utf8,"+encodeURIComponent(s); }
 const bandOf = s => s>=0.85?"critical":s>=0.6?"high":s>=0.35?"medium":"low";
 const bandColor = b => ({low:"#34d399",medium:"#f59e0b",high:"#fb7185",critical:"#ef4444"}[b]||"#34d399");
 
@@ -298,12 +328,13 @@ function initCy() {
     wheelSensitivity: 0.25,
     style: [
       { selector:"node", style:{
-        "background-color":"data(color)", "width":"data(size)", "height":"data(size)", "shape":"data(shape)",
-        "label":"data(label)", "font-size":"9px", "font-family":"var(--mono)", "color":"#aeb9c6", "text-wrap":"ellipsis",
-        "text-max-width":"90px", "text-valign":"bottom", "text-margin-y":4, "min-zoomed-font-size":7,
-        "border-width":"data(bw)", "border-color":"data(bc)", "border-opacity":0.9,
-        "transition-property":"opacity background-color border-width", "transition-duration":"180ms" }},
-      { selector:"node[halo]", style:{ "underlay-color":"data(bc)", "underlay-padding":6, "underlay-opacity":0.35 }},
+        "background-color":"#0f151c", "background-image":"data(icon)", "background-width":"56%", "background-height":"56%", "background-fit":"none", "background-clip":"none",
+        "width":"data(size)", "height":"data(size)", "shape":"ellipse",
+        "label":"data(label)", "font-size":"9px", "font-family":"var(--mono)", "color":"#9fabba", "text-wrap":"ellipsis",
+        "text-max-width":"92px", "text-valign":"bottom", "text-margin-y":4, "min-zoomed-font-size":7,
+        "border-width":"data(bw)", "border-color":"data(kc)", "border-opacity":1,
+        "transition-property":"opacity border-width", "transition-duration":"180ms" }},
+      { selector:"node[halo]", style:{ "underlay-color":"data(hc)", "underlay-padding":7, "underlay-opacity":0.45 }},
       { selector:"node:selected", style:{ "border-width":3, "border-color":"#ffffff", "underlay-color":"#33c2dd", "underlay-padding":8, "underlay-opacity":0.4 }},
       { selector:"edge", style:{
         "width":"data(w)", "line-color":"rgba(120,140,165,0.22)", "target-arrow-color":"rgba(120,140,165,0.3)",
@@ -335,8 +366,8 @@ function renderGraph() {
   g.nodes.forEach(n=>{
     const band = n.band||bandOf(n.risk);
     const hot = band==="critical"||band==="high";
-    els.push({ data:{ id:n.id, label:n.label, color:kColor(n.kind), size:14+(n.risk||0)*24, shape:kShape(n.kind),
-      bw:hot?2.5:1, bc:hot?bandColor(band):"rgba(0,0,0,0.25)", halo:hot?1:undefined }, classes: n.hypothesis?"hyp":"" });
+    els.push({ data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind), kc:kColor(n.kind), hc:bandColor(band),
+      size:24+(n.risk||0)*26, bw:hot?2.5:1.5, halo:hot?1:undefined }, classes: n.hypothesis?"hyp":"" });
   });
   g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:0.6+(e.conf||0.5)*1.8 }, classes:e.hypothesis?"hyp":"" }); });
   cy.elements().remove(); cy.add(els);
@@ -862,25 +893,68 @@ function mergeTransformResult(seed, res){ const tb=activeTab(); if(!tb)return; c
 }
 function flashFresh(ids){ if(!cy||!ids||!ids.length)return; setTimeout(()=>{ ids.forEach(id=>{ const e=cy.$id(id); if(e&&e.length){ e.addClass("fresh"); setTimeout(()=>e.removeClass("fresh"),1800); } }); },100); }
 
-// ---------- intelligence view ----------
-function renderIntelligence(){ const t=activeTab();
-  const top=$("#intelTop"), acts=$("#intelActions");
-  if(top){ top.innerHTML=""; const nodes=t?[...t.graph.nodes].sort((a,b)=>b.risk-a.risk).slice(0,12):[]; if(!nodes.length)top.innerHTML='<div class="empty">—</div>';
+// ---------- intelligence view (Palantir-grade) ----------
+function graphDegrees(g){ const deg={}; g.nodes.forEach(n=>deg[n.id]=0); g.edges.forEach(e=>{ if(deg[e.source]!=null)deg[e.source]++; if(deg[e.target]!=null)deg[e.target]++; }); return deg; }
+function computeClusters(g){ const deg=graphDegrees(g); const byId={}; g.nodes.forEach(n=>byId[n.id]=n);
+  const adj={}; g.nodes.forEach(n=>adj[n.id]=[]); g.edges.forEach(e=>{ if(adj[e.source]&&adj[e.target]){ adj[e.source].push(e.target); adj[e.target].push(e.source); } });
+  const hubs=[...g.nodes].sort((a,b)=>(deg[b.id]||0)-(deg[a.id]||0)).filter(n=>(deg[n.id]||0)>=2).slice(0,8);
+  return hubs.map(h=>{ const nb=adj[h.id]||[]; const kinds={}; nb.forEach(id=>{ const k=byId[id]?.kind||"?"; kinds[k]=(kinds[k]||0)+1; });
+    const dom=Object.entries(kinds).sort((a,b)=>b[1]-a[1])[0]; const maxRisk=Math.max(h.risk||0,...nb.map(id=>byId[id]?.risk||0));
+    return { id:h.id, hub:h, size:nb.length, dominant:dom?dom[0]:"mixed", band:bandOf(maxRisk) }; });
+}
+function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],edges:[]};
+  const top=$("#intelTop"); if(top){ top.innerHTML=""; const nodes=[...g.nodes].sort((a,b)=>b.risk-a.risk).slice(0,12); if(!nodes.length)top.innerHTML='<div class="empty">—</div>';
     nodes.forEach(n=>{ const li=el("div","li"); const l=el("div","l"); const d=el("span","kdot"); d.style.background=kColor(n.kind); l.appendChild(d); l.appendChild(el("span","label",n.label)); li.appendChild(l); li.appendChild(el("span","band "+(n.band||bandOf(n.risk)),(n.band||bandOf(n.risk)))); li.addEventListener("click",()=>focusEntity(n.id,true)); top.appendChild(li); }); }
-  if(acts){ const risk=t&&t.graph.meta&&t.graph.meta.risk; const items=[...new Set((risk&&risk.assessments||[]).filter(a=>a.recommended_action&&a.recommended_action!=="monitor").map(a=>a.recommended_action))];
-    acts.innerHTML=""; if(!items.length)acts.innerHTML='<div class="empty">Run an analysis first.</div>'; items.slice(0,12).forEach(a=>{ const li=el("div","li"); li.appendChild(el("span","label","▸ "+a)); acts.appendChild(li); }); }
+  const cl=$("#intelClusters"); if(cl){ cl.innerHTML=""; const clusters=computeClusters(g); if(!clusters.length)cl.innerHTML='<div class="empty">No dense clusters yet.</div>';
+    clusters.forEach(c=>{ const d=el("div","cluster"); d.innerHTML=`<span><span class="kdot" style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${kColor(c.hub.kind)};margin-right:7px"></span>${esc(c.hub.label)} <span class="conf">· ${c.dominant} hub</span></span><span class="csize">${c.size} <span class="band ${c.band}">${c.band}</span></span>`;
+      d.addEventListener("click",()=>focusEntity(c.id,true)); cl.appendChild(d); }); }
+  const gaps=$("#intelGaps"); if(gaps){ gaps.innerHTML=""; const deg=graphDegrees(g);
+    const sparse=g.nodes.filter(n=>Object.keys(n.attributes||{}).length===0).length;
+    const isolated=g.nodes.filter(n=>(deg[n.id]||0)===0).length;
+    const hyp=g.nodes.filter(n=>n.hypothesis||(n.tags||[]).includes("hypothesis")).length;
+    const sensitiveUnrev=g.nodes.filter(n=>n.sensitive).length;
+    const items=[];
+    if(!g.nodes.length) items.push("No data ingested — connect a source or run an analysis.");
+    if(sparse) items.push(`${sparse} entities have no attributes — enrich via transforms (Settings → Transforms).`);
+    if(isolated) items.push(`${isolated} isolated entities — no known relationships; correlation may be incomplete.`);
+    if(hyp) items.push(`${hyp} AI-proposed entities are unconfirmed hypotheses — verify before reporting.`);
+    if(sensitiveUnrev) items.push(`${sensitiveUnrev} sensitive entities require restricted handling and human review.`);
+    if(!items.length) items.push("No major gaps detected in the current graph.");
+    items.forEach(x=>{ const g2=el("div","gap"); g2.innerHTML=svg("alerts")+`<span>${esc(x)}</span>`; gaps.appendChild(g2); }); }
+  const acts=$("#intelActions"); if(acts){ const risk=t&&t.graph.meta&&t.graph.meta.risk; const items=[...new Set((risk&&risk.assessments||[]).filter(a=>a.recommended_action&&a.recommended_action!=="monitor").map(a=>a.recommended_action))];
+    // fold in AI-recommended actions if present
+    const intel=t&&t.intel; if(intel&&intel.recommended_actions) intel.recommended_actions.forEach(a=>{ if(!items.includes(a))items.push(a); });
+    acts.innerHTML=""; if(!items.length)acts.innerHTML='<div class="empty">Run an analysis or generate intelligence.</div>'; items.slice(0,14).forEach(a=>{ const li=el("div","li"); li.appendChild(el("span","label","▸ "+a)); acts.appendChild(li); }); }
+  // AI exec assessment + judgments (from last generate)
+  const intel=t&&t.intel;
+  const brief=$("#intelBrief"), jud=$("#intelJudgments"), conf=$("#intelConf");
+  if(brief){ brief.innerHTML = intel? `<p>${esc(intel.answer||"")}</p>` : '<div class="empty">Generate intelligence to synthesize an assessment.</div>'; }
+  if(conf){ conf.textContent = intel&&intel.confidence? ("confidence: "+intel.confidence):""; }
+  if(jud){ jud.innerHTML=""; const js=(intel&&(intel.key_judgments||intel.key_points))||[]; if(!js.length)jud.innerHTML='<div class="empty">Generate intelligence to derive judgments.</div>';
+    js.slice(0,8).forEach((j,i)=>{ const d=el("div","judgment"); const txt=typeof j==="string"?j:(j.text||JSON.stringify(j)); const c=(typeof j==="object"&&j.confidence)?j.confidence:(intel.confidence||""); d.innerHTML=`<b>J${i+1}.</b> ${esc(txt)}${c?`<span class="conf">${esc(c)}</span>`:""}`; jud.appendChild(d); }); }
 }
 async function generateIntelligence(){ const t=activeTab(); if(!t||!t.graph.nodes.length){toast("Open a project with a graph","err");return;}
-  const b=$("#intelBrief"); b.innerHTML='<div class="empty">✦ synthesizing intelligence…</div>'; setSync("busy","intel");
-  try{ const res=await api("/api/ask",{method:"POST",body:{question:"Produce a full intelligence brief for this dataset: the picture it shows, the strongest leads, the biggest risks, and prioritized next actions. Convert data into decision-ready intelligence.",domain:t.project.domain,provider:state.provider,graph:{nodes:t.graph.nodes,edges:t.graph.edges}}});
-    let h=`<p>${esc(res.answer||"(no answer)")}</p>`;
-    const arr=(title,items)=>{ if(items&&items.length){ h+=`<h3>${title}</h3><ul>`+items.map(x=>`<li>${esc(typeof x==="string"?x:JSON.stringify(x))}</li>`).join("")+"</ul>"; } };
-    arr("Key points",res.key_points); arr("Recommended actions",res.recommended_actions);
-    b.innerHTML=h; setSync("ok","complete"); pushNotif("ai","Intelligence brief generated"); renderIntelligence();
-  }catch(e){ b.innerHTML='<div class="empty">error: '+esc(e.message)+'</div>'; setSync("err","failed"); }
+  $("#intelBrief").innerHTML='<div class="empty">✦ synthesizing intelligence…</div>'; setSync("busy","intel"); showView("intelligence");
+  try{ const res=await api("/api/ask",{method:"POST",body:{question:"Act as lead analyst and produce a decision-ready INTELLIGENCE PRODUCT for this graph. Provide: (1) a 2-3 sentence executive assessment in 'answer'; (2) 'key_points' as 4-6 crisp KEY JUDGMENTS, each with a confidence word; (3) 'recommended_actions' prioritized; (4) an overall 'confidence' (low|medium|high). Separate confirmed facts from inference.",domain:t.project.domain,provider:state.provider,graph:{nodes:t.graph.nodes,edges:t.graph.edges},aiInstructions:t.project.ai_instructions}});
+    t.intel=res; setSync("ok","complete"); pushNotif("ai","Intelligence product generated"); renderIntelligence();
+    $("#intelMeta").textContent = `· ${t.graph.nodes.length} entities · ${computeClusters(t.graph).length} clusters`;
+  }catch(e){ $("#intelBrief").innerHTML='<div class="empty">error: '+esc(e.message)+'</div>'; setSync("err","failed"); }
 }
 $("#btnGenIntel")&&$("#btnGenIntel").addEventListener("click",generateIntelligence);
 $("#btnAsk3")&&$("#btnAsk3").addEventListener("click",openAsk);
+// ---------- report PDF (Typst) ----------
+$("#btnReportRefresh")&&$("#btnReportRefresh").addEventListener("click",renderReport);
+$("#btnReportPdf")&&$("#btnReportPdf").addEventListener("click",async()=>{
+  const t=activeTab(); if(!t||!t.result){ toast("Run an analysis first","err"); return; }
+  if(MODE!=="http"){ toast("PDF export runs in the app/server (Typst).","err"); return; }
+  setSync("busy","report"); toast("Rendering PDF via Typst…");
+  try{ const r=await api("/api/report/pdf",{method:"POST",body:{project_id:t.project.id}});
+    // stream the PDF to the browser for download
+    const resp=await fetch("/api/report/download?path="+encodeURIComponent(r.path),{headers:{Authorization:"Bearer "+TOKEN}});
+    const blob=await resp.blob(); const a=el("a"); a.href=URL.createObjectURL(blob); a.download=(t.project.name.replace(/\s+/g,"_"))+"_intel.pdf"; a.click(); URL.revokeObjectURL(a.href);
+    setSync("ok","complete"); pushNotif("report","Intelligence PDF exported"); toast("PDF exported","ok");
+  }catch(e){ setSync("err","failed"); toast("PDF: "+e.message,"err"); }
+});
 
 // ---------- keyboard ----------
 window.addEventListener("keydown",e=>{ const meta=e.metaKey||e.ctrlKey;
