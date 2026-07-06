@@ -117,15 +117,19 @@ pub fn analyst_system(domain: Domain) -> String {
 pub fn analyst_task(question: &str, graph_context: &str) -> String {
     format!(
         "Analyst question:\n{question}\n\n\
-         Answer using the current graph below. Return JSON:\n\
+         Answer using the current graph below, then DIRECTLY APPLY a graph focus if the question \
+         implies one (do not explain how to filter — return the filter to apply). Return JSON:\n\
          {{\n\
            \"answer\": \"<concise intelligence answer>\",\n\
            \"key_points\": [\"..\"],\n\
+           \"focus\": {{\"action\":\"isolate|highlight|none\",\"entity_labels\":[\"..\"],\"kinds\":[\"..\"],\"min_risk\":<0..1 or null>}},\n\
            \"entities\": [{{\"kind\":\"<kind>\",\"label\":\"<label>\",\"attributes\":{{}},\"hypothesis\":<bool>}}],\n\
            \"relationships\": [{{\"source\":\"<label>\",\"type\":\"<rel>\",\"target\":\"<label>\",\"confidence\":<0..1>,\"hypothesis\":<bool>}}],\n\
            \"recommended_actions\": [\"..\"],\n\
            \"confidence\": \"<low|medium|high>\"\n\
-         }}\n\n\
+         }}\n\
+         Put the entities the answer is about into focus.entity_labels so the UI highlights them. \
+         Use focus.action=\"none\" only when no subset is implied.\n\n\
          CURRENT GRAPH:\n{graph_context}"
     )
 }

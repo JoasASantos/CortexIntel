@@ -129,6 +129,7 @@ fn specialist_note(domain: Domain) -> Option<&'static str> {
         Domain::Logistics => Some("Model disruptions and dependencies; recommend resilient routing."),
         Domain::Military => Some("Correlate actors, units, infrastructure and movements; human-reviewed assessments only, never targeting."),
         Domain::Finance => Some("Trace flows across accounts/counterparties; quantify exposure."),
+        Domain::Kyc => Some("Correlate a person's connected records/documents; assess identity plausibility (country-aware). Decision-support only, respect LGPD/GDPR."),
         Domain::Government | Domain::Legal | Domain::Insurance | Domain::Telecom | Domain::Energy | Domain::Manufacturing | Domain::RealEstate | Domain::Education | Domain::Nonprofit => Some("Correlate the vertical's core records into prioritized, auditable, human-reviewed intelligence."),
         Domain::Generic => None,
     }

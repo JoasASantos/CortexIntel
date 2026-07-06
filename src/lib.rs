@@ -47,6 +47,7 @@ pub mod api {
     #[derive(Serialize)]
     pub struct DataTypeInfo {
         pub slug: String,
+        pub category: String,
     }
 
     /// An agent card for the GUI.
@@ -81,7 +82,7 @@ pub mod api {
     pub fn list_data_types() -> Vec<DataTypeInfo> {
         DataType::all()
             .iter()
-            .map(|t| DataTypeInfo { slug: t.slug().to_string() })
+            .map(|t| DataTypeInfo { slug: t.slug().to_string(), category: t.category().to_string() })
             .collect()
     }
 
@@ -202,6 +203,9 @@ pub mod api {
         /// Current graph context: { nodes: [...], edges: [...] }.
         #[serde(default)]
         pub graph: serde_json::Value,
+        /// Optional project AI instructions to steer the answer.
+        #[serde(default, alias = "aiInstructions")]
+        pub ai_instructions: Option<String>,
     }
 
     pub fn ask(params: AskParams) -> Result<serde_json::Value> {
@@ -215,7 +219,10 @@ pub mod api {
         } else {
             LlmRouter::new(provider, None, None, false)
         };
-        let context = summarize_graph_for_prompt(&params.graph);
+        let mut context = summarize_graph_for_prompt(&params.graph);
+        if let Some(instr) = params.ai_instructions.as_deref().filter(|s| !s.trim().is_empty()) {
+            context = format!("OPERATOR INSTRUCTIONS (steer your analysis):\n{instr}\n\n{context}");
+        }
         let req = crate::agents::ask_request(domain, &params.question, &context);
         let resp = router.complete(&req)?;
         resp.as_json().or_else(|_| Ok(serde_json::json!({ "answer": resp.text })))
@@ -240,6 +247,34 @@ pub mod api {
             s.push_str(&format!("- {src} --{rel}--> {tgt}\n"));
         }
         s
+    }
+
+    /// Instance config (country for locale-aware KYC + onboarding state).
+    pub fn get_config() -> serde_json::Value {
+        let s = crate::store::get_settings();
+        serde_json::json!({ "country": s.country, "onboarded": s.onboarded, "supported": ["BR", "US"] })
+    }
+
+    pub fn set_config(country: &str, onboarded: bool) -> Result<serde_json::Value> {
+        let mut s = crate::store::get_settings();
+        if !country.is_empty() {
+            s.country = country.to_uppercase();
+        }
+        s.onboarded = onboarded || s.onboarded;
+        crate::store::save_settings(&s)?;
+        Ok(get_config())
+    }
+
+    /// Save uploaded file bytes to the uploads dir and return its path (lets the
+    /// browser "select a file from the PC" and feed it to the pipeline).
+    pub fn save_upload(filename: &str, bytes: &[u8]) -> Result<String> {
+        let dir = crate::store::uploads_dir();
+        crate::store::ensure_dir(&dir)?;
+        let safe: String = filename.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '-' || *c == '_').collect();
+        let name = if safe.is_empty() { "upload.dat".into() } else { safe };
+        let path = dir.join(format!("{}-{}", uuid::Uuid::new_v4().simple(), name));
+        std::fs::write(&path, bytes)?;
+        Ok(path.to_string_lossy().to_string())
     }
 
     /// Test a connector (db/bigquery/datalake). Returns a status string.

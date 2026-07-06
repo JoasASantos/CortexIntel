@@ -404,3 +404,33 @@ body {
 .tf-badge.rs { background: rgba(249,115,22,0.18); color: #fdba74; }
 .tf-badge.key { background: rgba(245,158,11,0.18); color: var(--amber); }
 .tf-badge.free { background: rgba(52,211,153,0.15); color: var(--neon); }
+
+/* ============ v4: responsive copilot / palantir intelligence / onboarding ============ */
+/* AI copilot dock — responsive + scrollable + resizable */
+.ask-dock { width: clamp(300px, 38vw, 440px); max-height: min(72vh, 620px); resize: both; }
+.ask-log { min-height: 90px; overflow-y: auto; scroll-behavior: smooth; }
+.ask-input textarea { max-height: 120px; }
+@media (max-width: 900px){ .ask-dock { width: 92vw; right: 4vw; } }
+
+/* Palantir-style intelligence layout */
+.intel-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+.intel-full { grid-column: 1 / -1; }
+.judgment { padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--stroke); border-left: 3px solid var(--accent); border-radius: 8px; margin-bottom: 8px; font-size: 12.5px; }
+.judgment .conf { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); margin-left: 6px; }
+.cluster { display: flex; align-items: center; justify-content: space-between; padding: 9px 11px; background: var(--panel-2); border: 1px solid var(--stroke); border-radius: 8px; margin-bottom: 6px; cursor: pointer; font-size: 12.5px; }
+.cluster:hover { border-color: var(--accent-2); }
+.cluster .csize { font-family: var(--mono); color: var(--accent); }
+.gap { font-size: 12px; color: var(--amber); padding: 4px 0; }
+
+/* Disclaimer */
+.disclaimer { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); color: var(--amber); font-size: 11.5px; padding: 8px 11px; border-radius: 8px; margin: 6px 0; }
+
+/* Onboarding country choice */
+.country-grid { display: flex; gap: 12px; margin: 12px 0; }
+.country-opt { flex: 1; text-align: center; padding: 18px; border: 1px solid var(--stroke); border-radius: 12px; cursor: pointer; background: var(--panel-2); }
+.country-opt:hover, .country-opt.sel { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(34,211,238,0.15); }
+.country-opt .flag { font-size: 30px; }
+.country-opt .cn { font-weight: 600; margin-top: 6px; }
+
+/* link-mode banner */
+.linkmode { position: absolute; top: 110px; left: 50%; transform: translateX(-50%); z-index: 9; background: var(--purple); color: #1a103a; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 20px; box-shadow: var(--shadow); }

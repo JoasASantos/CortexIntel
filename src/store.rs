@@ -33,6 +33,31 @@ pub fn plugins_dir() -> PathBuf {
     base_dir().join("plugins")
 }
 
+pub fn uploads_dir() -> PathBuf {
+    base_dir().join("uploads")
+}
+
+fn settings_file() -> PathBuf {
+    base_dir().join("settings.json")
+}
+
+/// Instance settings (country for locale-aware KYC checks, onboarding state).
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+pub struct Settings {
+    #[serde(default)]
+    pub country: String, // "BR" | "US" | ""
+    #[serde(default)]
+    pub onboarded: bool,
+}
+
+pub fn get_settings() -> Settings {
+    read_json_or_default(&settings_file())
+}
+
+pub fn save_settings(s: &Settings) -> Result<()> {
+    write_json(&settings_file(), s)
+}
+
 /// Read a JSON file into a type, returning the default if it does not exist.
 pub fn read_json_or_default<T: serde::de::DeserializeOwned + Default>(path: &std::path::Path) -> T {
     match std::fs::read_to_string(path) {

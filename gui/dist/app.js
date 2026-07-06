@@ -676,7 +676,7 @@ function openSettingsTab(tab){ currentSettingsTab=tab; showView("settings");
 $$(".snav").forEach(b=>b.addEventListener("click",()=>openSettingsTab(b.dataset.tab)));
 
 // ---------- transform store ----------
-const TF_CATS=[["cyber","Cybersecurity"],["investigative","Investigative / OSINT"],["journalism","Journalism"],["hr","Human Resources"],["business","Business & Corporate"],["military","Military Intelligence"]];
+const TF_CATS=[["people","People Search"],["kyc","KYC / Identity (BR·US)"],["cyber","Cybersecurity"],["investigative","Investigative / OSINT"],["media","Media Forensics"],["journalism","Journalism"],["hr","Human Resources"],["business","Business & Corporate"],["military","Military Intelligence"]];
 async function renderTransformStore(){ const w=$("#transformCatalog"); if(!w)return; w.innerHTML="checking…";
   let cat=[],inst=[]; try{ cat=await api("/api/transforms/catalog"); }catch(e){} try{ inst=await api("/api/transforms"); }catch(e){}
   const instIds=new Set(inst.map(t=>t.id));

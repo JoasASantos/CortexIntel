@@ -17,6 +17,8 @@ pub enum Domain {
     Cybersecurity,
     /// Fraud, AML, financial crime investigation.
     Fraud,
+    /// KYC / identity verification & fraud analysis.
+    Kyc,
     /// Healthcare operations & clinical-safety intelligence.
     Health,
     /// Retail / e-commerce decisioning.
@@ -55,6 +57,7 @@ impl Domain {
             Domain::ChildProtection => "child-protection",
             Domain::Cybersecurity => "cybersecurity",
             Domain::Fraud => "fraud",
+            Domain::Kyc => "kyc",
             Domain::Health => "health",
             Domain::Commerce => "commerce",
             Domain::Logistics => "logistics",
@@ -78,6 +81,7 @@ impl Domain {
             Domain::ChildProtection => "Child Protection & Victim Identification",
             Domain::Cybersecurity => "Cybersecurity / Threat Intelligence",
             Domain::Fraud => "Fraud, AML & Financial Crime",
+            Domain::Kyc => "KYC / Identity Verification & Fraud Analysis",
             Domain::Health => "Healthcare & Clinical Safety",
             Domain::Commerce => "Commerce & Retail Decisioning",
             Domain::Logistics => "Logistics & Supply Chain",
@@ -103,6 +107,7 @@ impl Domain {
             Domain::ChildProtection => "Protect children and identify victims. Prioritize imminent-risk cases, preserve chain of custody, and never expose sensitive material beyond operational need. The AI supports investigators; it never decides guilt.",
             Domain::Cybersecurity => "Detect, correlate and prioritize threats. Map infrastructure, actors and TTPs; surface actionable, evidence-backed leads for SOC/DFIR analysts.",
             Domain::Fraud => "Detect fraud rings and illicit money flows. Correlate accounts, devices and transactions; quantify exposure and recommend defensible next steps.",
+            Domain::Kyc => "Verify identities and analyze fraud. Correlate a person's connected records/documents to assess whether the identity behind a document is real, with country-aware checks. Lawful basis required; respect LGPD/GDPR — validation is decision-support, never a definitive identity ruling.",
             Domain::Health => "Improve clinical and operational safety. Correlate events and signals to flag risk while protecting patient privacy at all times.",
             Domain::Commerce => "Improve commercial decisions. Correlate customers, orders, channels and signals to surface risk and opportunity.",
             Domain::Logistics => "Optimize and de-risk operations. Correlate shipments, routes, assets and disruptions to recommend resilient actions.",
@@ -126,6 +131,7 @@ impl Domain {
             Domain::ChildProtection,
             Domain::Cybersecurity,
             Domain::Fraud,
+            Domain::Kyc,
             Domain::Health,
             Domain::Commerce,
             Domain::Logistics,
@@ -228,6 +234,19 @@ impl DataType {
             DataType::Log => "log",
             DataType::Event => "event",
             DataType::Generic => "generic",
+        }
+    }
+
+    /// UI grouping category for the data-type selector.
+    pub fn category(self) -> &'static str {
+        match self {
+            DataType::Case | DataType::Report | DataType::Event | DataType::Log => "Cases & Events",
+            DataType::Person | DataType::Account | DataType::Customer | DataType::Student | DataType::Employee => "People & Accounts",
+            DataType::Device | DataType::Network | DataType::Url => "Digital & Network",
+            DataType::Media | DataType::Communication => "Content & Media",
+            DataType::Financial | DataType::Order | DataType::Product => "Commercial & Financial",
+            DataType::Shipment | DataType::Asset | DataType::Sensor | DataType::Location => "Operations & Assets",
+            DataType::Generic => "Other",
         }
     }
 

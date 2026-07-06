@@ -180,6 +180,7 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
                 b.get("domain").and_then(|v| v.as_str()).unwrap_or("generic"),
                 &user.email,
                 b.get("description").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("ai_instructions").and_then(|v| v.as_str()).unwrap_or(""),
             ))
         }
         ("POST", "/api/projects/delete") => {
@@ -243,6 +244,17 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
                 b.get("input").cloned().unwrap_or(serde_json::Value::Null),
                 b.get("params").cloned().unwrap_or(serde_json::json!({})),
             ))
+        }
+        // Instance config (country / onboarding)
+        ("GET", "/api/config") => json_ok(stream, &api::get_config()),
+        ("POST", "/api/config") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, api::set_config(b.get("country").and_then(|v| v.as_str()).unwrap_or(""), b.get("onboarded").and_then(|v| v.as_bool()).unwrap_or(false)))
+        }
+        // File upload (browse a file from the PC → temp path for the pipeline)
+        ("POST", "/api/upload") => {
+            let name = param(&req.query, "name").unwrap_or_else(|| "upload.dat".into());
+            finish(stream, api::save_upload(&name, &req.body).map(|p| serde_json::json!({ "path": p })))
         }
         // API keys (values never returned)
         ("GET", "/api/keys") => json_ok(stream, &keys::list_names()),

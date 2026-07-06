@@ -37,6 +37,9 @@ pub struct Project {
     pub owner: String,
     #[serde(default)]
     pub description: String,
+    /// Optional operator instructions steering the AI for this project.
+    #[serde(default)]
+    pub ai_instructions: String,
     pub created_at: u64,
     pub updated_at: u64,
     #[serde(default)]
@@ -72,7 +75,7 @@ fn valid_id(id: &str) -> bool {
     !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
-pub fn create(name: &str, domain: &str, owner: &str, description: &str) -> Result<Project> {
+pub fn create(name: &str, domain: &str, owner: &str, description: &str, ai_instructions: &str) -> Result<Project> {
     let name = name.trim();
     if name.is_empty() {
         return Err(anyhow!("project name is required"));
@@ -84,6 +87,7 @@ pub fn create(name: &str, domain: &str, owner: &str, description: &str) -> Resul
         domain: domain.to_string(),
         owner: owner.to_string(),
         description: description.trim().to_string(),
+        ai_instructions: ai_instructions.trim().to_string(),
         created_at: t,
         updated_at: t,
         activities: vec![Activity {

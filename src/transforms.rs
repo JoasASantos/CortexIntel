@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 use std::io::Write;
 use std::process::{Command, Stdio};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Transform {
     pub id: String,
     pub name: String,
@@ -39,6 +39,9 @@ pub struct Transform {
     pub runtime: String, // python | rust | command
     /// Inline source (python/rust) or executable path (command).
     pub entrypoint: String,
+    /// Legal/ethics notice shown before install/run (e.g. LGPD/GDPR).
+    #[serde(default)]
+    pub disclaimer: String,
     #[serde(default)]
     pub enabled: bool,
 }
@@ -129,6 +132,7 @@ pub fn run(id: &str, input: serde_json::Value, params: serde_json::Value) -> Res
 
 fn common_env(cmd: &mut Command, service: &str, api_key: &str) {
     cmd.env("CORTEX_TRANSFORM_SERVICE", service);
+    cmd.env("CORTEX_COUNTRY", store::get_settings().country);
     if !api_key.is_empty() {
         cmd.env("TRANSFORM_API_KEY", api_key);
     }
@@ -208,43 +212,85 @@ pub fn catalog() -> Vec<Transform> {
         Transform { id:"cyber.email-to-domain".into(), name:"Email → Domain".into(), category:"cyber".into(),
             description:"Extract the domain from an email account (local, no key).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["account".into()], runtime:"python".into(),
-            entrypoint: PY_EMAIL_TO_DOMAIN.into(), enabled:false },
+            entrypoint: PY_EMAIL_TO_DOMAIN.into(), disclaimer:String::new(), enabled:false },
         Transform { id:"cyber.hash-classify".into(), name:"Hash → Type".into(), category:"cyber".into(),
             description:"Classify a hash as MD5/SHA1/SHA256 (local Rust, no key).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["media".into()], runtime:"rust".into(),
-            entrypoint: RS_HASH_CLASSIFY.into(), enabled:false },
+            entrypoint: RS_HASH_CLASSIFY.into(), disclaimer:String::new(), enabled:false },
         Transform { id:"cyber.shodan-host".into(), name:"IP → Shodan Host".into(), category:"cyber".into(),
             description:"Enrich an IP with open ports/services from Shodan.".into(), service:"shodan".into(),
             requires_api_key:true, input_kinds:vec!["ip".into()], runtime:"python".into(),
-            entrypoint: PY_SHODAN.into(), enabled:false },
+            entrypoint: PY_SHODAN.into(), disclaimer:String::new(), enabled:false },
         Transform { id:"cyber.virustotal".into(), name:"Hash/URL → VirusTotal".into(), category:"cyber".into(),
             description:"Reputation lookup for a hash or URL via VirusTotal.".into(), service:"virustotal".into(),
             requires_api_key:true, input_kinds:vec!["media".into(),"url".into()], runtime:"python".into(),
-            entrypoint: PY_VIRUSTOTAL.into(), enabled:false },
+            entrypoint: PY_VIRUSTOTAL.into(), disclaimer:String::new(), enabled:false },
         // ---- INVESTIGATIVE ----
         Transform { id:"inv.whois".into(), name:"Domain → WHOIS".into(), category:"investigative".into(),
             description:"Registrant/registrar info via the local `whois` client (no key).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["domain".into()], runtime:"python".into(),
-            entrypoint: PY_WHOIS.into(), enabled:false },
+            entrypoint: PY_WHOIS.into(), disclaimer:String::new(), enabled:false },
         Transform { id:"inv.hibp".into(), name:"Email → Breaches".into(), category:"investigative".into(),
             description:"Check an email against Have I Been Pwned.".into(), service:"hibp".into(),
             requires_api_key:true, input_kinds:vec!["account".into()], runtime:"python".into(),
-            entrypoint: PY_HIBP.into(), enabled:false },
+            entrypoint: PY_HIBP.into(), disclaimer:String::new(), enabled:false },
         // ---- JOURNALISM ----
         Transform { id:"news.github-user".into(), name:"Username → GitHub".into(), category:"journalism".into(),
             description:"Public GitHub profile + repos for a username (no key for public).".into(), service:"github".into(),
             requires_api_key:false, input_kinds:vec!["account".into()], runtime:"python".into(),
-            entrypoint: PY_GITHUB.into(), enabled:false },
+            entrypoint: PY_GITHUB.into(), disclaimer:String::new(), enabled:false },
         // ---- HR ----
         Transform { id:"hr.email-normalize".into(), name:"Person → Corporate email".into(), category:"hr".into(),
             description:"Derive likely corporate email patterns from a name + domain (local).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["person".into()], runtime:"python".into(),
-            entrypoint: PY_HR_EMAIL.into(), enabled:false },
+            entrypoint: PY_HR_EMAIL.into(), disclaimer:String::new(), enabled:false },
         // ---- BUSINESS ----
         Transform { id:"biz.opencorporates".into(), name:"Company → Registry".into(), category:"business".into(),
             description:"Look up a company in OpenCorporates.".into(), service:"opencorporates".into(),
             requires_api_key:true, input_kinds:vec!["organization".into()], runtime:"python".into(),
-            entrypoint: PY_OPENCORP.into(), enabled:false },
+            entrypoint: PY_OPENCORP.into(), disclaimer:String::new(), enabled:false },
+        Transform { id:"biz.webhook".into(), name:"Entity → Webhook / API".into(), category:"business".into(),
+            description:"POST the selected entity to a webhook/REST endpoint (set params.url). Bring back JSON entities.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec![], runtime:"python".into(),
+            entrypoint: PY_WEBHOOK.into(), disclaimer:String::new(), enabled:false },
+        // ---- PEOPLE SEARCH ----
+        Transform { id:"people.persona".into(), name:"Name/Email → Persona".into(), category:"people".into(),
+            description:"People-search: resolve a name/email to a persona (accounts, locations) via a people-search API.".into(), service:"peoplesearch".into(),
+            requires_api_key:true, input_kinds:vec!["person".into(),"account".into()], runtime:"python".into(),
+            entrypoint: PY_PERSONA.into(),
+            disclaimer:"GDPR/LGPD: person searches require a lawful basis and data minimization. Use only for authorized investigations; results are leads, not proof.".into(), enabled:false },
+        // ---- KYC / IDENTITY (BR + US) ----
+        Transform { id:"kyc.cpf-validate".into(), name:"BR CPF → Validate (local)".into(), category:"kyc".into(),
+            description:"Validate a Brazilian CPF's check digits (format only, offline). Does NOT prove identity.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["person".into()], runtime:"python".into(),
+            entrypoint: PY_CPF.into(),
+            disclaimer:"LGPD: CPF is personal data. Checksum validity ≠ real identity. Lawful basis required.".into(), enabled:false },
+        Transform { id:"kyc.ssn-validate".into(), name:"US SSN → Validate (local)".into(), category:"kyc".into(),
+            description:"Validate a US SSN's structural format (offline). Does NOT prove identity.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["person".into()], runtime:"python".into(),
+            entrypoint: PY_SSN.into(),
+            disclaimer:"US privacy: SSN is sensitive PII. Format validity ≠ real identity.".into(), enabled:false },
+        Transform { id:"kyc.identity-verify".into(), name:"Document → Identity Verify".into(), category:"kyc".into(),
+            description:"Verify whether the person behind a document is real via a KYC provider (country-aware).".into(), service:"kyc_provider".into(),
+            requires_api_key:true, input_kinds:vec!["person".into()], runtime:"python".into(),
+            entrypoint: PY_KYC.into(),
+            disclaimer:"GDPR/LGPD + KYC regulation: identity verification requires explicit lawful basis and provider agreement.".into(), enabled:false },
+        // ---- MEDIA INTELLIGENCE ----
+        Transform { id:"media.metadata".into(), name:"Media → Metadata (EXIF)".into(), category:"media".into(),
+            description:"Extract EXIF/media metadata (camera, GPS, software) via local exiftool.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["media".into()], runtime:"python".into(),
+            entrypoint: PY_EXIF.into(),
+            disclaimer:"May reveal location/PII embedded in media. Handle per policy.".into(), enabled:false },
+        Transform { id:"media.deepfake".into(), name:"Media → Deepfake / manipulation".into(), category:"media".into(),
+            description:"Assess whether an image/video is AI-generated or manipulated (deepfake/deepnude) via a detection API.".into(), service:"deepfake_api".into(),
+            requires_api_key:true, input_kinds:vec!["media".into()], runtime:"python".into(),
+            entrypoint: PY_DEEPFAKE.into(),
+            disclaimer:"Detection is probabilistic — a signal, not proof. Never generate or store abusive content; reference by hash only.".into(), enabled:false },
+        Transform { id:"media.moderation".into(), name:"Media → Sensitive-content check".into(), category:"media".into(),
+            description:"Flag whether media is sensitive/NSFW so it can be gated from view (moderation API).".into(), service:"moderation_api".into(),
+            requires_api_key:true, input_kinds:vec!["media".into()], runtime:"python".into(),
+            entrypoint: PY_MODERATION.into(),
+            disclaimer:"Sensitive content must be handled under strict access controls; do not expose raw material.".into(), enabled:false },
     ]
 }
 
@@ -359,6 +405,143 @@ try:
     for c in j['results']['companies'][:10]:
         co=c['company']; lab=co['name']; out['entities'].append({'kind':'organization','label':lab,'attributes':{'jurisdiction':co.get('jurisdiction_code',''),'number':co.get('company_number','')}})
         out['relationships'].append({'source':q,'type':'matches_company','target':lab,'confidence':0.6})
+except Exception as e: out['error']=str(e)
+print(json.dumps(out))
+"#;
+
+const PY_WEBHOOK: &str = r#"
+import sys, json, os, urllib.request
+d=json.load(sys.stdin); inp=d.get('input') or {}; url=(d.get('params') or {}).get('url') or os.environ.get('WEBHOOK_URL','')
+out={'entities':[],'relationships':[]}
+try:
+    if not url: raise Exception('set params.url')
+    body=json.dumps({'entity':inp}).encode()
+    req=urllib.request.Request(url,data=body,headers={'content-type':'application/json'})
+    r=json.load(urllib.request.urlopen(req,timeout=25))
+    if isinstance(r,dict) and 'entities' in r: out=r
+    else: out['entities']=[{'kind':'incident','label':'webhook:response','attributes':{'raw':str(r)[:200]}}]
+except Exception as e: out['error']=str(e)
+print(json.dumps(out))
+"#;
+
+const PY_PERSONA: &str = r#"
+import sys, json, os, urllib.request, urllib.parse
+d=json.load(sys.stdin); q=(d.get('input') or {}).get('label',''); key=d.get('api_key') or os.environ.get('TRANSFORM_API_KEY','')
+base=(d.get('params') or {}).get('endpoint','')  # people-search API base returning {results:[{name,emails,usernames,locations}]}
+out={'entities':[],'relationships':[]}
+try:
+    if not base: raise Exception('set params.endpoint to your people-search API base URL')
+    u=base+('&' if '?' in base else '?')+'q='+urllib.parse.quote(q)+'&api_key='+key
+    j=json.load(urllib.request.urlopen(u,timeout=25))
+    for p in (j.get('results') or [])[:10]:
+        for em in (p.get('emails') or []): out['entities'].append({'kind':'account','label':em,'attributes':{'via':'peoplesearch'}}); out['relationships'].append({'source':q,'type':'linked_email','target':em,'confidence':0.5})
+        for un in (p.get('usernames') or []): out['entities'].append({'kind':'account','label':un,'attributes':{'via':'peoplesearch'}}); out['relationships'].append({'source':q,'type':'linked_username','target':un,'confidence':0.5})
+        for loc in (p.get('locations') or []): out['entities'].append({'kind':'location','label':loc,'attributes':{}}); out['relationships'].append({'source':q,'type':'associated_location','target':loc,'confidence':0.4})
+except Exception as e: out['error']=str(e)
+print(json.dumps(out))
+"#;
+
+const PY_CPF: &str = r#"
+import sys, json, re
+d=json.load(sys.stdin); raw=(d.get('input') or {}).get('label',''); cpf=re.sub(r'\D','',raw)
+out={'entities':[],'relationships':[]}
+def valid(c):
+    if len(c)!=11 or c==c[0]*11: return False
+    for i in (9,10):
+        s=sum(int(c[n])*((i+1)-n) for n in range(i)); dch=(s*10)%11%10
+        if dch!=int(c[i]): return False
+    return True
+if len(cpf)==11:
+    v=valid(cpf); lab='cpf-check:'+('valid' if v else 'invalid')
+    out['entities']=[{'kind':'incident','label':lab,'attributes':{'checksum':'valid' if v else 'invalid','note':'format only, not identity'}}]
+    out['relationships']=[{'source':raw,'type':'document_check','target':lab,'confidence':0.9 if v else 0.5}]
+else:
+    out['error']='not an 11-digit CPF'
+print(json.dumps(out))
+"#;
+
+const PY_SSN: &str = r#"
+import sys, json, re
+d=json.load(sys.stdin); raw=(d.get('input') or {}).get('label',''); ssn=re.sub(r'\D','',raw)
+out={'entities':[],'relationships':[]}
+def valid(s):
+    if len(s)!=9: return False
+    a,b,c=s[:3],s[3:5],s[5:]
+    if a in ('000','666') or a[0]=='9': return False
+    if b=='00' or c=='0000': return False
+    return True
+if len(ssn)==9:
+    v=valid(ssn); lab='ssn-check:'+('valid' if v else 'invalid')
+    out['entities']=[{'kind':'incident','label':lab,'attributes':{'format':'valid' if v else 'invalid','note':'format only, not identity'}}]
+    out['relationships']=[{'source':raw,'type':'document_check','target':lab,'confidence':0.8 if v else 0.4}]
+else:
+    out['error']='not a 9-digit SSN'
+print(json.dumps(out))
+"#;
+
+const PY_KYC: &str = r#"
+import sys, json, os, urllib.request
+d=json.load(sys.stdin); inp=d.get('input') or {}; key=d.get('api_key') or os.environ.get('TRANSFORM_API_KEY','')
+base=(d.get('params') or {}).get('endpoint',''); country=os.environ.get('CORTEX_COUNTRY','')
+out={'entities':[],'relationships':[]}
+try:
+    if not base: raise Exception('set params.endpoint to your KYC provider verify URL')
+    body=json.dumps({'name':inp.get('label',''),'attributes':inp.get('attributes',{}),'country':country}).encode()
+    req=urllib.request.Request(base,data=body,headers={'authorization':'Bearer '+key,'content-type':'application/json'})
+    j=json.load(urllib.request.urlopen(req,timeout=25))
+    verdict=j.get('verdict') or j.get('status') or 'unknown'; lab='kyc:'+str(verdict)
+    out['entities']=[{'kind':'incident','label':lab,'attributes':{k:str(v) for k,v in j.items() if k in ('verdict','status','score','match')}}]
+    out['relationships']=[{'source':inp.get('label',''),'type':'identity_verified','target':lab,'confidence':0.8}]
+except Exception as e: out['error']=str(e)
+print(json.dumps(out))
+"#;
+
+const PY_EXIF: &str = r#"
+import sys, json, subprocess, shutil, os
+d=json.load(sys.stdin); inp=d.get('input') or {}; path=(inp.get('attributes') or {}).get('path') or inp.get('label','')
+out={'entities':[],'relationships':[]}
+if shutil.which('exiftool') and os.path.exists(path):
+    try:
+        j=json.loads(subprocess.run(['exiftool','-json',path],capture_output=True,text=True,timeout=30).stdout)[0]
+        keep={k:str(v) for k,v in j.items() if k in ('Make','Model','Software','CreateDate','GPSLatitude','GPSLongitude','MIMEType','FileType')}
+        lab='meta:'+os.path.basename(path); out['entities']=[{'kind':'evidence','label':lab,'attributes':keep}]
+        out['relationships']=[{'source':inp.get('label',''),'type':'has_metadata','target':lab,'confidence':0.95}]
+        if 'GPSLatitude' in keep: out['entities'].append({'kind':'location','label':keep.get('GPSLatitude','')+','+keep.get('GPSLongitude',''),'attributes':{'from':'exif'}})
+    except Exception as e: out['error']=str(e)
+else:
+    out['error']='exiftool not installed or path missing (attributes.path)'
+print(json.dumps(out))
+"#;
+
+const PY_DEEPFAKE: &str = r#"
+import sys, json, os, urllib.request
+d=json.load(sys.stdin); inp=d.get('input') or {}; key=d.get('api_key') or os.environ.get('TRANSFORM_API_KEY','')
+base=(d.get('params') or {}).get('endpoint',''); ref=(inp.get('attributes') or {}).get('url') or inp.get('label','')
+out={'entities':[],'relationships':[]}
+try:
+    if not base: raise Exception('set params.endpoint to your deepfake-detection API')
+    body=json.dumps({'media_ref':ref}).encode()
+    req=urllib.request.Request(base,data=body,headers={'authorization':'Bearer '+key,'content-type':'application/json'})
+    j=json.load(urllib.request.urlopen(req,timeout=30))
+    score=j.get('deepfake_score', j.get('score','?')); lab='deepfake:%.2f'%float(score) if isinstance(score,(int,float)) else 'deepfake:?'
+    out['entities']=[{'kind':'incident','label':lab,'attributes':{'deepfake_score':str(score),'nsfw':str(j.get('nsfw',''))}}]
+    out['relationships']=[{'source':inp.get('label',''),'type':'authenticity_check','target':lab,'confidence':0.7}]
+except Exception as e: out['error']=str(e)
+print(json.dumps(out))
+"#;
+
+const PY_MODERATION: &str = r#"
+import sys, json, os, urllib.request
+d=json.load(sys.stdin); inp=d.get('input') or {}; key=d.get('api_key') or os.environ.get('TRANSFORM_API_KEY','')
+base=(d.get('params') or {}).get('endpoint',''); ref=(inp.get('attributes') or {}).get('url') or inp.get('label','')
+out={'entities':[],'relationships':[]}
+try:
+    if not base: raise Exception('set params.endpoint to your moderation API')
+    req=urllib.request.Request(base,data=json.dumps({'media_ref':ref}).encode(),headers={'authorization':'Bearer '+key,'content-type':'application/json'})
+    j=json.load(urllib.request.urlopen(req,timeout=30))
+    sens=j.get('sensitive', j.get('flagged','?')); lab='sensitive:'+str(sens)
+    out['entities']=[{'kind':'incident','label':lab,'attributes':{k:str(v) for k,v in j.items() if k in ('sensitive','flagged','categories')}}]
+    out['relationships']=[{'source':inp.get('label',''),'type':'content_moderation','target':lab,'confidence':0.7}]
 except Exception as e: out['error']=str(e)
 print(json.dumps(out))
 "#;
