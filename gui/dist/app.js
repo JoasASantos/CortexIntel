@@ -6,13 +6,26 @@ const TAURI = window.__TAURI__ || null;
 let MODE = "mock"; // "http" | "mock"
 let TOKEN = localStorage.getItem("cortex_token") || null;
 
+function isLocalOrigin() {
+  return typeof location !== "undefined" && /^https?:$/.test(location.protocol) &&
+    /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
+}
 async function detectTransport() {
-  if (typeof location !== "undefined" && /^https?:$/.test(location.protocol)) {
-    // Retry: the native app loads the window while the embedded server is still binding.
-    for (let i = 0; i < 6; i++) {
-      try { const r = await fetch("/api/ping", { cache: "no-store" }); if (r.ok && (await r.json()).cortex) { MODE = "http"; return; } } catch (e) {}
+  // Served locally (browser `cortex serve` or the desktop app's embedded server):
+  // this is ALWAYS our HTTP backend. The server may still be binding on a fresh
+  // desktop launch, so wait patiently — but never silently fall back to the mock
+  // sample, which would ignore the user's real data.
+  if (isLocalOrigin()) {
+    MODE = "http";
+    for (let i = 0; i < 40; i++) { // up to ~8s
+      try { const r = await fetch("/api/ping", { cache: "no-store" }); if (r.ok && (await r.json()).cortex) return; } catch (e) {}
       await new Promise(r => setTimeout(r, 200));
     }
+    return; // stay "http" even if ping was slow; calls will retry
+  }
+  // A remote https host (e.g. the artifact preview): probe once, else demo mock.
+  if (typeof location !== "undefined" && /^https?:$/.test(location.protocol)) {
+    try { const r = await fetch("/api/ping", { cache: "no-store" }); if (r.ok && (await r.json()).cortex) { MODE = "http"; return; } } catch (e) {}
   }
   MODE = "mock";
 }
@@ -1431,9 +1444,15 @@ let npUploadPath=null;
 // Browse a local file, upload its bytes to the server, and return the server-side path.
 function browseUpload(cb, accept){ const inp=$("#filePicker"); if(accept)inp.setAttribute("accept",accept); else inp.removeAttribute("accept"); inp.value="";
   inp.onchange=async ()=>{ const f=inp.files[0]; if(!f)return;
-    if(MODE!=="http"){ cb("/uploads/"+f.name); toast("Preview: file path simulated","ok"); return; }
-    try{ const buf=await f.arrayBuffer(); const r=await fetch("/api/upload?name="+encodeURIComponent(f.name),{method:"POST",headers:{"Authorization":"Bearer "+TOKEN,"Content-Type":"application/octet-stream"},body:buf}); const j=await r.json(); if(!r.ok)throw new Error(j.error||"upload failed"); cb(j.path); toast("Uploaded "+f.name,"ok"); }
-    catch(e){ toast(e.message,"err"); } };
+    // Only the static artifact preview lacks a backend; a local origin always has one.
+    if(!isLocalOrigin() && MODE!=="http"){ cb("/uploads/"+f.name); toast("Preview: file path simulated","ok"); return; }
+    setSync("busy","upload"); toast(`Uploading ${f.name} (${(f.size/1048576).toFixed(1)} MB)…`);
+    try{ const buf=await f.arrayBuffer();
+      const r=await fetch("/api/upload?name="+encodeURIComponent(f.name),{method:"POST",headers:{"Authorization":"Bearer "+TOKEN,"Content-Type":"application/octet-stream"},body:buf});
+      const txt=await r.text(); let j; try{ j=JSON.parse(txt);}catch(_){ j={}; }
+      if(!r.ok) throw new Error(j.error||("upload failed ("+r.status+")"));
+      setSync("ok","uploaded"); cb(j.path); toast("Uploaded "+f.name,"ok"); }
+    catch(e){ setSync("err","failed"); toast("Upload failed: "+e.message,"err"); } };
   inp.click(); }
 function downloadText(name,text){ const b=new Blob([text],{type:"application/json"}); const a=el("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
 
