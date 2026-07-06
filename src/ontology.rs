@@ -181,7 +181,6 @@ impl Entity {
         }
     }
 
-    #[allow(dead_code)]
     pub fn with_attr(mut self, k: impl Into<String>, v: impl Into<String>) -> Self {
         self.attributes.insert(k.into(), v.into());
         self

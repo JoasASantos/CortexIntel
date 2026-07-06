@@ -15,6 +15,7 @@ pub mod llm;
 pub mod ontology;
 pub mod pipeline;
 pub mod plugins;
+pub mod profile;
 pub mod projects;
 pub mod prompts;
 pub mod report;

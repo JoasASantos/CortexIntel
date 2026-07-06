@@ -66,12 +66,15 @@ pub fn extract_record(rec: &Record, _dt: DataType, extra: &[(String, EntityKind)
             by_kind.push((*kind, label));
         }
     }
-    // 1b) Plugin-provided field mappings.
+    // 1b) Plugin/auto-ontology field mappings — provenance includes the column.
     for (field, kind) in extra {
         if let Some(val) = rec.get_any(&[field.as_str()]) {
             let label = safe_label(*kind, val);
             if !by_kind.iter().any(|(k, l)| k == kind && *l == label) {
-                out.entities.push(Entity::new(*kind, &label).with_source(&origin));
+                let e = Entity::new(*kind, &label)
+                    .with_source(&format!("{origin}:{field}"))
+                    .with_attr("derived_from_column", field.clone());
+                out.entities.push(e);
                 by_kind.push((*kind, label));
             }
         }

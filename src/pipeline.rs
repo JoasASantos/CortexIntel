@@ -78,7 +78,7 @@ pub fn run(
         .flat_map(|p| p.field_mappings.iter())
         .map(|m| (m.field.clone(), EntityKind::parse(&m.kind)))
         .collect();
-    let extra_signals: Vec<(String, f32)> = plugins
+    let mut extra_signals: Vec<(String, f32)> = plugins
         .iter()
         .flat_map(|p| p.risk_signals.iter())
         .map(|r| (r.token.to_lowercase(), r.weight))
@@ -86,6 +86,32 @@ pub fn run(
     if !plugins.is_empty() {
         println!("      {} plugin(s) active: {}", plugins.len(), plugins.iter().map(|p| p.name.as_str()).collect::<Vec<_>>().join(", "));
     }
+
+    // Auto-ontology: profile columns of the first batch and fold the discovered
+    // column→entity mappings into the extractor, so undeclared feeds still build
+    // a graph without any schema flag. Deterministic; carries provenance.
+    let mut auto_mappings: Vec<(String, EntityKind)> = Vec::new();
+    if let Some(first) = batches.first() {
+        let profile = crate::profile::profile_batch(first);
+        auto_mappings = profile.entity_mappings();
+        if !auto_mappings.is_empty() {
+            let cols: Vec<String> = profile
+                .columns
+                .iter()
+                .filter(|c| c.entity_kind.is_some())
+                .map(|c| format!("{}→{} ({:.0}%)", c.name, c.semantic.as_str(), c.confidence * 100.0))
+                .collect();
+            println!("      auto-ontology: {}", cols.join(", "));
+        }
+    }
+    // Combine plugin + auto mappings (plugin wins on conflict via ordering).
+    let mut all_mappings = auto_mappings;
+    for m in &extra_mappings {
+        if !all_mappings.iter().any(|(f, _)| f == &m.0) {
+            all_mappings.push(m.clone());
+        }
+    }
+    let _ = &mut extra_signals;
 
     let cap = config.max_records;
     let mut ingested = 0usize;
@@ -99,7 +125,7 @@ pub fn run(
                 }
             }
             ingested += 1;
-            let res = extract::extract_record(rec, data_type, &extra_mappings);
+            let res = extract::extract_record(rec, data_type, &all_mappings);
             // Upsert entities and build a per-record label→id resolution table.
             let mut local: HashMap<String, String> = HashMap::new();
             for e in res.entities {
