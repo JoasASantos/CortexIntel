@@ -26,3 +26,7 @@
 # Never commit local accounts / secrets (these live in ~/.cortexintel anyway)
 users.json
 *.secret
+
+# private reference docs — do not publish
+DATA.md
+DESIGN.md
