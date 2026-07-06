@@ -34,6 +34,7 @@ const I18N = {
     "ready.ready":"Ready for decision","ready.needs-review":"Needs review","ready.insufficient":"Insufficient data","ready.conflicting":"Conflicting evidence",
     "rd.label":"Decision readiness","btn.genIntel":"Generate intelligence","btn.openGraph":"Open graph","decision.matrix.sub":"impact · confidence · risk · effort",
     "canvas.graph":"Graph","canvas.map":"Map","map.none":"No geolocated entities in this view. Entities with latitude/longitude (or GPS/EXIF) plot here; the rest stay in the graph.","map.plotted":"{0} geolocated entities","map.trajectories":"{0} trajectories",
+    "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h",
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
@@ -63,6 +64,7 @@ const I18N = {
     "ready.ready":"Pronto para decisão","ready.needs-review":"Precisa de revisão","ready.insufficient":"Dados insuficientes","ready.conflicting":"Evidências conflitantes",
     "rd.label":"Prontidão para decisão","btn.genIntel":"Gerar inteligência","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confiança · risco · esforço",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias",
+    "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h",
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
@@ -92,6 +94,7 @@ const I18N = {
     "ready.ready":"Listo para decidir","ready.needs-review":"Necesita revisión","ready.insufficient":"Datos insuficientes","ready.conflicting":"Evidencia contradictoria",
     "rd.label":"Preparación para decidir","btn.genIntel":"Generar inteligencia","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confianza · riesgo · esfuerzo",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias",
+    "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h",
   },
 };
 function detectLang(){ const s=localStorage.getItem("cortex_lang"); if(s&&I18N[s])return s; const n=(navigator.language||"en").slice(0,2).toLowerCase(); return I18N[n]?n:"en"; }
@@ -1984,6 +1987,55 @@ function focusCoaEntities(ids){ if(!ids||!ids.length)return; showView("graph");
     const eles=cy.nodes().filter(n=>keep.has(n.id())); if(eles.length){ cy.animate({fit:{eles:eles.closedNeighborhood(),padding:80},duration:350}); }
     toast(`Focused ${ids.length} supporting ${ids.length>1?"entities":"entity"}`); });
 }
+// ============ G4 — Planning timeline (Gantt of courses of action) ============
+// Promotes the recommended actions to a time band: each COA is a bar whose
+// WIDTH is its real backend duration (est_hours), sequenced by priority. Click a
+// bar to focus that action's entities in the active canvas; drag-select a window
+// to filter the plan (and cross-filter the graph to the entities in that window).
+let _planWindow=null; // {a,b} in hours, or null
+function renderPlanTimeline(tab,g){ const w=$("#planTimeline"); if(!w)return;
+  const nba=(tab&&tab.graph.meta&&tab.graph.meta.nba)||[];
+  if(!nba.length){ w.innerHTML=`<div class="empty">${esc(t2("plan.none"))}</div>`; const pm=$("#planMeta"); if(pm)pm.textContent=""; return; }
+  // Sequence by priority; each bar starts where the previous ended.
+  const ranked=[...nba].sort((a,b)=>(b.priority||0)-(a.priority||0));
+  let cursor=0; const bars=ranked.map(a=>{ const dur=Math.max(1,a.est_hours||2); const b={a,start:cursor,dur,end:cursor+dur}; cursor+=dur; return b; });
+  const total=cursor||1;
+  const byId={}; (g.nodes||[]).forEach(n=>byId[n.id]=n);
+  const pm=$("#planMeta"); if(pm) pm.textContent=t2("plan.total",Math.round(total));
+  w.innerHTML="";
+  // axis
+  const axis=el("div","plan-axis"); for(let h=0;h<=total;h+=Math.max(1,Math.round(total/6))){ const tick=el("span","plan-tick",h+t2("plan.hours")); tick.style.left=(h/total*100)+"%"; axis.appendChild(tick); } w.appendChild(axis);
+  const win=_planWindow;
+  bars.forEach((b,i)=>{
+    const seal=coaSeal(b.a);
+    const inWin = !win || (b.end>win.a && b.start<win.b);
+    const row=el("div","plan-row"+(inWin?"":" out"));
+    const bar=el("div","plan-bar seal-"+seal.cls); bar.style.left=(b.start/total*100)+"%"; bar.style.width=(b.dur/total*100)+"%";
+    bar.title=`${b.a.action} · ~${b.dur}${t2("plan.hours")} · ${b.a.attributed_to||""}`;
+    bar.innerHTML=`<span class="plan-bar-lbl">${esc(b.a.action)}</span>`;
+    const ids=(b.a.entity_ids||[]).filter(id=>byId[id]);
+    bar.addEventListener("click",()=>{ if(ids.length) focusCoaEntities(ids); highlightCoaCard(i); });
+    row.appendChild(bar); w.appendChild(row);
+  });
+  // window brush: a range slider pair
+  const brush=el("div","plan-brush");
+  brush.innerHTML=`<input type="range" id="planA" min="0" max="${Math.round(total)}" value="${win?win.a:0}"><input type="range" id="planB" min="0" max="${Math.round(total)}" value="${win?win.b:Math.round(total)}"><button class="plan-clear" id="planClear" ${win?"":"hidden"}>${esc(t2("plan.clear"))}</button><span class="plan-winlbl" id="planWinLbl"></span>`;
+  w.appendChild(brush);
+  const a=$("#planA"), b=$("#planB"), lbl=$("#planWinLbl"), clr=$("#planClear");
+  const applyWin=()=>{ let lo=Math.min(+a.value,+b.value), hi=Math.max(+a.value,+b.value); if(hi-lo<1){ _planWindow=null; } else { _planWindow={a:lo,b:hi}; }
+    if(lbl) lbl.textContent=_planWindow?t2("plan.window",lo,hi):""; if(clr) clr.hidden=!_planWindow;
+    // cross-filter the graph to entities of actions within the window
+    const keep=new Set(); bars.forEach(bb=>{ if(!_planWindow||(bb.end>_planWindow.a&&bb.start<_planWindow.b)) (bb.a.entity_ids||[]).forEach(id=>keep.add(id)); });
+    if(_planWindow && keep.size && cy){ cy.nodes().forEach(n=>n.style("display",keep.has(n.id())?"element":"none")); cy.edges().forEach(e=>e.style("display",(keep.has(e.source().id())&&keep.has(e.target().id()))?"element":"none")); }
+    else if(cy){ cy.elements().style("display","element"); }
+    renderPlanTimeline(tab,g);
+  };
+  a&&a.addEventListener("change",applyWin); b&&b.addEventListener("change",applyWin);
+  clr&&clr.addEventListener("click",()=>{ _planWindow=null; if(cy)cy.elements().style("display","element"); renderPlanTimeline(tab,g); });
+}
+// Flash the matching decision card when its plan bar is clicked.
+function highlightCoaCard(i){ const cards=$$("#coaPanel .coa"); const c=cards[i]; if(!c)return; c.scrollIntoView({behavior:"smooth",block:"nearest"}); c.classList.add("coa-flash"); setTimeout(()=>c.classList.remove("coa-flash"),1200); }
+
 // ============ G3 — Map lens (offline geo-canvas) ============
 // A second view of the SAME object: geolocated entities plotted on an
 // equirectangular canvas with temporal trajectories. Fully offline (no tiles,
@@ -2064,6 +2116,7 @@ function renderFlows(){ const w=$("#intelFlows"); if(!w)return; const t=activeTa
 function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],edges:[]}; const m=computeMetrics(g);
   renderFlows();
   renderDecisionPanel(t,g);
+  renderPlanTimeline(t,g);
   if(t){ renderHypotheses(t,g,m); renderDecisionMatrix(t,g,m); }
   const top=$("#intelTop"); if(top){ top.innerHTML=""; const nodes=[...g.nodes].sort((a,b)=>b.risk-a.risk).slice(0,12); if(!nodes.length)top.innerHTML='<div class="empty">—</div>';
     nodes.forEach(n=>{ const li=el("div","li"); const l=el("div","l"); const d=el("span","kdot"); d.style.background=kColor(n.kind); l.appendChild(d); l.appendChild(el("span","label",n.label)); li.appendChild(l); li.appendChild(el("span","band "+(n.band||bandOf(n.risk)),(n.band||bandOf(n.risk)))); li.addEventListener("click",()=>focusEntity(n.id,true)); top.appendChild(li); }); }
