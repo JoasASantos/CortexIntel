@@ -148,11 +148,21 @@ pub mod api {
         let provider = parse_provider(&params.provider);
         let offline = params.offline.unwrap_or(false) || provider == ProviderChoice::Mock;
 
+        // Default output goes under the (writable) data dir, not a relative
+        // "./cortex-out" — the desktop app's working dir may be read-only ("/"),
+        // which caused "Read-only file system (os error 30)" on run.
+        let out_dir = match params.output_dir.filter(|s| !s.trim().is_empty()) {
+            Some(s) => PathBuf::from(s),
+            None => {
+                let sub = params.project_id.clone().unwrap_or_else(|| "adhoc".into());
+                crate::store::base_dir().join("out").join(sub)
+            }
+        };
         let mut cfg = RunConfig {
             domain,
             data_type,
             provider: if offline { ProviderChoice::Mock } else { provider },
-            output_dir: PathBuf::from(params.output_dir.unwrap_or_else(|| "./cortex-out".into())),
+            output_dir: out_dir,
             // Default cap protects the GUI from huge feeds (e.g. 100k-row CSVs).
             max_records: Some(params.max_records.unwrap_or(4000)),
             offline,
