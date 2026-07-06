@@ -273,7 +273,7 @@ function renderGraph() {
   cy.elements().remove(); cy.add(els);
   runLayout();
   $("#graphStats").textContent = `${g.nodes.length} nodes · ${g.edges.length} edges`;
-  renderLegend();
+  renderLegend(); renderGraphFilters();
 }
 function runLayout() {
   if (!cy) return;
@@ -312,6 +312,7 @@ function selectNode(id) {
     const r=el("div","rel"); r.innerHTML=`<span class="rt">${esc(e.type)}</span> ${e.source===id?"→":"←"} ${esc(o.label)}`;
     r.addEventListener("click",()=>{ selectNode(other); if(cy){const el2=cy.$id(other); if(el2) cy.animate({center:{eles:el2},duration:300}); } }); rels.appendChild(r); });
   const src=$("#ctxSources"); src.innerHTML = n.sources.length?"":'<span class="chip">—</span>'; n.sources.forEach(s=>src.appendChild(el("span","chip",s)));
+  renderCtxTransforms(n.kind);
   showView("graph");
   if (cy){ const e2=cy.$id(id); if(e2) cy.animate({center:{eles:e2},duration:300}); }
 }
@@ -371,7 +372,7 @@ function showView(name){ currentView=name; $$(".view").forEach(v=>v.hidden=true)
   if(name==="graph"){ requestAnimationFrame(()=>{ initCy(); if(cy) cy.resize(); }); } }
 $$(".nav li").forEach(li=>li.addEventListener("click",()=>showView(li.dataset.view)));
 
-function renderAll(){ renderGraph(); renderDashboard(); renderEntities(); renderReport(); renderTimeline(); renderAlerts(); renderSavedConnectors(); }
+function renderAll(){ renderGraph(); renderDashboard(); renderEntities(); renderReport(); renderTimeline(); renderAlerts(); renderSavedConnectors(); renderIntelligence(); }
 
 function renderDashboard(){
   const t=activeTab();
@@ -638,10 +639,11 @@ $("#globalSearch").addEventListener("keydown",e=>{ if(e.key==="Enter"){ const q=
 // ---------- command palette ----------
 const COMMANDS=[
   ["New project","⌘N",newProjectModal],["Run analysis","⌘R",runModal],["Ask AI copilot","⌘/",openAsk],
-  ["Go to Dashboard","",()=>showView("dashboard")],["Go to Graph","",()=>showView("graph")],["Go to Entities","",()=>showView("entities")],
-  ["Go to Data Sources","",()=>showView("sources")],["Go to Timeline","",()=>showView("timeline")],["Go to Reports","",()=>showView("reports")],
-  ["Go to Plugins","",()=>{showView("plugins");renderPlugins();}],["Go to Settings","",()=>{showView("settings");renderSettings();}],
-  ["Fit graph","",()=>{showView("graph");if(cy)cy.fit(cy.elements(),50);}],["Recheck backends","",refreshDoctor],["Sign out","",logout],
+  ["Generate intelligence","",()=>{showView("intelligence");renderIntelligence();generateIntelligence();}],
+  ["Go to Dashboard","",()=>showView("dashboard")],["Go to Graph","",()=>showView("graph")],["Go to Intelligence","",()=>{showView("intelligence");renderIntelligence();}],["Go to Entities","",()=>showView("entities")],
+  ["Go to Timeline","",()=>showView("timeline")],["Go to Reports","",()=>showView("reports")],
+  ["Data Sources","",()=>openSettingsTab("datasources")],["Transforms store","",()=>openSettingsTab("transforms")],["API Keys","",()=>openSettingsTab("keys")],["Settings","",()=>openSettingsTab("account")],
+  ["Fit graph","",()=>{showView("graph");if(cy)cy.fit(cy.elements(":visible"),50);}],["Recheck backends","",refreshDoctor],["Sign out","",logout],
 ];
 let palSel=0;
 function openPalette(){ $("#paletteBackdrop").hidden=false; $("#paletteInput").value=""; renderPalette(""); $("#paletteInput").focus(); }
@@ -656,8 +658,117 @@ $("#paletteInput").addEventListener("keydown",e=>{ const items=$("#paletteList")
 $("#paletteBackdrop").addEventListener("click",e=>{ if(e.target===$("#paletteBackdrop")) closePalette(); });
 
 // nav hooks that need lazy render
-$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="plugins")renderPlugins(); if(li.dataset.view==="settings")renderSettings(); if(li.dataset.view==="sources"){renderConnectorCards();renderSavedConnectors();refreshDoctor();} }));
-$("#profileBtn").addEventListener("click",()=>{showView("settings");renderSettings();});
+$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); }));
+$("#profileBtn").addEventListener("click",()=>{showView("settings");openSettingsTab("account");});
+
+// ---------- settings tabs ----------
+let currentSettingsTab="account";
+function openSettingsTab(tab){ currentSettingsTab=tab; showView("settings");
+  $$(".snav").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));
+  $$(".stab").forEach(s=>s.hidden = s.id!=="stab-"+tab);
+  if(tab==="account"||tab==="project") renderSettings();
+  if(tab==="providers") { /* provider select already built */ }
+  if(tab==="datasources"){ renderConnectorCards(); renderSavedConnectors(); refreshDoctor(); }
+  if(tab==="transforms"){ renderTransformStore(); renderInstalledTransforms(); }
+  if(tab==="keys") renderKeys();
+  if(tab==="plugins"){ renderPlugins(); renderPluginExample(); }
+}
+$$(".snav").forEach(b=>b.addEventListener("click",()=>openSettingsTab(b.dataset.tab)));
+
+// ---------- transform store ----------
+const TF_CATS=[["cyber","Cybersecurity"],["investigative","Investigative / OSINT"],["journalism","Journalism"],["hr","Human Resources"],["business","Business & Corporate"],["military","Military Intelligence"]];
+async function renderTransformStore(){ const w=$("#transformCatalog"); if(!w)return; w.innerHTML="checking…";
+  let cat=[],inst=[]; try{ cat=await api("/api/transforms/catalog"); }catch(e){} try{ inst=await api("/api/transforms"); }catch(e){}
+  const instIds=new Set(inst.map(t=>t.id));
+  const q=($("#transformSearch")?.value||"").toLowerCase();
+  w.innerHTML="";
+  TF_CATS.forEach(([slug,title])=>{ const items=cat.filter(t=>t.category===slug && (t.name+t.description).toLowerCase().includes(q)); if(!items.length)return;
+    const box=el("div","tf-cat"); box.appendChild(el("h4",null,title));
+    items.forEach(t=>{ const it=el("div","tf-item");
+      const meta=el("div","tf-meta"); const nm=el("div","tf-name"); nm.appendChild(document.createTextNode(t.name));
+      nm.appendChild(el("span","tf-badge "+(t.runtime==="rust"?"rs":"py"), t.runtime));
+      nm.appendChild(el("span","tf-badge "+(t.requires_api_key?"key":"free"), t.requires_api_key?("key: "+t.service):"no key"));
+      meta.appendChild(nm); meta.appendChild(el("div","tf-desc",t.description)); it.appendChild(meta);
+      const btn=el("button","btn "+(instIds.has(t.id)?"ghost":"primary"), instIds.has(t.id)?"Installed":"Install");
+      if(!instIds.has(t.id)) btn.addEventListener("click",async()=>{ try{ await api("/api/transforms/install",{method:"POST",body:{id:t.id}}); toast("Installed "+t.name,"ok"); renderTransformStore(); renderInstalledTransforms(); if(t.requires_api_key) openSettingsTab("keys"); }catch(e){toast(e.message,"err");} });
+      it.appendChild(btn); box.appendChild(it); });
+    w.appendChild(box); });
+  if(!w.children.length) w.innerHTML='<div class="empty">No matches.</div>';
+}
+$("#transformSearch")&&$("#transformSearch").addEventListener("input",renderTransformStore);
+async function renderInstalledTransforms(){ const w=$("#installedTransforms"); if(!w)return; let inst=[]; try{ inst=await api("/api/transforms"); }catch(e){}
+  w.innerHTML=""; if(!inst.length){ w.innerHTML='<div class="empty">None installed. Add from the store above.</div>'; return; }
+  inst.forEach(t=>{ const li=el("div","li"); const l=el("div","l"); l.appendChild(el("span","label",`${t.name} · ${t.category}`)); li.appendChild(l);
+    const en=el("span","tag "+(t.enabled?"ok":"off"),t.enabled?"on":"off"); en.style.cursor="pointer"; en.addEventListener("click",async()=>{ await api("/api/transforms/enable",{method:"POST",body:{id:t.id,enabled:!t.enabled}}); renderInstalledTransforms(); });
+    const rm=el("span","tag off","remove"); rm.style.cursor="pointer"; rm.style.marginLeft="6px"; rm.addEventListener("click",async()=>{ await api("/api/transforms/remove",{method:"POST",body:{id:t.id}}); renderInstalledTransforms(); renderTransformStore(); });
+    const wrap=el("div"); wrap.appendChild(en); wrap.appendChild(rm); li.appendChild(wrap); w.appendChild(li); });
+}
+
+// ---------- API keys ----------
+async function renderKeys(){ const w=$("#keyList"); if(!w)return; let names=[]; try{ names=await api("/api/keys"); }catch(e){}
+  w.innerHTML=""; if(!names.length){ w.innerHTML='<div class="empty">No keys stored.</div>'; return; }
+  names.forEach(n=>{ const li=el("div","li"); li.appendChild(el("span","label",n)); const rm=el("span","tag off","delete"); rm.style.cursor="pointer"; rm.addEventListener("click",async()=>{ await api("/api/keys/delete",{method:"POST",body:{service:n}}); renderKeys(); }); li.appendChild(rm); w.appendChild(li); });
+}
+$("#btnSaveKey")&&$("#btnSaveKey").addEventListener("click",async()=>{ const s=$("#keyService").value.trim(),k=$("#keyValue").value; if(!s||!k){toast("Service and key required","err");return;} try{ await api("/api/keys",{method:"POST",body:{service:s,key:k}}); $("#keyValue").value=""; toast("Key saved","ok"); renderKeys(); }catch(e){toast(e.message,"err");} });
+
+// ---------- graph SIEM filters ----------
+let gfActiveKinds=null; // Set or null(all)
+let gfPreset="all";
+function renderGraphFilters(){ const t=activeTab(); const kinds=[...new Set((t?.graph.nodes||[]).map(n=>n.kind))]; const w=$("#gfKinds"); if(!w)return; w.innerHTML="";
+  kinds.forEach(k=>{ const chip=el("div","gf-kind"+((gfActiveKinds&&!gfActiveKinds.has(k))?" off":"")); const d=el("span","kdot"); d.style.background=kColor(k); chip.appendChild(d); chip.appendChild(el("span",null,k));
+    chip.addEventListener("click",()=>{ if(!gfActiveKinds) gfActiveKinds=new Set(kinds); if(gfActiveKinds.has(k))gfActiveKinds.delete(k); else gfActiveKinds.add(k); applyFilters(); renderGraphFilters(); }); w.appendChild(chip); });
+}
+function applyFilters(){ if(!cy)return; const t=activeTab(); if(!t)return;
+  cy.nodes().forEach(node=>{ const n=nodeData(node.id()); if(!n){node.style("display","none");return;}
+    let ok=true; const band=n.band||bandOf(n.risk);
+    if(gfPreset==="crit") ok = ok && (band==="critical"||band==="high");
+    else if(gfPreset==="suspicious"){ const hay=(n.tags.join(" ")+" "+n.kind+" "+Object.values(n.attributes||{}).join(" ")).toLowerCase(); ok = ok && (/suspic|malicious|malware|threat|fraud|c2|exploit/.test(hay) || band==="critical" || ["suspect","malware","incident"].includes(n.kind)); }
+    else if(gfPreset==="sensitive") ok = ok && !!n.sensitive;
+    if(gfActiveKinds && !gfActiveKinds.has(n.kind)) ok=false;
+    node.style("display", ok?"element":"none"); });
+  cy.fit(cy.nodes(":visible"),50);
+}
+$$(".gf-preset").forEach(b=>b.addEventListener("click",()=>{ gfPreset=b.dataset.preset; $$(".gf-preset").forEach(x=>x.classList.toggle("active",x===b)); applyFilters(); }));
+
+// ---------- run transforms from entity panel ----------
+async function renderCtxTransforms(kind){ const w=$("#ctxTransforms"); if(!w)return; w.innerHTML='<div class="empty">loading…</div>';
+  let inst=[]; try{ inst=await api("/api/transforms"); }catch(e){}
+  const match=inst.filter(t=>t.enabled && (!t.input_kinds.length || t.input_kinds.includes(kind)));
+  w.innerHTML=""; if(!match.length){ w.innerHTML='<div class="empty">No transforms for this kind. Install from Settings → Transforms.</div>'; return; }
+  match.forEach(t=>{ const r=el("div","rel"); r.innerHTML=`<span class="rt">${t.runtime}</span> ${esc(t.name)}`; r.addEventListener("click",()=>runTransformOnSelected(t)); w.appendChild(r); });
+}
+async function runTransformOnSelected(t){ const id=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; const n=id?nodeData(id):null; if(!n){toast("Select an entity","err");return;}
+  toast("Running "+t.name+"…"); setSync("busy","transform");
+  try{ const res=await api("/api/transforms/run",{method:"POST",body:{id:t.id,input:{kind:n.kind,label:n.label,attributes:n.attributes}}});
+    if(res.error){ toast("Transform: "+res.error,"err"); setSync("err","failed"); return; }
+    mergeTransformResult(n, res); setSync("ok","complete"); pushNotif("transform",`${t.name} → ${(res.entities||[]).length} new`); toast(`+${(res.entities||[]).length} entities`,"ok");
+  }catch(e){ setSync("err","failed"); toast(e.message,"err"); }
+}
+function mergeTransformResult(seed, res){ const tb=activeTab(); if(!tb)return; const byLabel={}; tb.graph.nodes.forEach(n=>byLabel[n.label.toLowerCase()]=n.id);
+  (res.entities||[]).forEach(e=>{ const key=(e.label||"").toLowerCase(); if(!key)return; if(!byLabel[key]){ const nid="tf-"+Math.abs(hashStr(key+e.kind)); byLabel[key]=nid; tb.graph.nodes.push({id:nid,kind:e.kind||"unknown",label:e.label,risk:0.3,band:"low",attributes:e.attributes||{},tags:["transform"],sources:["transform"]}); } });
+  (res.relationships||[]).forEach(r=>{ const s=byLabel[(r.source||"").toLowerCase()]||seed.id, tg=byLabel[(r.target||"").toLowerCase()]; if(s&&tg) tb.graph.edges.push({source:s,target:tg,type:r.type||"related",conf:r.confidence||0.5}); });
+  renderGraph(); renderGraphFilters(); selectNode(seed.id);
+}
+
+// ---------- intelligence view ----------
+function renderIntelligence(){ const t=activeTab();
+  const top=$("#intelTop"), acts=$("#intelActions");
+  if(top){ top.innerHTML=""; const nodes=t?[...t.graph.nodes].sort((a,b)=>b.risk-a.risk).slice(0,12):[]; if(!nodes.length)top.innerHTML='<div class="empty">—</div>';
+    nodes.forEach(n=>{ const li=el("div","li"); const l=el("div","l"); const d=el("span","kdot"); d.style.background=kColor(n.kind); l.appendChild(d); l.appendChild(el("span","label",n.label)); li.appendChild(l); li.appendChild(el("span","band "+(n.band||bandOf(n.risk)),(n.band||bandOf(n.risk)))); li.addEventListener("click",()=>focusEntity(n.id,true)); top.appendChild(li); }); }
+  if(acts){ const risk=t&&t.graph.meta&&t.graph.meta.risk; const items=[...new Set((risk&&risk.assessments||[]).filter(a=>a.recommended_action&&a.recommended_action!=="monitor").map(a=>a.recommended_action))];
+    acts.innerHTML=""; if(!items.length)acts.innerHTML='<div class="empty">Run an analysis first.</div>'; items.slice(0,12).forEach(a=>{ const li=el("div","li"); li.appendChild(el("span","label","▸ "+a)); acts.appendChild(li); }); }
+}
+async function generateIntelligence(){ const t=activeTab(); if(!t||!t.graph.nodes.length){toast("Open a project with a graph","err");return;}
+  const b=$("#intelBrief"); b.innerHTML='<div class="empty">✦ synthesizing intelligence…</div>'; setSync("busy","intel");
+  try{ const res=await api("/api/ask",{method:"POST",body:{question:"Produce a full intelligence brief for this dataset: the picture it shows, the strongest leads, the biggest risks, and prioritized next actions. Convert data into decision-ready intelligence.",domain:t.project.domain,provider:state.provider,graph:{nodes:t.graph.nodes,edges:t.graph.edges}}});
+    let h=`<p>${esc(res.answer||"(no answer)")}</p>`;
+    const arr=(title,items)=>{ if(items&&items.length){ h+=`<h3>${title}</h3><ul>`+items.map(x=>`<li>${esc(typeof x==="string"?x:JSON.stringify(x))}</li>`).join("")+"</ul>"; } };
+    arr("Key points",res.key_points); arr("Recommended actions",res.recommended_actions);
+    b.innerHTML=h; setSync("ok","complete"); pushNotif("ai","Intelligence brief generated"); renderIntelligence();
+  }catch(e){ b.innerHTML='<div class="empty">error: '+esc(e.message)+'</div>'; setSync("err","failed"); }
+}
+$("#btnGenIntel")&&$("#btnGenIntel").addEventListener("click",generateIntelligence);
+$("#btnAsk3")&&$("#btnAsk3").addEventListener("click",openAsk);
 
 // ---------- keyboard ----------
 window.addEventListener("keydown",e=>{ const meta=e.metaKey||e.ctrlKey;

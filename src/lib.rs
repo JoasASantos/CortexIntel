@@ -10,6 +10,7 @@ pub mod config;
 pub mod connectors;
 pub mod correlation;
 pub mod extract;
+pub mod keys;
 pub mod llm;
 pub mod ontology;
 pub mod pipeline;
@@ -21,6 +22,7 @@ pub mod risk;
 pub mod serve;
 pub mod sources;
 pub mod store;
+pub mod transforms;
 
 /// High-level, serde-friendly API used by the GUI backend.
 pub mod api {

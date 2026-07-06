@@ -113,7 +113,9 @@ fn specialist_name(domain: Domain) -> &'static str {
         Domain::Health => "Clinical-Safety Specialist",
         Domain::Commerce => "Commercial-Decisioning Specialist",
         Domain::Logistics => "Supply-Chain Specialist",
-        Domain::Generic => "Domain Specialist",
+        Domain::Military => "Defense-Intelligence Specialist",
+        Domain::Finance => "Financial-Crime Specialist",
+        _ => "Domain Specialist",
     }
 }
 
@@ -125,6 +127,9 @@ fn specialist_note(domain: Domain) -> Option<&'static str> {
         Domain::Health => Some("Correlate safety signals while enforcing patient-privacy minimization."),
         Domain::Commerce => Some("Surface commercial risk/opportunity from customer and order signals."),
         Domain::Logistics => Some("Model disruptions and dependencies; recommend resilient routing."),
+        Domain::Military => Some("Correlate actors, units, infrastructure and movements; human-reviewed assessments only, never targeting."),
+        Domain::Finance => Some("Trace flows across accounts/counterparties; quantify exposure."),
+        Domain::Government | Domain::Legal | Domain::Insurance | Domain::Telecom | Domain::Energy | Domain::Manufacturing | Domain::RealEstate | Domain::Education | Domain::Nonprofit => Some("Correlate the vertical's core records into prioritized, auditable, human-reviewed intelligence."),
         Domain::Generic => None,
     }
 }

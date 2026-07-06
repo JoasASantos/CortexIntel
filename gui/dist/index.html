@@ -75,12 +75,11 @@
         <ul class="nav">
           <li data-view="dashboard" class="active"><span class="ni">▤</span><span>Dashboard</span></li>
           <li data-view="graph"><span class="ni">◕</span><span>Graph</span></li>
+          <li data-view="intelligence"><span class="ni">✦</span><span>Intelligence</span></li>
           <li data-view="entities"><span class="ni">⬡</span><span>Entities</span></li>
-          <li data-view="sources"><span class="ni">⇄</span><span>Data Sources</span></li>
           <li data-view="timeline"><span class="ni">⧗</span><span>Timeline</span></li>
           <li data-view="alerts"><span class="ni">⚠</span><span>Alerts</span></li>
           <li data-view="reports"><span class="ni">▦</span><span>Reports</span></li>
-          <li data-view="plugins"><span class="ni">⧉</span><span>Plugins</span></li>
           <li data-view="settings"><span class="ni">⚙</span><span>Settings</span></li>
         </ul>
         <div class="sidebar-foot">
@@ -121,6 +120,16 @@
                 <button class="btn ghost" id="btnAsk2">✦ Ask</button>
               </div>
             </div>
+            <div class="graph-filters" id="graphFilters">
+              <span class="gf-label">Filters</span>
+              <div class="gf-presets">
+                <button class="gf-preset active" data-preset="all">All</button>
+                <button class="gf-preset" data-preset="crit">Critical + High</button>
+                <button class="gf-preset" data-preset="suspicious">Suspicious/Malicious</button>
+                <button class="gf-preset" data-preset="sensitive">Sensitive</button>
+              </div>
+              <div class="gf-kinds" id="gfKinds"></div>
+            </div>
             <div id="cy"></div>
             <div class="legend" id="legend"></div>
             <div class="graph-empty" id="graphEmpty">
@@ -146,13 +155,18 @@
           <table class="tbl" id="entitiesTable"><thead><tr><th>Risk</th><th>Kind</th><th>Label</th><th>Tags</th></tr></thead><tbody></tbody></table>
         </section>
 
-        <!-- Data sources / connectors -->
-        <section class="view" id="view-sources" hidden>
-          <div class="view-head"><h1>Data Sources</h1><p class="muted">Import files or connect databases, BigQuery and data lakes.</p></div>
-          <div class="cards three" id="connectorCards"></div>
-          <div class="card"><div class="card-head"><h3>LLM backends</h3><button class="btn ghost" id="btnDoctor">Recheck</button></div>
-            <div class="list" id="backendList"><div class="empty">—</div></div></div>
-          <div class="card"><div class="card-head"><h3>Saved connectors (this project)</h3></div><div class="list" id="savedConnectors"><div class="empty">—</div></div></div>
+        <!-- Intelligence -->
+        <section class="view" id="view-intelligence" hidden>
+          <div class="view-head"><h1>Intelligence</h1><p class="muted">AI-synthesized picture: findings, leads and prioritized actions from the current graph.</p></div>
+          <div class="row-actions" style="margin-bottom:14px">
+            <button class="btn primary" id="btnGenIntel">✦ Generate intelligence</button>
+            <button class="btn ghost" id="btnAsk3">Ask a question</button>
+          </div>
+          <div class="cards two">
+            <div class="card"><div class="card-head"><h3>Intelligence brief</h3></div><div class="report-body" id="intelBrief"><div class="empty">Generate intelligence to populate.</div></div></div>
+            <div class="card"><div class="card-head"><h3>Prioritized entities</h3></div><div class="list" id="intelTop"><div class="empty">—</div></div></div>
+          </div>
+          <div class="card"><div class="card-head"><h3>Recommended actions</h3></div><div class="list" id="intelActions"><div class="empty">—</div></div></div>
         </section>
 
         <!-- Timeline -->
@@ -173,40 +187,82 @@
           <div class="card"><div class="report-body" id="reportBody"><div class="empty">—</div></div></div>
         </section>
 
-        <!-- Plugins -->
-        <section class="view" id="view-plugins" hidden>
-          <div class="view-head"><h1>Plugins</h1><p class="muted">Extend classification, field mappings and risk signals.</p></div>
-          <div class="card"><div class="card-head"><h3>Installed</h3><button class="btn ghost" id="btnImportPlugin">⇪ Import manifest</button></div>
-            <div class="list" id="pluginList"><div class="empty">No plugins installed.</div></div></div>
-          <div class="card"><div class="card-head"><h3>Manifest format</h3></div>
-            <pre class="code" id="pluginExample"></pre></div>
-        </section>
-
-        <!-- Settings -->
+        <!-- Settings (tabbed: everything config & integration lives here) -->
         <section class="view" id="view-settings" hidden>
-          <div class="view-head"><h1>Settings</h1><p class="muted">Account, provider and project.</p></div>
-          <div class="cards two">
-            <div class="card"><div class="card-head"><h3>Account</h3></div><div class="kv" id="acctInfo"></div>
-              <button class="btn ghost" id="btnLogout" style="margin-top:12px">Sign out</button></div>
-            <div class="card"><div class="card-head"><h3>Default LLM provider</h3></div>
-              <div class="cselect" id="setProvider"></div>
-              <p class="muted" style="margin-top:8px">Claude runs with your subscription; Codex via `codex exec`. Auto falls back Claude→Codex.</p></div>
-          </div>
-          <div class="cards two">
-            <div class="card"><div class="card-head"><h3>Active project</h3></div><div class="kv" id="projInfo"></div>
-              <div class="row-actions">
-                <button class="btn ghost" id="btnExportProject">⬇ Export</button>
-                <button class="btn ghost" id="btnImportProject">⬆ Import</button>
-                <button class="btn ghost danger" id="btnDeleteProject">Delete</button>
-              </div></div>
-            <div class="card"><div class="card-head"><h3>Security</h3></div>
-              <div class="list">
-                <div class="li"><span>Password hashing</span><span class="tag ok">Argon2id</span></div>
-                <div class="li"><span>Password policy</span><span class="tag ok">10+ / mixed</span></div>
-                <div class="li"><span>Lockout</span><span class="tag ok">5 fails / 15 min</span></div>
-                <div class="li"><span>Session</span><span class="tag ok">bearer token · 12h</span></div>
-                <div class="li"><span>Secrets at rest</span><span class="tag ok">not persisted</span></div>
-              </div></div>
+          <div class="view-head"><h1>Settings</h1><p class="muted">Configuration & integrations.</p></div>
+          <div class="settings-shell">
+            <div class="settings-nav" id="settingsNav">
+              <button class="snav active" data-tab="account">Account</button>
+              <button class="snav" data-tab="providers">Providers & Routing</button>
+              <button class="snav" data-tab="datasources">Data Sources</button>
+              <button class="snav" data-tab="transforms">Transforms Store</button>
+              <button class="snav" data-tab="keys">API Keys</button>
+              <button class="snav" data-tab="plugins">Classifier Plugins</button>
+              <button class="snav" data-tab="project">Project</button>
+              <button class="snav" data-tab="security">Security</button>
+            </div>
+            <div class="settings-body">
+              <div class="stab" id="stab-account">
+                <div class="card"><div class="card-head"><h3>Account</h3></div><div class="kv" id="acctInfo"></div>
+                  <button class="btn ghost" id="btnLogout" style="margin-top:12px">Sign out</button></div>
+              </div>
+              <div class="stab" id="stab-providers" hidden>
+                <div class="card"><div class="card-head"><h3>Default LLM provider</h3></div>
+                  <div class="cselect" id="setProvider"></div>
+                  <div class="route-table">
+                    <div class="rt-row"><span>Classification / Audit</span><span class="tag off">simple → Codex gpt-5.5</span></div>
+                    <div class="rt-row"><span>Extraction / Correlation</span><span class="tag ok">standard → Claude Sonnet</span></div>
+                    <div class="rt-row"><span>Risk / Investigation / Ask</span><span class="tag ok">complex → Claude Opus 4.8</span></div>
+                    <div class="rt-row"><span>High data density</span><span class="tag ok">escalates → Claude Opus</span></div>
+                  </div>
+                  <p class="muted" style="margin-top:10px">Auto routes by task complexity: critical/high-density to Claude (Opus 4.8 → Sonnet), simpler to Codex. Override models with CORTEX_MODEL_COMPLEX / _STANDARD / _SIMPLE.</p></div>
+              </div>
+              <div class="stab" id="stab-datasources" hidden>
+                <div class="card"><div class="card-head"><h3>Connect a source</h3></div><div class="cards three" id="connectorCards"></div></div>
+                <div class="card"><div class="card-head"><h3>LLM backends</h3><button class="btn ghost" id="btnDoctor">Recheck</button></div>
+                  <div class="list" id="backendList"><div class="empty">—</div></div></div>
+                <div class="card"><div class="card-head"><h3>Saved connectors (this project)</h3></div><div class="list" id="savedConnectors"><div class="empty">—</div></div></div>
+              </div>
+              <div class="stab" id="stab-transforms" hidden>
+                <div class="card"><div class="card-head"><h3>Transform store</h3><input id="transformSearch" class="mini-select" placeholder="filter…" style="width:160px" /></div>
+                  <div id="transformCatalog"></div></div>
+                <div class="card"><div class="card-head"><h3>Installed transforms</h3></div><div class="list" id="installedTransforms"><div class="empty">—</div></div></div>
+              </div>
+              <div class="stab" id="stab-keys" hidden>
+                <div class="card"><div class="card-head"><h3>API keys</h3></div>
+                  <p class="muted">Keys are stored encrypted-at-rest scope (0600) in ~/.cortexintel and only passed to transforms. Values are never shown back.</p>
+                  <div class="field">Service<input id="keyService" placeholder="shodan / virustotal / hibp / opencorporates …" /></div>
+                  <div class="field">Key<input id="keyValue" type="password" placeholder="paste API key" /></div>
+                  <button class="btn primary" id="btnSaveKey">Save key</button>
+                  <div class="list" id="keyList" style="margin-top:12px"><div class="empty">—</div></div></div>
+              </div>
+              <div class="stab" id="stab-plugins" hidden>
+                <div class="card"><div class="card-head"><h3>Classifier plugins</h3><button class="btn ghost" id="btnImportPlugin">⇪ Import manifest</button></div>
+                  <p class="muted">Extend field mappings, risk signals and prompts (no code execution).</p>
+                  <div class="list" id="pluginList"><div class="empty">No plugins installed.</div></div></div>
+                <div class="card"><div class="card-head"><h3>Manifest format</h3></div><pre class="code" id="pluginExample"></pre></div>
+              </div>
+              <div class="stab" id="stab-project" hidden>
+                <div class="card"><div class="card-head"><h3>Active project</h3></div><div class="kv" id="projInfo"></div>
+                  <div class="row-actions">
+                    <button class="btn ghost" id="btnExportProject">⬇ Export</button>
+                    <button class="btn ghost" id="btnImportProject">⬆ Import</button>
+                    <button class="btn ghost danger" id="btnDeleteProject">Delete</button>
+                  </div></div>
+              </div>
+              <div class="stab" id="stab-security" hidden>
+                <div class="card"><div class="card-head"><h3>Security posture</h3></div>
+                  <div class="list">
+                    <div class="li"><span>Password hashing</span><span class="tag ok">Argon2id</span></div>
+                    <div class="li"><span>Password policy</span><span class="tag ok">10+ / upper·lower·digit</span></div>
+                    <div class="li"><span>Lockout</span><span class="tag ok">5 fails / 15 min</span></div>
+                    <div class="li"><span>Session</span><span class="tag ok">bearer token · 12h</span></div>
+                    <div class="li"><span>API keys at rest</span><span class="tag ok">0600, never returned</span></div>
+                    <div class="li"><span>DB passwords</span><span class="tag ok">env-only, not persisted</span></div>
+                    <div class="li"><span>Transform sandbox</span><span class="tag off">runs local python/rust — review before install</span></div>
+                  </div></div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
@@ -225,6 +281,7 @@
           <button class="btn ghost" data-act="neighbors">Neighbors</button>
           <button class="btn ghost" data-act="alert">Create alert</button>
         </div>
+        <div class="ctx-section"><h4>Transforms</h4><div class="rel-list" id="ctxTransforms"><div class="empty">—</div></div></div>
       </aside>
     </div>
   </div>

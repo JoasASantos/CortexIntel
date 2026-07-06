@@ -6,7 +6,7 @@
 //! the binary, so a release build is fully self-contained and works offline.
 //! All `/api/*` routes except ping/auth/health require a bearer session token.
 
-use crate::{api, auth, connectors, plugins, projects};
+use crate::{api, auth, connectors, keys, plugins, projects, transforms};
 use anyhow::{anyhow, Result};
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
@@ -219,6 +219,40 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("POST", "/api/plugins/remove") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, plugins::remove(b.get("id").and_then(|v| v.as_str()).unwrap_or("")).map(|_| serde_json::json!({"ok":true})))
+        }
+        // Transforms (Maltego-style store + execution)
+        ("GET", "/api/transforms/catalog") => json_ok(stream, &transforms::catalog()),
+        ("GET", "/api/transforms") => json_ok(stream, &transforms::list()),
+        ("POST", "/api/transforms/install") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, transforms::install_from_catalog(b.get("id").and_then(|v| v.as_str()).unwrap_or("")))
+        }
+        ("POST", "/api/transforms/install_manifest") => finish(stream, parse_body(&req.body).and_then(transforms::install_manifest)),
+        ("POST", "/api/transforms/enable") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, transforms::set_enabled(b.get("id").and_then(|v| v.as_str()).unwrap_or(""), b.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)).map(|_| serde_json::json!({"ok":true})))
+        }
+        ("POST", "/api/transforms/remove") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, transforms::remove(b.get("id").and_then(|v| v.as_str()).unwrap_or("")).map(|_| serde_json::json!({"ok":true})))
+        }
+        ("POST", "/api/transforms/run") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, transforms::run(
+                b.get("id").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("input").cloned().unwrap_or(serde_json::Value::Null),
+                b.get("params").cloned().unwrap_or(serde_json::json!({})),
+            ))
+        }
+        // API keys (values never returned)
+        ("GET", "/api/keys") => json_ok(stream, &keys::list_names()),
+        ("POST", "/api/keys") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, keys::set(b.get("service").and_then(|v| v.as_str()).unwrap_or(""), b.get("key").and_then(|v| v.as_str()).unwrap_or("")).map(|_| serde_json::json!({"ok":true})))
+        }
+        ("POST", "/api/keys/delete") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, keys::delete(b.get("service").and_then(|v| v.as_str()).unwrap_or("")).map(|_| serde_json::json!({"ok":true})))
         }
         _ => respond(stream, 404, "application/json; charset=utf-8", br#"{"error":"not found"}"#),
     }

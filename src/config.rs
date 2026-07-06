@@ -23,6 +23,28 @@ pub enum Domain {
     Commerce,
     /// Supply chain & logistics operations.
     Logistics,
+    /// Military / defense intelligence.
+    Military,
+    /// Government / public-sector intelligence.
+    Government,
+    /// Banking & finance.
+    Finance,
+    /// Insurance underwriting & claims.
+    Insurance,
+    /// Telecom operations & abuse.
+    Telecom,
+    /// Energy & critical infrastructure.
+    Energy,
+    /// Legal / e-discovery / compliance.
+    Legal,
+    /// Manufacturing & industrial ops.
+    Manufacturing,
+    /// Real estate & property intelligence.
+    RealEstate,
+    /// Education & academic institutions.
+    Education,
+    /// Nonprofit / hotline / humanitarian.
+    Nonprofit,
     /// Domain-neutral: generic entity/relationship intelligence.
     Generic,
 }
@@ -36,6 +58,17 @@ impl Domain {
             Domain::Health => "health",
             Domain::Commerce => "commerce",
             Domain::Logistics => "logistics",
+            Domain::Military => "military",
+            Domain::Government => "government",
+            Domain::Finance => "finance",
+            Domain::Insurance => "insurance",
+            Domain::Telecom => "telecom",
+            Domain::Energy => "energy",
+            Domain::Legal => "legal",
+            Domain::Manufacturing => "manufacturing",
+            Domain::RealEstate => "real-estate",
+            Domain::Education => "education",
+            Domain::Nonprofit => "nonprofit",
             Domain::Generic => "generic",
         }
     }
@@ -48,6 +81,17 @@ impl Domain {
             Domain::Health => "Healthcare & Clinical Safety",
             Domain::Commerce => "Commerce & Retail Decisioning",
             Domain::Logistics => "Logistics & Supply Chain",
+            Domain::Military => "Military & Defense Intelligence",
+            Domain::Government => "Government & Public Sector",
+            Domain::Finance => "Banking & Finance",
+            Domain::Insurance => "Insurance (Underwriting & Claims)",
+            Domain::Telecom => "Telecommunications",
+            Domain::Energy => "Energy & Critical Infrastructure",
+            Domain::Legal => "Legal, e-Discovery & Compliance",
+            Domain::Manufacturing => "Manufacturing & Industrial",
+            Domain::RealEstate => "Real Estate & Property",
+            Domain::Education => "Education & Academia",
+            Domain::Nonprofit => "Nonprofit & Humanitarian",
             Domain::Generic => "Generic Intelligence",
         }
     }
@@ -62,6 +106,17 @@ impl Domain {
             Domain::Health => "Improve clinical and operational safety. Correlate events and signals to flag risk while protecting patient privacy at all times.",
             Domain::Commerce => "Improve commercial decisions. Correlate customers, orders, channels and signals to surface risk and opportunity.",
             Domain::Logistics => "Optimize and de-risk operations. Correlate shipments, routes, assets and disruptions to recommend resilient actions.",
+            Domain::Military => "Support defense intelligence and force protection. Correlate actors, units, infrastructure, movements and signals into decision-ready, human-reviewed assessments. Never automate targeting or lethal decisions.",
+            Domain::Government => "Support public-sector analysis and safety. Correlate records, entities and events for lawful, accountable decision-making.",
+            Domain::Finance => "Detect financial crime and manage exposure. Correlate accounts, counterparties and transactions to quantify risk.",
+            Domain::Insurance => "Assess risk and detect claims fraud. Correlate policies, claims, parties and evidence.",
+            Domain::Telecom => "Detect abuse and map infrastructure. Correlate subscribers, numbers, devices and network events.",
+            Domain::Energy => "Protect critical infrastructure. Correlate assets, access, incidents and threats to prioritize resilience.",
+            Domain::Legal => "Support e-discovery and compliance. Correlate custodians, communications and documents into defensible findings.",
+            Domain::Manufacturing => "Improve industrial operations & safety. Correlate assets, suppliers, sensors and incidents.",
+            Domain::RealEstate => "Property & ownership intelligence. Correlate entities, holdings, transactions and locations.",
+            Domain::Education => "Institutional & student intelligence. Correlate people, enrollments and activity while protecting privacy.",
+            Domain::Nonprofit => "Support humanitarian and hotline work. Correlate reports and cases to protect people, with strict data minimization.",
             Domain::Generic => "Turn heterogeneous data into a correlated, prioritized, auditable picture that supports human decision-making.",
         }
     }
@@ -74,6 +129,17 @@ impl Domain {
             Domain::Health,
             Domain::Commerce,
             Domain::Logistics,
+            Domain::Military,
+            Domain::Government,
+            Domain::Finance,
+            Domain::Insurance,
+            Domain::Telecom,
+            Domain::Energy,
+            Domain::Legal,
+            Domain::Manufacturing,
+            Domain::RealEstate,
+            Domain::Education,
+            Domain::Nonprofit,
             Domain::Generic,
         ]
     }

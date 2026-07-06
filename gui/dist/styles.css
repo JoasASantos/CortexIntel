@@ -369,3 +369,38 @@ body {
 .tag.off { background: rgba(148,163,184,0.15); color: var(--muted); }
 .modal-body .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; font-size: 12px; color: var(--muted); }
 .modal-body .field input, .modal-body .field textarea { background: var(--panel-2); border: 1px solid var(--stroke); color: var(--text); border-radius: 9px; padding: 9px 11px; font-size: 13px; outline: none; font-family: var(--font); }
+
+/* ============ v3: settings tabs / filters / transform store / intelligence ============ */
+.settings-shell { display: grid; grid-template-columns: 210px 1fr; gap: 16px; }
+.settings-nav { display: flex; flex-direction: column; gap: 4px; }
+.snav { text-align: left; background: transparent; border: 1px solid transparent; color: var(--muted); padding: 9px 12px; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; }
+.snav:hover { background: var(--panel); color: var(--text); }
+.snav.active { background: var(--panel-2); color: var(--text); box-shadow: inset 2px 0 0 var(--accent); }
+.settings-body .stab { display: flex; flex-direction: column; gap: 14px; }
+.route-table { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.rt-row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; padding: 7px 10px; background: var(--panel-2); border: 1px solid var(--stroke); border-radius: 8px; }
+
+/* Graph filter bar */
+.graph-filters { position: absolute; top: 62px; left: 14px; right: 14px; z-index: 6; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--panel-glass); backdrop-filter: blur(14px); border: 1px solid var(--stroke); border-radius: 10px; padding: 7px 11px; }
+.gf-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.gf-presets { display: flex; gap: 6px; }
+.gf-preset { font-size: 11.5px; padding: 4px 10px; border-radius: 7px; border: 1px solid var(--stroke); background: var(--panel); color: var(--muted); cursor: pointer; }
+.gf-preset.active { background: linear-gradient(135deg, var(--accent-2), var(--accent)); color: #04191d; border: none; }
+.gf-kinds { display: flex; gap: 5px; flex-wrap: wrap; }
+.gf-kind { font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--stroke); cursor: pointer; display: flex; align-items: center; gap: 5px; color: var(--muted); }
+.gf-kind.off { opacity: 0.4; text-decoration: line-through; }
+.gf-kind .kdot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Transform store */
+.tf-cat { margin-bottom: 14px; }
+.tf-cat h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); }
+.tf-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--stroke); border-radius: 9px; margin-bottom: 6px; }
+.tf-item .tf-meta { overflow: hidden; }
+.tf-item .tf-name { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.tf-item .tf-desc { font-size: 11.5px; color: var(--muted); }
+.tf-badge { font-size: 9.5px; padding: 2px 6px; border-radius: 5px; }
+.tf-badge.py { background: rgba(56,189,248,0.18); color: #7dd3fc; }
+.tf-badge.rs { background: rgba(249,115,22,0.18); color: #fdba74; }
+.tf-badge.key { background: rgba(245,158,11,0.18); color: var(--amber); }
+.tf-badge.free { background: rgba(52,211,153,0.15); color: var(--neon); }
