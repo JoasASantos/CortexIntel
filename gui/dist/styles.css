@@ -231,6 +231,13 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .fsb-row.file { color: var(--text-2); }
 .fsb-row .fsz { margin-left: auto; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .fsb-row .ic { width: 15px; height: 15px; }
+/* G0 ingestion triage panel */
+.triage { border: 1px solid var(--stroke-2); border-radius: var(--r); padding: 10px 11px; margin-bottom: 12px; background: var(--bg-2); }
+.triage-head { font-size: 12px; color: var(--text-2); margin-bottom: 8px; }
+.triage-row { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+.triage-cols { display: flex; flex-wrap: wrap; gap: 5px; max-height: 92px; overflow-y: auto; }
+.tcol { font-size: 10.5px; font-family: var(--mono); color: var(--muted); background: var(--panel-3); border: 1px solid var(--stroke); border-radius: var(--r-s); padding: 2px 7px; }
+.tcol.key { color: var(--accent-2); border-color: var(--accent-2); }
 .ask-input { display: flex; gap: 7px; padding: 9px; border-top: 1px solid var(--stroke); }
 .ask-input textarea { flex: 1; resize: none; max-height: 120px; background: var(--bg-2); border: 1px solid var(--stroke); color: var(--text); border-radius: var(--r); padding: 8px 10px; font-size: 12.5px; font-family: var(--font); outline: none; }
 .ask-input textarea:focus { border-color: var(--accent-2); }

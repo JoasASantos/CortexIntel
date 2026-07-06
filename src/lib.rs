@@ -337,6 +337,61 @@ pub mod api {
             .unwrap_or_else(|| std::path::PathBuf::from("/"))
     }
 
+    /// Pre-ingest triage: profile a source *without* running the pipeline, so the
+    /// UI can show columns/volume and let the user ingest only what's relevant to
+    /// the current context (instead of dumping a million rows and freezing the
+    /// graph). For a directory, reports the count of media files it would ingest.
+    pub fn profile_source(path: &str) -> Result<serde_json::Value> {
+        use std::path::Path;
+        let p = Path::new(path);
+        if !p.exists() {
+            return Err(anyhow!("input not found: {}", p.display()));
+        }
+        if p.is_dir() {
+            let exts = ["png","jpg","jpeg","gif","webp","bmp","tiff","mp4","mov","avi","mkv","mp3","wav","m4a","flac","pdf"];
+            let mut media = 0usize;
+            let mut by_type: std::collections::BTreeMap<String, usize> = std::collections::BTreeMap::new();
+            if let Ok(rd) = std::fs::read_dir(p) {
+                for e in rd.flatten() {
+                    let fp = e.path();
+                    if let Some(ext) = fp.extension().and_then(|e| e.to_str()).map(|s| s.to_lowercase()) {
+                        if exts.contains(&ext.as_str()) {
+                            media += 1;
+                            let kind = if ["mp4","mov","avi","mkv"].contains(&ext.as_str()) { "video" }
+                                else if ["mp3","wav","m4a","flac"].contains(&ext.as_str()) { "audio" }
+                                else if ext == "pdf" { "document" } else { "image" };
+                            *by_type.entry(kind.to_string()).or_default() += 1;
+                        }
+                    }
+                }
+            }
+            return Ok(serde_json::json!({
+                "kind": "media_folder",
+                "path": p.to_string_lossy(),
+                "media_count": media,
+                "by_type": by_type,
+            }));
+        }
+        // Tabular / structured file: load a batch and profile columns.
+        let src = crate::sources::source_for_path(p, None)?;
+        let batch = src.load()?;
+        let profile = crate::profile::profile_batch(&batch);
+        Ok(serde_json::json!({
+            "kind": "table",
+            "path": p.to_string_lossy(),
+            "row_count": batch.records.len(),
+            "rows_sampled": profile.rows_sampled,
+            "columns": profile.columns.iter().map(|c| serde_json::json!({
+                "name": c.name,
+                "semantic": c.semantic.as_str(),
+                "entity_kind": c.entity_kind.map(|k| k.as_str()),
+                "confidence": c.confidence,
+                "uniqueness": c.uniqueness,
+                "is_primary_label": c.is_primary_label,
+            })).collect::<Vec<_>>(),
+        }))
+    }
+
     /// Test a connector (db/bigquery/datalake). Returns a status string.
     pub fn connector_test(kind: &str, cfg: &serde_json::Value) -> Result<String> {
         crate::connectors::test(kind, cfg)

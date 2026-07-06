@@ -358,6 +358,8 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         // Server-side file/folder browser (the desktop WebView can't open a native
         // file dialog reliably). Read-only; the local server reads local paths.
         ("GET", "/api/fs/list") => finish(stream, api::fs_list(param(&req.query, "path").as_deref())),
+        // Pre-ingest triage: profile a source (columns/volume) without ingesting.
+        ("GET", "/api/profile") => finish(stream, api::profile_source(&param(&req.query, "path").unwrap_or_default())),
         // API keys (values never returned)
         ("GET", "/api/keys") => json_ok(stream, &keys::list_names()),
         ("POST", "/api/keys") => {

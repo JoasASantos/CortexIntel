@@ -1004,14 +1004,44 @@ function runModal(){
     <div class="field">AI provider<select id="rProvider" class="select">
       <option value="auto">Auto — smart routing (Opus/Sonnet ⇄ Codex)</option><option value="claude">Claude (Opus/Sonnet)</option><option value="codex">Codex (gpt-5.5)</option><option value="mock">Offline mock</option></select></div>
     <div class="field">Input source(s)<div style="display:flex;gap:8px"><input id="rInputs" placeholder="/path/to/data.csv or .json  (or Browse)" style="flex:1" /><button class="btn ghost" id="rBrowse">Browse…</button></div></div>
+    <div id="rTriage" class="triage" hidden></div>
     <div class="field">Max records (graph cap)<input id="rMax" type="number" value="4000" /></div>
     ${MODE==="mock"?'<div class="modal-note">Preview mode: loads the embedded sample.</div>':''}
   `,[
     {label:"Cancel",cls:"ghost",act:closeModal},
     {label:"▶ Run",cls:"primary",act:doRun}
   ]);
-  setTimeout(()=>{ const b=$("#rBrowse"); if(b) b.addEventListener("click",()=>pickServerPath(path=>{ const cur=$("#rInputs").value.trim(); $("#rInputs").value=(cur?cur+" ":"")+path; }, {title:"Choose input (file or folder of media)", folders:true, accept:".csv,.tsv,.json,.jsonl,.ndjson,.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.mp3,.wav,.pdf"})); },40);
+  setTimeout(()=>{ const b=$("#rBrowse"); if(b) b.addEventListener("click",()=>pickServerPath(path=>{ const cur=$("#rInputs").value.trim(); $("#rInputs").value=(cur?cur+" ":"")+path; triageSource(path); }, {title:"Choose input (file or folder of media)", folders:true, accept:".csv,.tsv,.json,.jsonl,.ndjson,.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.mp3,.wav,.pdf"})); },40);
+  setTimeout(()=>{ const inp=$("#rInputs"); if(inp) inp.addEventListener("change",()=>{ const first=inp.value.split(/\s+/).filter(Boolean)[0]; if(first) triageSource(first); }); },40);
   setTimeout(()=>{ if($("#rProvider")) $("#rProvider").value=state.provider; },30);
+}
+// G0 — pre-ingest triage: profile the picked source and offer a scope choice so
+// the user ingests only what's relevant instead of dumping everything and
+// freezing the graph. Sets the Max-records cap to match the chosen scope.
+async function triageSource(path){
+  const w=$("#rTriage"); if(!w||MODE==="mock")return;
+  w.hidden=false; w.innerHTML='<div class="empty">'+esc(t("ingest.title"))+'…</div>';
+  let p; try{ p=await api("/api/profile?path="+encodeURIComponent(path)); }catch(e){ w.hidden=true; return; }
+  if(p.kind==="media_folder"){
+    const bits=Object.entries(p.by_type||{}).map(([k,v])=>`${v} ${k}`).join(" · ")||"0";
+    w.innerHTML=`<div class="triage-head">📁 ${esc(t("ingest.title"))}</div>
+      <div class="triage-row"><b>${p.media_count}</b> media files — ${esc(bits)}</div>
+      <div class="modal-note">Each file becomes a media entity (referenced by path/hash); run media transforms to analyze.</div>`;
+    return;
+  }
+  const rows=p.row_count||0;
+  const cols=(p.columns||[]);
+  const keyCols=cols.filter(c=>c.entity_kind||c.is_primary_label);
+  const scopeId="rScope";
+  w.innerHTML=`<div class="triage-head">🔎 ${esc(t("ingest.title"))} — <b>${fmtNum(rows)}</b> ${esc(t("ingest.rows"))}, ${cols.length} ${esc(t("ingest.detected").toLowerCase())}</div>
+    <div class="triage-cols">${cols.map(c=>`<span class="tcol ${c.entity_kind?'key':''}" title="${esc(c.semantic)}${c.entity_kind?' → '+c.entity_kind:''}">${esc(c.name)}${c.entity_kind?` · ${esc(c.entity_kind)}`:''}</span>`).join("")}</div>
+    <div class="field" style="margin-top:8px">Ingestion scope<select id="${scopeId}" class="select">
+      <option value="relevant">${esc(t("ingest.relevant"))} (${keyCols.length} key columns, cap ${Math.min(4000,rows||4000)})</option>
+      <option value="all">${esc(t("ingest.all"))} (${fmtNum(rows)} rows${rows>20000?' — heavy':''})</option>
+    </select></div>`;
+  const sel=$("#"+scopeId), max=$("#rMax");
+  const applyScope=()=>{ if(!max)return; max.value = sel.value==="all" ? String(Math.max(rows,1)) : String(Math.min(4000, rows||4000)); };
+  sel&&sel.addEventListener("change",applyScope); applyScope();
 }
 async function doRun(){
   const t=activeTab(); if(!t){ toast("Open a project first","err"); return; }
@@ -1498,7 +1528,20 @@ function modeHint(txt){ let h=$("#modeHint"); if(txt){ if(!h){ h=el("div","mode-
 function syncModeButtons(){ const t=activeTab(); const m=t?(t.graphMode||"full"):"full"; $$(".gmode").forEach(b=>b.classList.toggle("active",b.dataset.mode===m)); }
 function parseTs(n){ for(const k of ["created_at","created at","timestamp","first_seen_at","observed_at","received_at","date"]){ const v=(n.attributes||{})[k]; if(v){ const d=Date.parse(v); if(!isNaN(d))return d; } } return null; }
 function clearTimeScrub(){ const s=$("#timeScrub"); if(s)s.remove(); }
+// Rendering thousands of raw nodes freezes the WebView and reads as noise;
+// beyond this, Full asks first and points at the lighter lenses.
+const FULL_GUARD = 3000;
 function setGraphMode(mode, opts){ const t=activeTab(); if(!t||!t.graph.nodes.length){ toast("No graph to view","err"); return; }
+  // Adaptive: on a large graph, "Full" would dump everything — confirm and offer
+  // the volume-appropriate lenses (Overview/Risk) instead.
+  if(mode==="full" && t.graph.nodes.length>FULL_GUARD && !opts?.forced){
+    openModal(`Render all ${fmtNum(t.graph.nodes.length)} entities?`,
+      `<p class="muted">This graph is large. Rendering every node at once can be heavy and hard to read. Overview (grouped) or Risk (high/critical only) usually show what matters faster.</p>`,
+      [{label:"Overview (grouped)",cls:"ghost",act:()=>{closeModal();setGraphMode("overview");}},
+       {label:"Risk lens",cls:"ghost",act:()=>{closeModal();setGraphMode("risk");}},
+       {label:"Render all anyway",cls:"primary",act:()=>{closeModal();setGraphMode("full",{forced:true});}}]);
+    return;
+  }
   t.graphMode=mode; syncModeButtons(); clearTimeScrub(); modeHint("");
   showView("graph");
   // Overview clusters; every other mode needs the un-clustered graph. If we're
