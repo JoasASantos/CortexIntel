@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CortexIntel</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="vendor/cytoscape.min.js"></script>
+  <script src="vendor/layout-base.js"></script>
+  <script src="vendor/cose-base.js"></script>
+  <script src="vendor/cytoscape-fcose.js"></script>
+</head>
+<body>
+  <!-- ===== Splash / loading ===== -->
+  <div class="splash" id="splash">
+    <div class="splash-inner">
+      <div class="splash-logo">◈</div>
+      <div class="splash-name">CortexIntel</div>
+      <div class="splash-tag">data → information → intelligence</div>
+      <div class="boot" id="bootList"></div>
+      <div class="boot-bar"><span id="bootBar"></span></div>
+    </div>
+  </div>
+
+  <!-- ===== Auth ===== -->
+  <div class="auth" id="auth" hidden>
+    <div class="auth-panel">
+      <div class="auth-brand"><span class="logo">◈</span> CortexIntel</div>
+      <div class="auth-sub" id="authSub">Sign in to your workspace</div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-auth="login">Sign in</button>
+        <button class="auth-tab" data-auth="register">Create account</button>
+      </div>
+      <form id="authForm" class="auth-form">
+        <label id="nameField" hidden>Display name
+          <input id="aName" type="text" autocomplete="name" placeholder="Your name" />
+        </label>
+        <label>Email
+          <input id="aEmail" type="email" autocomplete="username" placeholder="you@org.com" required />
+        </label>
+        <label>Password
+          <input id="aPassword" type="password" autocomplete="current-password" placeholder="••••••••••" required />
+        </label>
+        <div class="pw-hint" id="pwHint" hidden>Min 10 chars, with upper, lower and a digit.</div>
+        <div class="auth-error" id="authError"></div>
+        <button class="btn primary block" id="authSubmit" type="submit">Sign in</button>
+      </form>
+      <div class="auth-foot">Local accounts, Argon2id-hashed. First account becomes admin.</div>
+    </div>
+  </div>
+
+  <!-- ===== Main app ===== -->
+  <div class="app" id="app" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">◈</span><span class="brand-name">CortexIntel</span>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <button class="icon-btn newtab" id="btnNewProject" title="New project (⌘N)">＋</button>
+      <div class="global-search">
+        <span class="gs-icon">⌕</span>
+        <input id="globalSearch" type="text" placeholder="Search entities…  (⌘K commands)" />
+      </div>
+      <div class="topbar-right">
+        <div class="sync-status" id="syncStatus"><span class="dot idle"></span><span id="syncLabel">idle</span></div>
+        <button class="btn ghost" id="btnAsk" title="Ask the AI copilot (⌘/)">✦ Ask AI</button>
+        <button class="btn primary" id="btnRun" title="Run analysis (⌘R)">▶ Run</button>
+        <button class="icon-btn" id="btnNotifications" title="Notifications">🔔<span class="badge" id="notifBadge" hidden>0</span></button>
+        <div class="profile" id="profileBtn" title="Account"><span class="avatar" id="avatar">OP</span></div>
+      </div>
+    </header>
+
+    <div class="shell">
+      <nav class="sidebar">
+        <ul class="nav">
+          <li data-view="dashboard" class="active"><span class="ni">▤</span><span>Dashboard</span></li>
+          <li data-view="graph"><span class="ni">◕</span><span>Graph</span></li>
+          <li data-view="entities"><span class="ni">⬡</span><span>Entities</span></li>
+          <li data-view="sources"><span class="ni">⇄</span><span>Data Sources</span></li>
+          <li data-view="timeline"><span class="ni">⧗</span><span>Timeline</span></li>
+          <li data-view="alerts"><span class="ni">⚠</span><span>Alerts</span></li>
+          <li data-view="reports"><span class="ni">▦</span><span>Reports</span></li>
+          <li data-view="plugins"><span class="ni">⧉</span><span>Plugins</span></li>
+          <li data-view="settings"><span class="ni">⚙</span><span>Settings</span></li>
+        </ul>
+        <div class="sidebar-foot">
+          <div class="vertical-pill" id="verticalPill">—</div>
+          <div class="prov-pill" id="providerPill">provider: auto</div>
+        </div>
+      </nav>
+
+      <main class="main" id="main">
+        <!-- Dashboard -->
+        <section class="view" id="view-dashboard">
+          <div class="view-head"><h1 id="dashTitle">Dashboard</h1><p class="muted" id="dashSub">Open or create a project to begin.</p></div>
+          <div class="cards">
+            <div class="card kpi" id="kcEntities"><div class="kpi-v" id="kpiEntities">0</div><div class="kpi-l">Entities →</div></div>
+            <div class="card kpi" id="kcRels"><div class="kpi-v" id="kpiRels">0</div><div class="kpi-l">Relationships →</div></div>
+            <div class="card kpi" id="kcCrit"><div class="kpi-v crit" id="kpiCrit">0</div><div class="kpi-l">Critical → isolate</div></div>
+            <div class="card kpi" id="kcActs"><div class="kpi-v" id="kpiActs">0</div><div class="kpi-l">Activities</div></div>
+          </div>
+          <div class="cards two">
+            <div class="card"><div class="card-head"><h3>Most critical entities</h3></div><div class="list" id="criticalList"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3>Recent activity</h3></div><div class="list" id="activityList"><div class="empty">—</div></div></div>
+          </div>
+          <div class="card"><div class="card-head"><h3>Your projects</h3><button class="btn ghost" id="btnNewProject2">＋ New</button></div>
+            <div class="list" id="projectList"><div class="empty">No projects yet.</div></div>
+          </div>
+        </section>
+
+        <!-- Graph -->
+        <section class="view" id="view-graph" hidden>
+          <div class="graph-wrap">
+            <div class="graph-toolbar">
+              <div class="gt-left"><strong>Graph</strong><span class="muted" id="graphStats">0 nodes · 0 edges</span></div>
+              <div class="gt-right">
+                <input id="graphFilter" placeholder="Filter…" />
+                <select id="graphLayout" class="mini-select"><option value="fcose">Force (fcose)</option><option value="concentric">Concentric</option><option value="breadthfirst">Hierarchy</option><option value="circle">Circle</option><option value="grid">Grid</option></select>
+                <button class="btn ghost" id="btnFit">Fit</button>
+                <button class="btn ghost" id="btnReset">Reset</button>
+                <button class="btn ghost" id="btnAsk2">✦ Ask</button>
+              </div>
+            </div>
+            <div id="cy"></div>
+            <div class="legend" id="legend"></div>
+            <div class="graph-empty" id="graphEmpty">
+              <div class="ge-inner"><div class="ge-icon">◕</div><h2>No graph yet</h2>
+                <p>Run an analysis or connect a source to build the correlation graph.</p>
+                <button class="btn primary" id="btnRun2">▶ Run analysis</button></div>
+            </div>
+            <!-- AI copilot dock -->
+            <div class="ask-dock" id="askDock" hidden>
+              <div class="ask-head"><span>✦ AI Copilot</span><button class="icon-btn" id="askClose">✕</button></div>
+              <div class="ask-log" id="askLog"></div>
+              <div class="ask-input">
+                <textarea id="askText" rows="2" placeholder="Ask about this graph… e.g. 'which accounts share infrastructure and why?'"></textarea>
+                <button class="btn primary" id="askSend">Send</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Entities -->
+        <section class="view" id="view-entities" hidden>
+          <div class="view-head"><h1>Entities</h1><p class="muted">Resolved objects in the active graph.</p></div>
+          <table class="tbl" id="entitiesTable"><thead><tr><th>Risk</th><th>Kind</th><th>Label</th><th>Tags</th></tr></thead><tbody></tbody></table>
+        </section>
+
+        <!-- Data sources / connectors -->
+        <section class="view" id="view-sources" hidden>
+          <div class="view-head"><h1>Data Sources</h1><p class="muted">Import files or connect databases, BigQuery and data lakes.</p></div>
+          <div class="cards three" id="connectorCards"></div>
+          <div class="card"><div class="card-head"><h3>LLM backends</h3><button class="btn ghost" id="btnDoctor">Recheck</button></div>
+            <div class="list" id="backendList"><div class="empty">—</div></div></div>
+          <div class="card"><div class="card-head"><h3>Saved connectors (this project)</h3></div><div class="list" id="savedConnectors"><div class="empty">—</div></div></div>
+        </section>
+
+        <!-- Timeline -->
+        <section class="view" id="view-timeline" hidden>
+          <div class="view-head"><h1>Timeline</h1><p class="muted">Audit & discovery events.</p></div>
+          <div class="timeline" id="timeline"><div class="empty">—</div></div>
+        </section>
+
+        <!-- Alerts -->
+        <section class="view" id="view-alerts" hidden>
+          <div class="view-head"><h1>Alerts</h1><p class="muted">Flagged for human review.</p></div>
+          <div class="list" id="alertsList"><div class="empty">—</div></div>
+        </section>
+
+        <!-- Reports -->
+        <section class="view" id="view-reports" hidden>
+          <div class="view-head"><h1>Reports</h1><p class="muted">Investigative brief & governance.</p></div>
+          <div class="card"><div class="report-body" id="reportBody"><div class="empty">—</div></div></div>
+        </section>
+
+        <!-- Plugins -->
+        <section class="view" id="view-plugins" hidden>
+          <div class="view-head"><h1>Plugins</h1><p class="muted">Extend classification, field mappings and risk signals.</p></div>
+          <div class="card"><div class="card-head"><h3>Installed</h3><button class="btn ghost" id="btnImportPlugin">⇪ Import manifest</button></div>
+            <div class="list" id="pluginList"><div class="empty">No plugins installed.</div></div></div>
+          <div class="card"><div class="card-head"><h3>Manifest format</h3></div>
+            <pre class="code" id="pluginExample"></pre></div>
+        </section>
+
+        <!-- Settings -->
+        <section class="view" id="view-settings" hidden>
+          <div class="view-head"><h1>Settings</h1><p class="muted">Account, provider and project.</p></div>
+          <div class="cards two">
+            <div class="card"><div class="card-head"><h3>Account</h3></div><div class="kv" id="acctInfo"></div>
+              <button class="btn ghost" id="btnLogout" style="margin-top:12px">Sign out</button></div>
+            <div class="card"><div class="card-head"><h3>Default LLM provider</h3></div>
+              <div class="cselect" id="setProvider"></div>
+              <p class="muted" style="margin-top:8px">Claude runs with your subscription; Codex via `codex exec`. Auto falls back Claude→Codex.</p></div>
+          </div>
+          <div class="cards two">
+            <div class="card"><div class="card-head"><h3>Active project</h3></div><div class="kv" id="projInfo"></div>
+              <div class="row-actions">
+                <button class="btn ghost" id="btnExportProject">⬇ Export</button>
+                <button class="btn ghost" id="btnImportProject">⬆ Import</button>
+                <button class="btn ghost danger" id="btnDeleteProject">Delete</button>
+              </div></div>
+            <div class="card"><div class="card-head"><h3>Security</h3></div>
+              <div class="list">
+                <div class="li"><span>Password hashing</span><span class="tag ok">Argon2id</span></div>
+                <div class="li"><span>Password policy</span><span class="tag ok">10+ / mixed</span></div>
+                <div class="li"><span>Lockout</span><span class="tag ok">5 fails / 15 min</span></div>
+                <div class="li"><span>Session</span><span class="tag ok">bearer token · 12h</span></div>
+                <div class="li"><span>Secrets at rest</span><span class="tag ok">not persisted</span></div>
+              </div></div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Right context panel -->
+      <aside class="context" id="context" hidden>
+        <div class="ctx-head"><div><div class="ctx-kind" id="ctxKind">entity</div><div class="ctx-name" id="ctxName">—</div></div><button class="icon-btn" id="ctxClose">✕</button></div>
+        <div class="ctx-risk" id="ctxRisk"></div>
+        <div class="ctx-section"><h4>Tags</h4><div class="chips" id="ctxTags"></div></div>
+        <div class="ctx-section"><h4>Metadata</h4><div class="kv" id="ctxMeta"></div></div>
+        <div class="ctx-section"><h4>Direct relations</h4><div class="rel-list" id="ctxRels"></div></div>
+        <div class="ctx-section"><h4>Sources</h4><div class="chips" id="ctxSources"></div></div>
+        <div class="ctx-actions">
+          <button class="btn ghost" data-act="expand">✦ Expand (AI)</button>
+          <button class="btn ghost" data-act="isolate">Isolate</button>
+          <button class="btn ghost" data-act="neighbors">Neighbors</button>
+          <button class="btn ghost" data-act="alert">Create alert</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Notifications drawer -->
+  <div class="drawer" id="notifDrawer" hidden>
+    <div class="drawer-head"><h3>Notifications</h3><button class="icon-btn" id="notifClose">✕</button></div>
+    <div class="list" id="notifList"><div class="empty">No notifications.</div></div>
+  </div>
+
+  <!-- Command palette -->
+  <div class="palette-backdrop" id="paletteBackdrop" hidden>
+    <div class="palette"><input id="paletteInput" placeholder="Type a command…" /><div class="palette-list" id="paletteList"></div>
+      <div class="palette-foot">↑↓ navigate · ↵ select · Esc close</div></div>
+  </div>
+
+  <!-- Generic modal -->
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal"><div class="modal-head"><h2 id="modalTitle">Dialog</h2><button class="icon-btn" id="modalClose">✕</button></div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot" id="modalFoot"></div></div>
+  </div>
+
+  <div class="ctxmenu" id="ctxmenu" hidden></div>
+  <div class="toast" id="toast" hidden></div>
+  <input type="file" id="filePicker" hidden />
+
+  <script src="app.js"></script>
+</body>
+</html>

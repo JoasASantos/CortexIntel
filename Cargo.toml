@@ -1,0 +1,37 @@
+[package]
+name = "cortexintel"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+description = "CortexIntel — agnostic data-collection & intelligence engine with an LLM decision layer (Claude CLI + ChatGPT Codex), specialized agents and a graph-correlation investigation pipeline."
+license = "MIT"
+readme = "README.md"
+
+[lib]
+name = "cortexintel"
+path = "src/lib.rs"
+
+[[bin]]
+name = "cortex"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+csv = "1"
+anyhow = "1"
+thiserror = "1"
+chrono = { version = "0.4", features = ["serde", "clock"] }
+uuid = { version = "1", features = ["v4"] }
+dialoguer = "0.11"
+owo-colors = "4"
+petgraph = "0.6"
+indexmap = { version = "2", features = ["serde"] }
+argon2 = "0.5"
+rand = "0.8"
+dirs = "5"
+
+[profile.release]
+opt-level = 2
+lto = "thin"

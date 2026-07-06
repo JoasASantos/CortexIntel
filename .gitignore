@@ -1,0 +1,24 @@
+# Rust build artifacts
+/target
+/gui/src-tauri/target
+/gui/src-tauri/gen
+**/*.rs.bk
+
+# Generated / runtime output
+/cortex-out
+/cortex-demo
+*.log
+
+# Test & tooling artifacts
+/.playwright-mcp
+/cortex-graph*.png
+/v2-*.png
+/gui/src-tauri/app-icon.png
+
+# OS / editor
+.DS_Store
+*.swp
+
+# Never commit local accounts / secrets (these live in ~/.cortexintel anyway)
+users.json
+*.secret

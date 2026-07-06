@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "CortexIntel",
+  "version": "0.1.0",
+  "identifier": "io.unico.cortexintel",
+  "build": {
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "category": "Utility",
+    "shortDescription": "Agnostic data-intelligence workspace",
+    "longDescription": "CortexIntel desktop workspace: graph investigation, risk prioritization and LLM-agent analysis over an agnostic intelligence engine.",
+    "icon": [
+      "icons/icon.png"
+    ]
+  }
+}
