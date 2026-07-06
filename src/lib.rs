@@ -392,6 +392,50 @@ pub mod api {
         }))
     }
 
+    /// G2 — the aggregated "situation object": the case as a navigable object with
+    /// severity + metadata, so an analyst reads the situation before opening the
+    /// graph. Reuses projects.rs + the case.json the pipeline already produced;
+    /// severity is derived from the stored risk report, never invented.
+    pub fn situation_get(id: &str) -> Result<serde_json::Value> {
+        let p = crate::projects::load(id)?;
+        let lr = p.last_result.clone();
+        // Severity from the stored risk report; fall back to none when unrun.
+        let (sev_band, sev_score) = lr.as_ref()
+            .and_then(|r| r.get("ai_assessments"))
+            .map(|risk| (
+                risk.get("case_risk_band").and_then(|v| v.as_str()).unwrap_or("none").to_string(),
+                risk.get("case_risk_score").and_then(|v| v.as_f64()).unwrap_or(0.0),
+            ))
+            .unwrap_or_else(|| ("none".to_string(), 0.0));
+        let count_entities = |r: &serde_json::Value| r.get("entities").and_then(|e| e.as_object())
+            .map(|o| o.values().filter_map(|v| v.as_array().map(|a| a.len())).sum::<usize>()).unwrap_or(0);
+        let (n_ent, n_rel, n_crit, n_alerts) = match &lr {
+            Some(r) => (
+                count_entities(r),
+                r.get("relationships").and_then(|x| x.as_array()).map(|a| a.len()).unwrap_or(0),
+                r.get("ai_assessments").and_then(|a| a.get("assessments")).and_then(|a| a.as_array())
+                    .map(|a| a.iter().filter(|x| x.get("risk_band").and_then(|b| b.as_str()) == Some("critical")).count()).unwrap_or(0),
+                r.get("ai_assessments").and_then(|a| a.get("assessments")).and_then(|a| a.as_array())
+                    .map(|a| a.iter().filter(|x| x.get("requires_human_review").and_then(|b| b.as_bool()).unwrap_or(false)).count()).unwrap_or(0),
+            ),
+            None => (0, 0, 0, 0),
+        };
+        Ok(serde_json::json!({
+            "id": p.id,
+            "title": p.name,
+            "domain": p.domain,
+            "owner": p.owner,
+            "jurisdiction": crate::store::get_settings().country,
+            "created_at": p.created_at,
+            "updated_at": p.updated_at,
+            "severity": { "band": sev_band, "score": sev_score },
+            "counts": { "entities": n_ent, "relationships": n_rel, "critical": n_crit, "alerts": n_alerts },
+            "has_result": lr.is_some(),
+            "activity_count": p.activities.len(),
+            "connector_count": p.connectors.len(),
+        }))
+    }
+
     /// Test a connector (db/bigquery/datalake). Returns a status string.
     pub fn connector_test(kind: &str, cfg: &serde_json::Value) -> Result<String> {
         crate::connectors::test(kind, cfg)

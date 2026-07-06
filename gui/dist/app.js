@@ -15,6 +15,8 @@ const I18N = {
     "launcher.open":"Open a recent project or start a new investigation.","launcher.new":"New project","launcher.import":"Import project","launcher.empty":"No projects yet — create your first investigation.",
     "decision.title":"Decision panel","decision.recommended":"Recommended","decision.feasible":"Feasible","decision.highrisk":"High risk","decision.viewGraph":"View in graph","decision.why":"Why","decision.attributedTo":"Analyzed by","decision.none":"Run an analysis to generate decision options.",
     "ingest.title":"Prepare this source","ingest.relevant":"Ingest only what's relevant to this context","ingest.all":"Ingest everything","ingest.detected":"Detected columns","ingest.rows":"rows",
+    "sev.critical":"Critical","sev.high":"High","sev.medium":"Medium","sev.low":"Low","sev.none":"No severity",
+    "sit.domain":"Vertical","sit.owner":"Owner","sit.jurisdiction":"Jurisdiction","sit.created":"Created","sit.updated":"Updated","sit.entities":"entities","sit.relationships":"relationships","sit.critical":"critical","sit.alerts":"alerts",
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
@@ -25,6 +27,8 @@ const I18N = {
     "launcher.open":"Abra um projeto recente ou inicie uma nova investigação.","launcher.new":"Novo projeto","launcher.import":"Importar projeto","launcher.empty":"Nenhum projeto ainda — crie sua primeira investigação.",
     "decision.title":"Painel de decisão","decision.recommended":"Recomendado","decision.feasible":"Viável","decision.highrisk":"Alto risco","decision.viewGraph":"Ver no grafo","decision.why":"Por quê","decision.attributedTo":"Analisado por","decision.none":"Execute uma análise para gerar opções de decisão.",
     "ingest.title":"Preparar esta fonte","ingest.relevant":"Ingerir só o que é relevante para este contexto","ingest.all":"Ingerir tudo","ingest.detected":"Colunas detectadas","ingest.rows":"linhas",
+    "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Médio","sev.low":"Baixo","sev.none":"Sem severidade",
+    "sit.domain":"Vertical","sit.owner":"Responsável","sit.jurisdiction":"Jurisdição","sit.created":"Criado","sit.updated":"Atualizado","sit.entities":"entidades","sit.relationships":"relações","sit.critical":"críticos","sit.alerts":"alertas",
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
@@ -35,11 +39,15 @@ const I18N = {
     "launcher.open":"Abre un proyecto reciente o inicia una nueva investigación.","launcher.new":"Nuevo proyecto","launcher.import":"Importar proyecto","launcher.empty":"Aún no hay proyectos — crea tu primera investigación.",
     "decision.title":"Panel de decisión","decision.recommended":"Recomendado","decision.feasible":"Viable","decision.highrisk":"Alto riesgo","decision.viewGraph":"Ver en el grafo","decision.why":"Por qué","decision.attributedTo":"Analizado por","decision.none":"Ejecuta un análisis para generar opciones de decisión.",
     "ingest.title":"Preparar esta fuente","ingest.relevant":"Ingerir solo lo relevante para este contexto","ingest.all":"Ingerir todo","ingest.detected":"Columnas detectadas","ingest.rows":"filas",
+    "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Medio","sev.low":"Bajo","sev.none":"Sin severidad",
+    "sit.domain":"Vertical","sit.owner":"Responsable","sit.jurisdiction":"Jurisdicción","sit.created":"Creado","sit.updated":"Actualizado","sit.entities":"entidades","sit.relationships":"relaciones","sit.critical":"críticos","sit.alerts":"alertas",
   },
 };
 function detectLang(){ const s=localStorage.getItem("cortex_lang"); if(s&&I18N[s])return s; const n=(navigator.language||"en").slice(0,2).toLowerCase(); return I18N[n]?n:"en"; }
 let LANG = detectLang();
 function t(key, ...args){ let s=(I18N[LANG]&&I18N[LANG][key]) || I18N.en[key] || key; args.forEach((a,i)=>{ s=s.replace("{"+i+"}",a); }); return s; }
+// Alias for call sites where `t` is shadowed by a local (e.g. the active tab).
+function t2(...a){ return t(...a); }
 function setLang(l){ if(!I18N[l])return; LANG=l; localStorage.setItem("cortex_lang",l); document.documentElement.lang=l; applyI18n(); try{ applyIcons(); }catch(e){} try{ if(typeof showLauncher==="function" && !document.getElementById("launcher").hidden) showLauncher(); }catch(e){} }
 function applyI18n(){
   document.querySelectorAll("[data-i18n]").forEach(e=>{ const k=e.getAttribute("data-i18n"); const v=t(k); if(v)e.textContent=v; });
@@ -843,7 +851,41 @@ function computeMetrics(g){ const deg=graphDegrees(g); const nodes=g.nodes;
   return { deg,highRisk,unresolved,missingSource,missingMeta,isolated,sensitive,hyp,duplicates,dupGroups,avgConf,avgQual,coverage,sourceDiversity,readinessScore,readiness,bandCount,riskByKind,total:nodes.length,edges:g.edges.length }; }
 const pct=x=>Math.round((x||0)*100)+"%";
 
+// G2 — situation object header: severity + metadata so the analyst reads the
+// situation before opening the graph. Data (incl. severity) comes from the
+// backend situation endpoint; falls back silently offline.
+async function renderSituation(t){ const w=$("#situationHeader"); if(!w)return;
+  if(!t){ w.hidden=true; return; }
+  let s=null; if(MODE==="http"){ try{ s=await api("/api/situations/get?id="+encodeURIComponent(t.project.id)); }catch(e){} }
+  if(!s){ w.hidden=true; return; }
+  w.hidden=false;
+  const band=(s.severity&&s.severity.band)||"none";
+  const bandLabel={critical:t2("sev.critical"),high:t2("sev.high"),medium:t2("sev.medium"),low:t2("sev.low"),none:t2("sev.none")}[band]||band;
+  const fmtDate=ts=>ts?new Date(ts*1000).toISOString().slice(0,10):"—";
+  const c=s.counts||{};
+  w.innerHTML=`
+    <div class="sit-main">
+      <div class="sit-title-row">
+        <span class="sit-sev sev-${band}">${esc(bandLabel)}</span>
+        <h2 class="sit-title">${esc(s.title||t.project.name)}</h2>
+      </div>
+      <div class="sit-meta">
+        <span>${esc(t2("sit.domain"))}: <b>${esc(s.domain||"—")}</b></span>
+        <span>${esc(t2("sit.owner"))}: <b>${esc(s.owner||"—")}</b></span>
+        <span>${esc(t2("sit.jurisdiction"))}: <b>${esc(s.jurisdiction||"—")}</b></span>
+        <span>${esc(t2("sit.created"))}: <b>${fmtDate(s.created_at)}</b></span>
+        <span>${esc(t2("sit.updated"))}: <b>${fmtDate(s.updated_at)}</b></span>
+      </div>
+    </div>
+    <div class="sit-counts">
+      <div class="sit-stat"><b>${fmtNum(c.entities||0)}</b><span>${esc(t2("sit.entities"))}</span></div>
+      <div class="sit-stat"><b>${fmtNum(c.relationships||0)}</b><span>${esc(t2("sit.relationships"))}</span></div>
+      <div class="sit-stat ${c.critical?'crit':''}"><b>${fmtNum(c.critical||0)}</b><span>${esc(t2("sit.critical"))}</span></div>
+      <div class="sit-stat ${c.alerts?'warn':''}"><b>${fmtNum(c.alerts||0)}</b><span>${esc(t2("sit.alerts"))}</span></div>
+    </div>`;
+}
 function renderDashboard(){ const t=activeTab();
+  renderSituation(t);
   $("#dashTitle").textContent = t? t.project.name : "Command Center";
   $("#dashSub").textContent = t? `${t.project.domain} · investigation state, confidence, risk & next best action` : "Open or create a project to begin turning data into decisions.";
   const g=t?t.graph:{nodes:[],edges:[]}; const m=computeMetrics(g);

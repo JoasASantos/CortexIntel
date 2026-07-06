@@ -360,6 +360,8 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/api/fs/list") => finish(stream, api::fs_list(param(&req.query, "path").as_deref())),
         // Pre-ingest triage: profile a source (columns/volume) without ingesting.
         ("GET", "/api/profile") => finish(stream, api::profile_source(&param(&req.query, "path").unwrap_or_default())),
+        // G2 — aggregated situation object (severity + metadata) for a project.
+        ("GET", "/api/situations/get") => finish(stream, api::situation_get(&param(&req.query, "id").unwrap_or_default())),
         // API keys (values never returned)
         ("GET", "/api/keys") => json_ok(stream, &keys::list_names()),
         ("POST", "/api/keys") => {
