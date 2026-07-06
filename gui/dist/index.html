@@ -116,6 +116,7 @@
                 <input id="graphFilter" placeholder="Filter…" />
                 <select id="graphLayout" class="mini-select"><option value="fcose">Force (fcose)</option><option value="concentric">Concentric</option><option value="breadthfirst">Hierarchy</option><option value="circle">Circle</option><option value="grid">Grid</option></select>
                 <button class="btn ghost" id="btnFit">Fit</button>
+                <button class="btn ghost" id="btnPath">Path</button>
                 <button class="btn ghost" id="btnReset">Reset</button>
                 <button class="btn ghost" id="btnAsk2">✦ Ask</button>
               </div>
@@ -136,6 +137,7 @@
               <button id="zoomOut" title="Zoom out">−</button>
               <button id="zoomFit" title="Fit">⤢</button>
             </div>
+            <div class="minimap-wrap" id="minimapWrap"><div class="minimap-title">OVERVIEW</div><canvas id="minimap"></canvas></div>
             <div class="legend" id="legend"></div>
             <div class="graph-empty" id="graphEmpty">
               <div class="ge-inner"><div class="ge-icon">◕</div><h2>No graph yet</h2>

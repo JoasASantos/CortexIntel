@@ -345,12 +345,15 @@ function initCy() {
       { selector:".hyp", style:{ "line-style":"dashed", "line-color":"#8b7fe8", "border-color":"#8b7fe8", "border-style":"dashed" }},
       { selector:".faded", style:{ "opacity":0.1 }},
       { selector:".fresh", style:{ "underlay-color":"#3fb457", "underlay-padding":10, "underlay-opacity":0.5 }},
+      { selector:"node.pathhl", style:{ "border-width":3, "border-color":"#33c2dd", "underlay-color":"#33c2dd", "underlay-padding":8, "underlay-opacity":0.5, "opacity":1 }},
+      { selector:"edge.pathhl", style:{ "line-color":"#33c2dd", "target-arrow-color":"#33c2dd", "width":3, "opacity":1 }},
     ],
   });
-  cy.on("tap","node", ev=>selectNode(ev.target.id()));
-  cy.on("tap", ev=>{ if(ev.target===cy){ cy.elements().removeClass("faded"); cy.$(":selected").unselect(); $("#context").hidden=true; } });
+  cy.on("tap","node", ev=>{ const id=ev.target.id(); if(linkMode){ finishLink(id); return; } if(pathSource){ finishPath(id); return; } selectNode(id); });
+  cy.on("tap", ev=>{ if(ev.target===cy){ cy.elements().removeClass("faded pathhl"); cy.$(":selected").unselect(); $("#context").hidden=true; } });
   cy.on("cxttap","node", ev=>{ const e=ev.originalEvent; if(linkMode) finishLink(ev.target.id()); else openCtxMenu(e.clientX,e.clientY,ev.target.id()); });
-  cy.on("tap","node", ev=>{ if(linkMode) finishLink(ev.target.id()); });
+  cy.on("pan zoom", ()=>scheduleMinimap());
+  cy.on("layoutstop render", ()=>scheduleMinimap());
   return cy;
 }
 
@@ -373,7 +376,7 @@ function renderGraph() {
   cy.elements().remove(); cy.add(els);
   runLayout();
   $("#graphStats").textContent = `${g.nodes.length} nodes · ${g.edges.length} edges`;
-  renderLegend(); renderGraphFilters();
+  renderLegend(); renderGraphFilters(); setTimeout(scheduleMinimap, 700);
 }
 function runLayout() {
   if (!cy) return;
@@ -466,7 +469,8 @@ async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   add("spark","Expand via AI",()=>askAbout(`Expand the investigation around "${n.label}" (${n.kind}). Propose linked entities and leads.`));
   add("fit","Isolate neighborhood",()=>isolate(id));
   add("graph","Focus neighbors",()=>{if(cy)cy.animate({fit:{eles:cy.$id(id).closedNeighborhood(),padding:80},duration:350});});
-  add("link","Connect to another node…",()=>startLink(id),true);
+  add("graph","Find path from here…",()=>startPath(id),true);
+  add("link","Connect to another node…",()=>startLink(id));
   add("alerts","Create alert",()=>{pushNotif("alert",`Alert on ${n.label}`);toast("Alert created");});
   add("trash","Remove node",()=>removeNode(id));
   // transforms submenu (installed, matching kind)
@@ -768,6 +772,51 @@ $("#zoomIn")&&$("#zoomIn").addEventListener("click",()=>{ if(cy) cy.zoom({level:
 $("#zoomOut")&&$("#zoomOut").addEventListener("click",()=>{ if(cy) cy.zoom({level:cy.zoom()/1.3, renderedPosition:{x:cy.width()/2,y:cy.height()/2}}); });
 $("#zoomFit")&&$("#zoomFit").addEventListener("click",()=>{ if(cy) cy.fit(cy.elements(":visible"),50); });
 $("#zoomIn")&&($("#zoomIn").innerHTML=svg("zoomin")); $("#zoomOut")&&($("#zoomOut").innerHTML=svg("zoomout")); $("#zoomFit")&&($("#zoomFit").innerHTML=svg("fit"));
+
+// ---------- minimap ----------
+let _mmScheduled=false;
+function scheduleMinimap(){ if(_mmScheduled)return; _mmScheduled=true; requestAnimationFrame(()=>{ _mmScheduled=false; drawMinimap(); }); }
+function drawMinimap(){ const cv=$("#minimap"); if(!cv) return; const ctx=cv.getContext("2d");
+  if(!cy||!cy.nodes(":visible").length){ ctx.clearRect(0,0,cv.width,cv.height); return; }
+  const dpr=window.devicePixelRatio||1; const W=cv.clientWidth||190, H=cv.clientHeight||130;
+  if(cv.width!==W*dpr||cv.height!==H*dpr){ cv.width=W*dpr; cv.height=H*dpr; }
+  ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  const bb=cy.elements(":visible").boundingBox(); const pad=8, sw=W-2*pad, sh=H-2*pad;
+  const s=Math.min(sw/(bb.w||1), sh/(bb.h||1)); const offx=pad+(sw-bb.w*s)/2, offy=pad+(sh-bb.h*s)/2;
+  const X=x=>offx+(x-bb.x1)*s, Y=y=>offy+(y-bb.y1)*s;
+  ctx.strokeStyle="rgba(120,140,165,0.14)"; ctx.lineWidth=0.4; ctx.beginPath();
+  cy.edges(":visible").forEach(e=>{ const a=e.source().position(), b=e.target().position(); ctx.moveTo(X(a.x),Y(a.y)); ctx.lineTo(X(b.x),Y(b.y)); }); ctx.stroke();
+  cy.nodes(":visible").forEach(n=>{ const p=n.position(); const nd=nodeData(n.id()); ctx.fillStyle=nd?kColor(nd.kind):"#889"; ctx.beginPath(); ctx.arc(X(p.x),Y(p.y),1.4,0,7); ctx.fill(); });
+  const ext=cy.extent(); ctx.fillStyle="rgba(51,194,221,0.09)"; ctx.strokeStyle="rgba(51,194,221,0.9)"; ctx.lineWidth=1;
+  const rx=X(ext.x1), ry=Y(ext.y1), rw=(ext.x2-ext.x1)*s, rh=(ext.y2-ext.y1)*s; ctx.fillRect(rx,ry,rw,rh); ctx.strokeRect(rx,ry,rw,rh);
+  cv._map={bb,s,offx,offy};
+}
+function minimapGoto(ev){ const cv=$("#minimap"); const m=cv._map; if(!m||!cy)return; const r=cv.getBoundingClientRect();
+  const mx=ev.clientX-r.left, my=ev.clientY-r.top; const modelX=m.bb.x1+(mx-m.offx)/m.s, modelY=m.bb.y1+(my-m.offy)/m.s;
+  const z=cy.zoom(); cy.pan({x:cy.width()/2-modelX*z, y:cy.height()/2-modelY*z}); }
+(function(){ const cv=$("#minimap"); if(!cv)return; let down=false;
+  cv.addEventListener("mousedown",e=>{down=true;minimapGoto(e);});
+  window.addEventListener("mousemove",e=>{ if(down)minimapGoto(e); });
+  window.addEventListener("mouseup",()=>down=false); })();
+
+// ---------- path finder ----------
+let pathSource=null;
+function pathBanner(txt){ let b=$("#pathBanner"); if(txt){ if(!b){ b=el("div","pathbar"); b.id="pathBanner"; $(".graph-wrap").appendChild(b);} b.textContent=txt; b.hidden=false; } else if(b) b.hidden=true; }
+function startPath(id){ pathSource=id; if(cy) cy.elements().removeClass("pathhl faded"); pathBanner("Path mode: click the target node (Esc to cancel)"); }
+function finishPath(targetId){ const src=pathSource; pathSource=null; pathBanner(""); if(!cy||src===targetId) return;
+  const res=cy.elements().aStar({root:cy.$id(src), goal:cy.$id(targetId), directed:false});
+  if(!res.found){ toast("No path between these entities","err"); return; }
+  cy.elements().addClass("faded"); res.path.removeClass("faded").addClass("pathhl");
+  cy.fit(res.path,80);
+  const nodes=res.path.nodes().map(n=>{ const d=nodeData(n.id()); return d?d.label:n.id(); });
+  toast(`Path found · ${res.path.nodes().length} hops`,"ok");
+  // show the path chain in the dossier relations area
+  const c=$("#context"); c.hidden=false; $("#ctxKind").textContent="path"; $("#ctxName").textContent="Path trace";
+  $("#ctxRisk").innerHTML=""; $("#ctxTags").innerHTML=""; $("#ctxMeta").innerHTML=""; $("#ctxSources").innerHTML=""; $("#ctxTransforms").innerHTML="";
+  const rl=$("#ctxRels"); rl.innerHTML=""; nodes.forEach((lab,i)=>{ const r=el("div","rel"); r.innerHTML=(i<nodes.length-1?`<span class="rt">hop ${i+1}</span> `:`<span class="rt">end</span> `)+esc(lab); rl.appendChild(r); });
+}
+function clearPath(){ pathSource=null; pathBanner(""); if(cy) cy.elements().removeClass("pathhl faded"); }
+$("#btnPath")&&$("#btnPath").addEventListener("click",()=>{ const sel=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; if(sel){ startPath(sel); } else { toast("Select a node, then click Path — or right-click a node → Find path from here"); } });
 $("#btnReset").addEventListener("click",()=>{ if(cy){ cy.nodes().style("display","element"); cy.$(":selected").unselect(); cy.fit(cy.elements(),50); } $("#graphFilter").value=""; $("#context").hidden=true; toast("View reset"); });
 $("#graphLayout").addEventListener("change",runLayout);
 $("#graphFilter").addEventListener("input",e=>{ const q=e.target.value.trim().toLowerCase(); if(!cy)return;
@@ -962,7 +1011,7 @@ window.addEventListener("keydown",e=>{ const meta=e.metaKey||e.ctrlKey;
   else if(meta&&e.key.toLowerCase()==="r"){e.preventDefault();runModal();}
   else if(meta&&e.key.toLowerCase()==="n"){e.preventDefault();newProjectModal();}
   else if(meta&&e.key==="/"){e.preventDefault();openAsk();}
-  else if(e.key==="Escape"){ closePalette(); closeModal(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); if(linkMode){ linkMode=null; const b=$("#linkmodeBanner"); if(b)b.hidden=true; } } });
+  else if(e.key==="Escape"){ closePalette(); closeModal(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); if(linkMode){ linkMode=null; const b=$("#linkmodeBanner"); if(b)b.hidden=true; } if(pathSource) clearPath(); } });
 
 // ---------- file helpers ----------
 function pickFile(cb){ const inp=$("#filePicker"); inp.removeAttribute("accept"); inp.value=""; inp.onchange=()=>{ const f=inp.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>cb(rd.result); rd.readAsText(f); }; inp.click(); }
