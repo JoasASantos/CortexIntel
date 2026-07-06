@@ -355,6 +355,9 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             let name = param(&req.query, "name").unwrap_or_else(|| "upload.dat".into());
             finish(stream, api::save_upload(&name, &req.body).map(|p| serde_json::json!({ "path": p })))
         }
+        // Server-side file/folder browser (the desktop WebView can't open a native
+        // file dialog reliably). Read-only; the local server reads local paths.
+        ("GET", "/api/fs/list") => finish(stream, api::fs_list(param(&req.query, "path").as_deref())),
         // API keys (values never returned)
         ("GET", "/api/keys") => json_ok(stream, &keys::list_names()),
         ("POST", "/api/keys") => {

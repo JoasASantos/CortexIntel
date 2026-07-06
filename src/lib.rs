@@ -291,6 +291,52 @@ pub mod api {
         Ok(path.to_string_lossy().to_string())
     }
 
+    /// List a directory for the in-app file/folder browser. The desktop WebView
+    /// often won't open a native `<input type=file>` dialog, so the UI navigates
+    /// the local filesystem through this endpoint instead; the embedded server
+    /// runs on the user's own machine and can read local paths directly.
+    /// Defaults to the user's home directory when no path is given.
+    pub fn fs_list(path: Option<&str>) -> Result<serde_json::Value> {
+        use std::path::{Path, PathBuf};
+        let dir: PathBuf = match path.filter(|s| !s.trim().is_empty()) {
+            Some(s) => PathBuf::from(s),
+            None => dirs_home(),
+        };
+        let dir = if dir.is_file() { dir.parent().map(Path::to_path_buf).unwrap_or(dir) } else { dir };
+        if !dir.is_dir() {
+            return Err(anyhow!("not a directory: {}", dir.display()));
+        }
+        let mut dirs = Vec::new();
+        let mut files = Vec::new();
+        if let Ok(rd) = std::fs::read_dir(&dir) {
+            for e in rd.flatten() {
+                let name = e.file_name().to_string_lossy().to_string();
+                if name.starts_with('.') { continue; } // skip hidden/system entries
+                let p = e.path();
+                if p.is_dir() {
+                    dirs.push(serde_json::json!({ "name": name, "path": p.to_string_lossy() }));
+                } else {
+                    let size = e.metadata().map(|m| m.len()).unwrap_or(0);
+                    files.push(serde_json::json!({ "name": name, "path": p.to_string_lossy(), "size": size }));
+                }
+            }
+        }
+        dirs.sort_by(|a, b| a["name"].as_str().unwrap_or("").to_lowercase().cmp(&b["name"].as_str().unwrap_or("").to_lowercase()));
+        files.sort_by(|a, b| a["name"].as_str().unwrap_or("").to_lowercase().cmp(&b["name"].as_str().unwrap_or("").to_lowercase()));
+        Ok(serde_json::json!({
+            "path": dir.to_string_lossy(),
+            "parent": dir.parent().map(|p| p.to_string_lossy().to_string()),
+            "dirs": dirs,
+            "files": files,
+        }))
+    }
+
+    fn dirs_home() -> std::path::PathBuf {
+        std::env::var_os("HOME").map(std::path::PathBuf::from)
+            .or_else(|| std::env::var_os("USERPROFILE").map(std::path::PathBuf::from))
+            .unwrap_or_else(|| std::path::PathBuf::from("/"))
+    }
+
     /// Test a connector (db/bigquery/datalake). Returns a status string.
     pub fn connector_test(kind: &str, cfg: &serde_json::Value) -> Result<String> {
         crate::connectors::test(kind, cfg)

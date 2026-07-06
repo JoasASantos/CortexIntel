@@ -375,7 +375,7 @@ function newProjectModal() {
     }}
   ]);
   npUploadPath=null;
-  setTimeout(()=>{ const b=$("#npBrowse"); if(b) b.addEventListener("click",()=>browseUpload(path=>{ npUploadPath=path; $("#npFile").value=path.split("/").pop(); }, ".csv,.tsv,.json,.jsonl,.ndjson")); },40);
+  setTimeout(()=>{ const b=$("#npBrowse"); if(b) b.addEventListener("click",()=>pickServerPath(path=>{ npUploadPath=path; $("#npFile").value=path.split("/").pop(); }, {title:"Choose a file or a folder of media", folders:true, accept:".csv,.tsv,.json,.jsonl,.ndjson,.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.mp3,.wav,.pdf"})); },40);
   setTimeout(()=>$("#npName")&&$("#npName").focus(),50);
 }
 
@@ -727,6 +727,7 @@ async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   if(n.meta){ add("graph",`Expand cluster (${n.members.length})`,()=>expandCluster(id)); add("fit","Focus cluster",()=>{ if(cy) cy.animate({fit:{eles:cy.$id(id),padding:120},duration:300}); });
     m.style.left=Math.min(x,window.innerWidth-230)+"px"; m.style.top=Math.min(y,window.innerHeight-120)+"px"; m.hidden=false; return; }
   add("entities","Open dossier",()=>selectNode(id));
+  add("settings","Edit entity…",()=>editEntityModal(id));
   if((activeTab()?.clusterMode||"none")!=="none") add("boxes"in ICONS?"boxes":"entities","Collapse this cluster",()=>collapseNodeCluster(id));
   add("spark","Expand via AI",()=>askAbout(`Expand the investigation around "${n.label}" (${n.kind}). Propose linked entities and leads.`));
   add("fit","Isolate neighborhood",()=>isolate(id));
@@ -961,7 +962,7 @@ function runModal(){
     {label:"Cancel",cls:"ghost",act:closeModal},
     {label:"▶ Run",cls:"primary",act:doRun}
   ]);
-  setTimeout(()=>{ const b=$("#rBrowse"); if(b) b.addEventListener("click",()=>browseUpload(path=>{ const cur=$("#rInputs").value.trim(); $("#rInputs").value=(cur?cur+" ":"")+path; }, ".csv,.tsv,.json,.jsonl,.ndjson")); },40);
+  setTimeout(()=>{ const b=$("#rBrowse"); if(b) b.addEventListener("click",()=>pickServerPath(path=>{ const cur=$("#rInputs").value.trim(); $("#rInputs").value=(cur?cur+" ":"")+path; }, {title:"Choose input (file or folder of media)", folders:true, accept:".csv,.tsv,.json,.jsonl,.ndjson,.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.mp3,.wav,.pdf"})); },40);
   setTimeout(()=>{ if($("#rProvider")) $("#rProvider").value=state.provider; },30);
 }
 async function doRun(){
@@ -1389,7 +1390,7 @@ function addEntityModal(){ const t=activeTab(); if(!t){ toast("Open or create a 
   ]);
   aeUploadPath=null;
   setTimeout(()=>{ const ks=$("#aeKind"); const upd=()=>{ $("#aeMediaField").hidden=!["media","evidence"].includes(ks.value); }; ks&&ks.addEventListener("change",upd); upd();
-    const b=$("#aeBrowse"); if(b)b.addEventListener("click",()=>browseUpload(p=>{ aeUploadPath=p; $("#aeFile").value=p.split("/").pop(); if(!$("#aeLabel").value) $("#aeLabel").value=p.split("/").pop(); }, "image/*,video/*,audio/*,.pdf,.png,.jpg,.jpeg,.mp4,.mov,.mp3,.wav")); },40);
+    const b=$("#aeBrowse"); if(b)b.addEventListener("click",()=>pickServerPath(p=>{ aeUploadPath=p; $("#aeFile").value=p.split("/").pop(); if(!$("#aeLabel").value) $("#aeLabel").value=p.split("/").pop(); }, {title:"Choose media file", accept:".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.m4a,.pdf"})); },40);
 }
 function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind").value; let label=$("#aeLabel").value.trim();
   if(!label && !aeUploadPath){ toast("Label or file required","err"); return; }
@@ -1402,6 +1403,39 @@ function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind
   pushNotif("entity","Manual entity added: "+label); toast("Entity added — run transforms to analyze","ok");
 }
 $("#btnAddEntity")&&$("#btnAddEntity").addEventListener("click",addEntityModal);
+
+// ---------- edit an existing entity (analyst correction / change media) ----------
+let eeUploadPath=null;
+function editEntityModal(id){ const t=activeTab(); if(!t)return; const n=t.graph.nodes.find(x=>x.id===id);
+  if(!n){ toast("Entity not found","err"); return; }
+  const isMedia=["media","evidence"].includes(n.kind);
+  const attrsText=Object.entries(n.attributes||{}).filter(([k])=>!["path","file"].includes(k)).map(([k,v])=>`${k}: ${v}`).join("\n");
+  const curFile=(n.attributes&&(n.attributes.file||n.attributes.path))||"";
+  eeUploadPath=null;
+  openModal("Edit entity", `
+    <div class="field">Type<input value="${esc(n.kind)}" disabled /></div>
+    <div class="field">Label / value<input id="eeLabel" value="${esc(n.label||"")}" /></div>
+    <div class="field">Tags (comma-separated)<input id="eeTags" value="${esc((n.tags||[]).join(", "))}" /></div>
+    ${isMedia?`<div class="field">Media file
+      <div style="display:flex;gap:8px"><input id="eeFile" readonly style="flex:1" value="${esc(curFile.split("/").pop())}" placeholder="no file selected"/><button class="btn ghost" id="eeBrowse">Change…</button></div>
+      <div class="modal-note">Pick a different image/video/audio to replace the referenced media.</div></div>`:""}
+    <div class="field">Attributes (key: value per line)<textarea id="eeAttrs" rows="3">${esc(attrsText)}</textarea></div>
+  `,[{label:"Cancel",cls:"ghost",act:closeModal},{label:"Save changes",cls:"primary",act:()=>saveEntityEdit(id)}]);
+  if(isMedia) setTimeout(()=>{ const b=$("#eeBrowse"); if(b)b.addEventListener("click",()=>pickServerPath(p=>{ eeUploadPath=p; $("#eeFile").value=p.split("/").pop(); }, {title:"Choose replacement media", accept:".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.m4a,.pdf"})); },40);
+  setTimeout(()=>$("#eeLabel")&&$("#eeLabel").focus(),50);
+}
+function saveEntityEdit(id){ const t=activeTab(); if(!t)return; const n=t.graph.nodes.find(x=>x.id===id); if(!n)return;
+  const label=$("#eeLabel").value.trim(); if(label) n.label=label;
+  n.tags=($("#eeTags").value||"").split(",").map(s=>s.trim()).filter(Boolean);
+  const attrs={}; ($("#eeAttrs").value||"").split("\n").forEach(l=>{ const i=l.indexOf(":"); if(i>0){ const k=l.slice(0,i).trim(); if(k)attrs[k]=l.slice(i+1).trim(); } });
+  // preserve media path/file unless a new file was chosen
+  if(n.attributes){ if(n.attributes.media_type&&!attrs.media_type) attrs.media_type=n.attributes.media_type; }
+  if(eeUploadPath){ attrs.path=eeUploadPath; attrs.file=eeUploadPath.split("/").pop(); }
+  else if(n.attributes&&n.attributes.path){ attrs.path=n.attributes.path; attrs.file=n.attributes.file; }
+  n.attributes=attrs;
+  if(!n.tags.includes("edited")) n.tags.push("edited");
+  closeModal(); renderGraph(); renderGraphFilters(); selectNode(id); toast("Entity updated","ok");
+}
 $("#btnAddEntity2")&&$("#btnAddEntity2").addEventListener("click",addEntityModal);
 $("#btnReset").addEventListener("click",()=>{ if(cy){ cy.elements().style("display","element").removeClass("faded pathhl"); cy.$(":selected").unselect(); cy.fit(cy.elements(),50); } $("#graphFilter").value=""; $("#context").hidden=true; clearTimeScrub(); modeHint(""); const t=activeTab(); if(t){ t.graphMode="full"; t.clusterMode="none"; $("#graphCluster")&&($("#graphCluster").value="none"); syncModeButtons(); $("#graphStats").textContent=`${t.graph.nodes.length} nodes · ${t.graph.edges.length} edges`; } toast("View reset"); });
 $("#graphLayout").addEventListener("change",runLayout);
@@ -1833,6 +1867,33 @@ function browseUpload(cb, accept){ const inp=$("#filePicker"); if(accept)inp.set
       setSync("ok","uploaded"); cb(j.path); toast("Uploaded "+f.name,"ok"); }
     catch(e){ setSync("err","failed"); toast("Upload failed: "+e.message,"err"); } };
   inp.click(); }
+
+// Server-side file/folder browser. The desktop WebView often won't open a native
+// file dialog, so we navigate the local filesystem via /api/fs/list; the embedded
+// server reads local paths directly (no upload needed). `opts.accept` is a comma
+// list of extensions to highlight; `opts.folders` shows a "Select this folder"
+// action. Falls back to the device upload for the static/mock preview.
+async function pickServerPath(cb, opts={}){
+  if(MODE!=="http"){ return browseUpload(cb, opts.accept); }
+  const accept=(opts.accept||"").split(",").map(s=>s.trim().replace(/^\*?\./,"").toLowerCase()).filter(Boolean).filter(s=>!s.includes("/"));
+  const matches=name=>{ if(!accept.length) return true; const ext=name.split(".").pop().toLowerCase(); return accept.includes(ext); };
+  let cur=null;
+  const body=`<div class="fsb"><div class="fsb-path" id="fsbPath">…</div><div class="fsb-list" id="fsbList"></div></div>`;
+  const foot=[{label:"Upload from device",cls:"ghost",act:()=>{ closeModal(); browseUpload(cb, opts.accept); }},{label:"Cancel",cls:"ghost",act:closeModal}];
+  if(opts.folders) foot.unshift({label:"Select this folder",cls:"primary",act:()=>{ if(cur){ closeModal(); cb(cur); } }});
+  openModal(opts.title||"Choose a file", body, foot);
+  async function load(path){
+    const w=$("#fsbList"); if(!w)return; w.innerHTML='<div class="empty">loading…</div>';
+    let data; try{ data=await api("/api/fs/list"+(path?"?path="+encodeURIComponent(path):"")); }catch(e){ w.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; return; }
+    cur=data.path; const pe=$("#fsbPath"); if(pe)pe.textContent=data.path;
+    w.innerHTML="";
+    if(data.parent){ const up=el("div","fsb-row dir"); up.innerHTML=svg("fit")+"<span>.. (up one level)</span>"; up.addEventListener("click",()=>load(data.parent)); w.appendChild(up); }
+    data.dirs.forEach(d=>{ const r=el("div","fsb-row dir"); r.innerHTML='<span class="fi">📁</span><span>'+esc(d.name)+'</span>'; r.addEventListener("click",()=>load(d.path)); w.appendChild(r); });
+    data.files.filter(f=>matches(f.name)).forEach(f=>{ const r=el("div","fsb-row file"); r.innerHTML='<span class="fi">📄</span><span>'+esc(f.name)+'</span><span class="fsz">'+(f.size>1048576?(f.size/1048576).toFixed(1)+" MB":Math.max(1,Math.round(f.size/1024))+" KB")+'</span>'; r.addEventListener("click",()=>{ closeModal(); cb(f.path); }); w.appendChild(r); });
+    if(!w.children.length) w.innerHTML='<div class="empty">empty folder</div>';
+  }
+  setTimeout(()=>load(opts.start||null),40);
+}
 function downloadText(name,text){ const b=new Blob([text],{type:"application/json"}); const a=el("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
 // Copy helper with a WebView-safe fallback (clipboard API is often blocked in the
 // desktop WebView, so fall back to a hidden textarea + execCommand).
