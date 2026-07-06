@@ -41,6 +41,11 @@ const KIND_COLOR = {
   vulnerability:"#f97316", incident:"#e879f9", service:"#5eead4", repository:"#a3e635", unknown:"#94a3b8"
 };
 const kColor = k => KIND_COLOR[k] || KIND_COLOR.unknown;
+const KIND_SHAPE = { person:"ellipse", victim:"ellipse", suspect:"ellipse", account:"round-rectangle", device:"round-rectangle",
+  ip:"diamond", url:"hexagon", domain:"hexagon", media:"round-tag", evidence:"round-tag", wallet:"pentagon", payment:"pentagon",
+  group:"octagon", case:"round-rectangle", report:"round-rectangle", malware:"star", incident:"star", vulnerability:"star",
+  location:"triangle", organization:"barrel", service:"round-rectangle", repository:"round-rectangle" };
+const kShape = k => KIND_SHAPE[k] || "ellipse";
 const bandOf = s => s>=0.85?"critical":s>=0.6?"high":s>=0.35?"medium":"low";
 const bandColor = b => ({low:"#34d399",medium:"#f59e0b",high:"#fb7185",critical:"#ef4444"}[b]||"#34d399");
 
@@ -53,8 +58,42 @@ function toast(m,k){ const t=$("#toast"); t.textContent=m; t.className="toast "+
 function setSync(k,l){ const d=$("#syncStatus .dot"); d.className="dot "+k; $("#syncLabel").textContent=l; }
 const activeTab = () => state.tabs[state.active] || null;
 
+// ---------- lucide-style icons (inline SVG) ----------
+const ICONS = {
+  dashboard:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+  graph:'<circle cx="5" cy="6" r="2.2"/><circle cx="19" cy="7" r="2.2"/><circle cx="12" cy="17" r="2.2"/><path d="M7 7l3.5 8M17 8l-3.5 7"/>',
+  intel:'<path d="M12 3l1.9 4.6L18 9l-4.1 1.4L12 15l-1.9-4.6L6 9l4.1-1.4z"/><path d="M18 15l.8 2 .2.8"/><path d="M5 16l.6 1.6"/>',
+  entities:'<path d="M12 2l8 4.5v9L12 20l-8-4.5v-9z"/><path d="M12 2v18M4 6.5l8 4.5 8-4.5"/>',
+  sources:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/>',
+  timeline:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  alerts:'<path d="M10.3 3.8L2 18a2 2 0 001.7 3h16.6A2 2 0 0022 18L13.7 3.8a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  reports:'<path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  operations:'<path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1l-.4-2.5H10l-.4 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1l.4 2.5h4l.4-2.5a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6a7 7 0 00.1-1z"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 00-1.7-1l-.4-2.5H10l-.4 2.5a7 7 0 00-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 000 2l-2 1.6 2 3.4 2.4-1a7 7 0 001.7 1l.4 2.5h4l.4-2.5a7 7 0 001.7-1l2.4 1 2-3.4-2-1.6a7 7 0 00.1-1z"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>', search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+  play:'<path d="M6 4l14 8-14 8z"/>', spark:'<path d="M12 3l1.9 4.6L18 9l-4.1 1.4L12 15l-1.9-4.6L6 9l4.1-1.4z"/>',
+  bell:'<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>',
+  logo:'<path d="M12 2l8 4.5v9L12 20l-8-4.5v-9z"/><circle cx="12" cy="11" r="3"/>',
+  close:'<path d="M18 6L6 18M6 6l12 12"/>', plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  zoomin:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/>', zoomout:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/>', fit:'<path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/>',
+  link:'<path d="M9 15l6-6M10 6l1-1a4 4 0 015.7 5.7l-1 1M14 18l-1 1a4 4 0 01-5.7-5.7l1-1"/>', trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>', run:'<path d="M6 4l14 8-14 8z"/>',
+};
+function svg(name){ return `<svg class="ic" viewBox="0 0 24 24">${ICONS[name]||''}</svg>`; }
+const NAVICON={dashboard:'dashboard',graph:'graph',intelligence:'intel',entities:'entities',sources:'sources',timeline:'timeline',alerts:'alerts',reports:'reports',operations:'operations',settings:'settings'};
+function applyIcons(){
+  $$('.nav li').forEach(li=>{ const ic=NAVICON[li.dataset.view]; const ni=li.querySelector('.ni'); if(ic&&ni) ni.innerHTML=svg(ic); });
+  $$('.logo').forEach(l=>l.innerHTML=svg('logo'));
+  const set=(sel,name,keepText)=>{ const e=$(sel); if(e){ e.innerHTML=svg(name)+(keepText?(' '+keepText):''); } };
+  set('#btnNewProject','plus'); const gs=$('.gs-icon'); if(gs)gs.innerHTML=svg('search');
+  set('#btnRun','play','Run'); set('#btnAsk','spark','Ask AI');
+  const bn=$('#btnNotifications'); if(bn){ bn.innerHTML=svg('bell')+'<span class="badge" id="notifBadge" hidden>0</span>'; }
+  const sl=$('.splash-logo'); if(sl)sl.innerHTML=`<svg class="ic" style="width:52px;height:52px" viewBox="0 0 24 24">${ICONS.logo}</svg>`;
+  const ge=$('.ge-icon'); if(ge)ge.innerHTML=`<svg class="ic" style="width:44px;height:44px" viewBox="0 0 24 24">${ICONS.graph}</svg>`;
+}
+
 // ---------- boot ----------
 async function boot() {
+  applyIcons();
   await detectTransport();
   const steps = [];
   const push = (label, ok, cls) => steps.push({label, ok, cls});
@@ -128,12 +167,15 @@ async function logout() {
 // ---------- app enter ----------
 async function enterApp() {
   $("#app").hidden = false;
+  applyIcons();
   try { state.domains = await api("/api/domains"); } catch(e){ state.domains=[]; }
   try { state.dataTypes = await api("/api/data_types"); } catch(e){ state.dataTypes=[]; }
   $("#avatar").textContent = (state.user?.display_name||state.user?.email||"OP").slice(0,2).toUpperCase();
   buildProviderSelect();
   refreshDoctor(); renderConnectorCards(); renderPluginExample();
   $("#providerPill").textContent = "provider: "+state.provider;
+  // Onboarding: ask country (BR/US) once.
+  try { const cfg=await api("/api/config"); state.country=cfg.country; if(!cfg.onboarded) onboardCountry(); } catch(e){}
   await loadProjects();
   if (!state.tabs.length) {
     // open most recent project or prompt to create
@@ -198,22 +240,41 @@ function renderTabs() {
   });
 }
 
+let onboardSel="BR";
+function onboardCountry(){
+  openModal("Welcome — set your region", `
+    <p class="muted">CortexIntel tailors identity/KYC checks and disclaimers to your country. Supported now: Brazil & United States.</p>
+    <div class="country-grid">
+      <div class="country-opt sel" data-c="BR"><div class="flag">🇧🇷</div><div class="cn">Brazil</div><div class="muted" style="margin:0">CPF · LGPD</div></div>
+      <div class="country-opt" data-c="US"><div class="flag">🇺🇸</div><div class="cn">United States</div><div class="muted" style="margin:0">SSN · privacy</div></div>
+    </div>
+    <div class="disclaimer">Person/identity data is regulated. Processing requires a lawful basis under LGPD (BR) / GDPR & state law (US). Validation is decision-support, never a definitive identity ruling.</div>
+  `,[{label:"Continue",cls:"primary",act:async()=>{ try{ await api("/api/config",{method:"POST",body:{country:onboardSel,onboarded:true}}); state.country=onboardSel; }catch(e){} closeModal(); toast("Region set: "+onboardSel,"ok"); }}]);
+  onboardSel="BR";
+  setTimeout(()=>{ $$(".country-opt").forEach(o=>o.addEventListener("click",()=>{ $$(".country-opt").forEach(x=>x.classList.remove("sel")); o.classList.add("sel"); onboardSel=o.dataset.c; })); },40);
+}
 function newProjectModal() {
   const domainOpts = state.domains.map(d=>`<option value="${d.slug}">${esc(d.title)}</option>`).join("");
   openModal("New project", `
     <div class="field">Project name<input id="npName" placeholder="e.g. CourseStack Students" /></div>
     <div class="field">Business vertical<select id="npDomain" class="select">${domainOpts}</select></div>
     <div class="field">Description<textarea id="npDesc" rows="2" placeholder="what this project investigates"></textarea></div>
+    <div class="field">Instruction for AI (optional)<textarea id="npAI" rows="2" placeholder="focus/context for the AI, e.g. 'prioritize shared-infrastructure fraud rings; ignore internal test accounts'"></textarea></div>
+    <div class="field">Import a file now (optional)<div style="display:flex;gap:8px"><input id="npFile" placeholder="no file selected" readonly style="flex:1" /><button class="btn ghost" id="npBrowse">Browse…</button></div></div>
+    <div class="modal-note" id="npNote"></div>
   `, [
     {label:"Cancel", cls:"ghost", act:closeModal},
     {label:"Create", cls:"primary", act: async ()=>{
       const name=$("#npName").value.trim(); if(!name){ toast("Name required","err"); return; }
       try {
-        const p = await api("/api/projects",{method:"POST",body:{name,domain:$("#npDomain").value,description:$("#npDesc").value}});
-        closeModal(); await loadProjects(); openProject(p.id); pushNotif("project",`Project "${p.name}" created`);
+        const p = await api("/api/projects",{method:"POST",body:{name,domain:$("#npDomain").value,description:$("#npDesc").value,ai_instructions:$("#npAI").value}});
+        closeModal(); await loadProjects(); await openProject(p.id); pushNotif("project",`Project "${p.name}" created`);
+        if(npUploadPath){ const tb=activeTab(); if(tb){ setSync("busy","running"); try{ const result=await api("/api/run",{method:"POST",body:{inputs:[npUploadPath],domain:p.domain,provider:state.provider,maxRecords:4000,projectId:p.id}}); tb.result=result; tb.graph=consolidatedToGraph(result); tb.project=await api(`/api/projects/get?id=${encodeURIComponent(p.id)}`).catch(()=>tb.project); setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy();if(cy)cy.fit(cy.elements(),50);},700);}catch(e){setSync("err","failed");toast(e.message,"err");} } }
       } catch(e){ toast(e.message,"err"); }
     }}
   ]);
+  npUploadPath=null;
+  setTimeout(()=>{ const b=$("#npBrowse"); if(b) b.addEventListener("click",()=>browseUpload(path=>{ npUploadPath=path; $("#npFile").value=path.split("/").pop(); }, ".csv,.tsv,.json,.jsonl,.ndjson")); },40);
   setTimeout(()=>$("#npName")&&$("#npName").focus(),50);
 }
 
@@ -237,21 +298,28 @@ function initCy() {
     wheelSensitivity: 0.25,
     style: [
       { selector:"node", style:{
-        "background-color":"data(color)", "width":"data(size)", "height":"data(size)",
-        "label":"data(label)", "font-size":"9px", "color":"#c9d4e2", "text-wrap":"ellipsis",
-        "text-max-width":"90px", "text-valign":"bottom", "text-margin-y":3, "min-zoomed-font-size":7,
-        "border-width":"data(bw)", "border-color":"data(bc)" }},
-      { selector:"node:selected", style:{ "border-width":3, "border-color":"#ffffff" }},
+        "background-color":"data(color)", "width":"data(size)", "height":"data(size)", "shape":"data(shape)",
+        "label":"data(label)", "font-size":"9px", "font-family":"var(--mono)", "color":"#aeb9c6", "text-wrap":"ellipsis",
+        "text-max-width":"90px", "text-valign":"bottom", "text-margin-y":4, "min-zoomed-font-size":7,
+        "border-width":"data(bw)", "border-color":"data(bc)", "border-opacity":0.9,
+        "transition-property":"opacity background-color border-width", "transition-duration":"180ms" }},
+      { selector:"node[halo]", style:{ "underlay-color":"data(bc)", "underlay-padding":6, "underlay-opacity":0.35 }},
+      { selector:"node:selected", style:{ "border-width":3, "border-color":"#ffffff", "underlay-color":"#33c2dd", "underlay-padding":8, "underlay-opacity":0.4 }},
       { selector:"edge", style:{
-        "width":1, "line-color":"rgba(120,140,165,0.28)", "target-arrow-color":"rgba(120,140,165,0.35)",
+        "width":"data(w)", "line-color":"rgba(120,140,165,0.22)", "target-arrow-color":"rgba(120,140,165,0.3)",
         "target-arrow-shape":"triangle", "arrow-scale":0.7, "curve-style":"bezier",
-        "label":"data(type)", "font-size":"7px", "color":"rgba(160,180,200,0.55)", "text-rotation":"autorotate", "min-zoomed-font-size":9 }},
-      { selector:"edge:selected", style:{ "line-color":"var(--accent)", "width":2 }},
-      { selector:".hyp", style:{ "line-style":"dashed", "line-color":"#a78bfa", "border-color":"#a78bfa" }},
+        "label":"data(type)", "font-size":"7px", "font-family":"var(--mono)", "color":"rgba(150,170,190,0.5)", "text-rotation":"autorotate", "min-zoomed-font-size":10,
+        "transition-property":"opacity line-color", "transition-duration":"180ms" }},
+      { selector:"edge:selected", style:{ "line-color":"#33c2dd", "width":2 }},
+      { selector:".hyp", style:{ "line-style":"dashed", "line-color":"#8b7fe8", "border-color":"#8b7fe8", "border-style":"dashed" }},
+      { selector:".faded", style:{ "opacity":0.1 }},
+      { selector:".fresh", style:{ "underlay-color":"#3fb457", "underlay-padding":10, "underlay-opacity":0.5 }},
     ],
   });
   cy.on("tap","node", ev=>selectNode(ev.target.id()));
-  cy.on("cxttap","node", ev=>{ const e=ev.originalEvent; openCtxMenu(e.clientX,e.clientY,ev.target.id()); });
+  cy.on("tap", ev=>{ if(ev.target===cy){ cy.elements().removeClass("faded"); cy.$(":selected").unselect(); $("#context").hidden=true; } });
+  cy.on("cxttap","node", ev=>{ const e=ev.originalEvent; if(linkMode) finishLink(ev.target.id()); else openCtxMenu(e.clientX,e.clientY,ev.target.id()); });
+  cy.on("tap","node", ev=>{ if(linkMode) finishLink(ev.target.id()); });
   return cy;
 }
 
@@ -266,10 +334,11 @@ function renderGraph() {
   const els = [];
   g.nodes.forEach(n=>{
     const band = n.band||bandOf(n.risk);
-    els.push({ data:{ id:n.id, label:n.label, color:kColor(n.kind), size:12+(n.risk||0)*22,
-      bw:(band==="critical"||band==="high")?2.5:0, bc:bandColor(band) }, classes: n.hypothesis?"hyp":"" });
+    const hot = band==="critical"||band==="high";
+    els.push({ data:{ id:n.id, label:n.label, color:kColor(n.kind), size:14+(n.risk||0)*24, shape:kShape(n.kind),
+      bw:hot?2.5:1, bc:hot?bandColor(band):"rgba(0,0,0,0.25)", halo:hot?1:undefined }, classes: n.hypothesis?"hyp":"" });
   });
-  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type }, classes:e.hypothesis?"hyp":"" }); });
+  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:0.6+(e.conf||0.5)*1.8 }, classes:e.hypothesis?"hyp":"" }); });
   cy.elements().remove(); cy.add(els);
   runLayout();
   $("#graphStats").textContent = `${g.nodes.length} nodes · ${g.edges.length} edges`;
@@ -286,16 +355,17 @@ function runLayout() {
 function clearGraph(){ if(cy) cy.elements().remove(); }
 
 function renderLegend() {
-  const t = activeTab(); const kinds=[...new Set((t?.graph.nodes||[]).map(n=>n.kind))];
+  const t = activeTab(); const nodes=(t?.graph.nodes||[]); const counts={};
+  nodes.forEach(n=>counts[n.kind]=(counts[n.kind]||0)+1);
   const lg=$("#legend"); lg.innerHTML="";
-  kinds.forEach(k=>{ const x=el("div","lg"); const d=el("span","kdot"); d.style.background=kColor(k); x.appendChild(d); x.appendChild(el("span",null,k)); lg.appendChild(x); });
+  Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([k,c])=>{ const x=el("div","lg"); const d=el("span","kdot"); d.style.background=kColor(k); x.appendChild(d); const s=el("span"); s.innerHTML=`${k} <b>${c}</b>`; x.appendChild(s); lg.appendChild(x); });
 }
 
 // ---------- entity selection ----------
 function nodeData(id){ const t=activeTab(); return t? t.graph.nodes.find(n=>n.id===id):null; }
 function selectNode(id) {
   const n = nodeData(id); if(!n) return;
-  if (cy) { cy.$(":selected").unselect(); const el=cy.$id(id); if(el) el.select(); }
+  if (cy) { cy.$(":selected").unselect(); const nel=cy.$id(id); if(nel&&nel.length){ nel.select(); cy.elements().addClass("faded"); nel.closedNeighborhood().removeClass("faded"); } }
   const c=$("#context"); c.hidden=false;
   $("#ctxKind").textContent = n.kind + (n.sensitive?" · sensitive":"");
   $("#ctxName").textContent = n.label;
@@ -357,12 +427,27 @@ function isolate(id){ const t=activeTab(); if(!t)return; const keep=new Set([id]
   if(cy){ cy.nodes().forEach(n=>{ n.style("display", keep.has(n.id())?"element":"none"); }); cy.fit(cy.nodes(":visible"),60); } toast("Isolated "+nodeData(id).label); }
 
 // ---------- context menu ----------
-function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
+let linkMode=null; // source id while connecting
+async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   const n=nodeData(id); if(!n)return;
-  [["Open details",()=>selectNode(id)],["✦ Expand via AI",()=>askAbout(`Expand around "${n.label}"`)],["Isolate",()=>isolate(id)],["Neighbors",()=>{if(cy)cy.fit(cy.$id(id).closedNeighborhood(),80);}],["Create alert",()=>{pushNotif("alert",`Alert on ${n.label}`);toast("Alert created");}]]
-    .forEach(([t,fn])=>{ const mi=el("div","mi",t); mi.addEventListener("click",()=>{fn();m.hidden=true;}); m.appendChild(mi); });
-  m.style.left=x+"px"; m.style.top=y+"px"; m.hidden=false;
+  const add=(icon,label,fn,sep)=>{ if(sep){ const s=el("div","mi sep"); m.appendChild(s);} const mi=el("div","mi"); mi.innerHTML=svg(icon)+`<span>${esc(label)}</span>`; mi.addEventListener("click",()=>{fn();m.hidden=true;}); m.appendChild(mi); };
+  add("entities","Open dossier",()=>selectNode(id));
+  add("spark","Expand via AI",()=>askAbout(`Expand the investigation around "${n.label}" (${n.kind}). Propose linked entities and leads.`));
+  add("fit","Isolate neighborhood",()=>isolate(id));
+  add("graph","Focus neighbors",()=>{if(cy)cy.animate({fit:{eles:cy.$id(id).closedNeighborhood(),padding:80},duration:350});});
+  add("link","Connect to another node…",()=>startLink(id),true);
+  add("alerts","Create alert",()=>{pushNotif("alert",`Alert on ${n.label}`);toast("Alert created");});
+  add("trash","Remove node",()=>removeNode(id));
+  // transforms submenu (installed, matching kind)
+  let inst=[]; try{ inst=await api("/api/transforms"); }catch(e){}
+  const match=inst.filter(t=>t.enabled && (!t.input_kinds.length || t.input_kinds.includes(n.kind)));
+  if(match.length){ const s=el("div","mi sep"); m.appendChild(s); match.slice(0,8).forEach(t=>add("run",`Run: ${t.name}`,()=>{ cy.$(":selected").unselect(); cy.$id(id).select(); runTransformOnSelected(t); })); }
+  m.style.left=Math.min(x,window.innerWidth-230)+"px"; m.style.top=Math.min(y,window.innerHeight-40-m.childElementCount*34)+"px"; m.hidden=false;
 }
+function startLink(id){ linkMode=id; let b=$("#linkmodeBanner"); if(!b){ b=el("div","linkmode"); b.id="linkmodeBanner"; b.textContent="Link mode: click a target node (Esc to cancel)"; $(".graph-wrap").appendChild(b);} b.hidden=false; }
+function finishLink(targetId){ if(!linkMode) return; const s=linkMode, t=activeTab(); linkMode=null; const bn=$("#linkmodeBanner"); if(bn)bn.hidden=true;
+  if(s===targetId||!t) return; t.graph.edges.push({source:s,target:targetId,type:"linked_by_analyst",conf:1.0}); renderGraph(); toast("Nodes connected"); }
+function removeNode(id){ const t=activeTab(); if(!t)return; t.graph.nodes=t.graph.nodes.filter(n=>n.id!==id); t.graph.edges=t.graph.edges.filter(e=>e.source!==id&&e.target!==id); $("#context").hidden=true; renderGraph(); renderGraphFilters(); toast("Node removed"); }
 window.addEventListener("click",()=>{ $("#ctxmenu").hidden=true; closeAllSelects(); });
 
 // ---------- render all views ----------
@@ -420,19 +505,23 @@ function renderAlerts(){ const t=activeTab(); const a=$("#alertsList"); a.innerH
 function runModal(){
   const t=activeTab();
   const domainOpts = state.domains.map(d=>`<option value="${d.slug}" ${t&&t.project.domain===d.slug?"selected":""}>${esc(d.title)}</option>`).join("");
-  const typeOpts = ['<option value="">auto (classify)</option>'].concat(state.dataTypes.map(dt=>`<option value="${dt.slug}">${dt.slug}</option>`)).join("");
+  // group data types by category
+  const cats={}; state.dataTypes.forEach(dt=>{ (cats[dt.category||"Other"]=cats[dt.category||"Other"]||[]).push(dt.slug); });
+  let typeOpts='<option value="">Auto-classify</option>';
+  Object.entries(cats).forEach(([c,list])=>{ typeOpts+=`<optgroup label="${esc(c)}">`+list.map(s=>`<option value="${s}">${s}</option>`).join("")+"</optgroup>"; });
   openModal("Run analysis", `
     <div class="field">Business vertical<select id="rDomain" class="select">${domainOpts}</select></div>
-    <div class="field">Data type<select id="rType" class="select">${typeOpts}</select></div>
+    <div class="field">Data type (category → type, or auto)<select id="rType" class="select">${typeOpts}</select></div>
     <div class="field">LLM provider<select id="rProvider" class="select">
-      <option value="auto">Auto (Claude → Codex)</option><option value="claude">Claude</option><option value="codex">Codex</option><option value="mock">Offline mock</option></select></div>
-    <div class="field">Input source(s) — path(s), space-separated<input id="rInputs" placeholder="/opt/CourseStackIntelligence/Students.csv" /></div>
+      <option value="auto">Auto — smart routing (Opus/Sonnet ⇄ Codex)</option><option value="claude">Claude (Opus/Sonnet)</option><option value="codex">Codex (gpt-5.5)</option><option value="mock">Offline mock</option></select></div>
+    <div class="field">Input source(s)<div style="display:flex;gap:8px"><input id="rInputs" placeholder="/path/file.csv  (or Browse)" style="flex:1" /><button class="btn ghost" id="rBrowse">Browse…</button></div></div>
     <div class="field">Max records (graph cap)<input id="rMax" type="number" value="4000" /></div>
     ${MODE==="mock"?'<div class="modal-note">Preview mode: loads the embedded sample.</div>':''}
   `,[
     {label:"Cancel",cls:"ghost",act:closeModal},
     {label:"▶ Run",cls:"primary",act:doRun}
   ]);
+  setTimeout(()=>{ const b=$("#rBrowse"); if(b) b.addEventListener("click",()=>browseUpload(path=>{ const cur=$("#rInputs").value.trim(); $("#rInputs").value=(cur?cur+" ":"")+path; }, ".csv,.tsv,.json,.jsonl,.ndjson")); },40);
   setTimeout(()=>{ if($("#rProvider")) $("#rProvider").value=state.provider; },30);
 }
 async function doRun(){
@@ -477,7 +566,7 @@ async function askAbout(q){
   const thinking=el("div","ask-msg a","✦ thinking…"); log.appendChild(thinking); log.scrollTop=log.scrollHeight;
   try {
     const graph = t? {nodes:t.graph.nodes, edges:t.graph.edges}:{nodes:[],edges:[]};
-    const res = await api("/api/ask",{method:"POST",body:{question:q, domain:t?t.project.domain:"generic", provider:state.provider, graph}});
+    const res = await api("/api/ask",{method:"POST",body:{question:q, domain:t?t.project.domain:"generic", provider:state.provider, graph, aiInstructions:t?t.project.ai_instructions:""}});
     thinking.remove();
     const a=el("div","ask-msg a");
     let h=`<div>${esc(res.answer||"(no answer)")}</div>`;
@@ -487,6 +576,7 @@ async function askAbout(q){
     if(adds){ const n=(res.entities||[]).length,r=(res.relationships||[]).length; h+=`<div class="adds" id="addProp">＋ Add ${n} entities / ${r} relations to graph</div>`; }
     a.innerHTML=h; log.appendChild(a); log.scrollTop=log.scrollHeight;
     if(adds){ $("#addProp").addEventListener("click",()=>mergeProposals(res)); }
+    applyFocus(res.focus);
     pushNotif("ai","AI copilot answered a query");
   } catch(e){ thinking.remove(); const a=el("div","ask-msg a"); a.textContent="✦ error: "+e.message; log.appendChild(a); }
 }
@@ -500,6 +590,20 @@ function mergeProposals(res){
   renderGraph(); toast("Added AI proposals to graph","ok");
 }
 function hashStr(s){ let h=0; for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))|0; } return h; }
+// Apply an AI-returned focus directly to the graph (isolate/highlight), no manual filtering.
+function applyFocus(focus){ if(!focus||!cy||focus.action==="none") return; const t=activeTab(); if(!t) return;
+  const labels=new Set((focus.entity_labels||[]).map(s=>String(s).toLowerCase()));
+  const kinds=new Set((focus.kinds||[]).map(s=>String(s).toLowerCase()));
+  const minRisk=typeof focus.min_risk==="number"?focus.min_risk:null;
+  const match=n=>{ let ok=false; if(labels.size&&labels.has(n.label.toLowerCase()))ok=true; if(kinds.size&&kinds.has(n.kind.toLowerCase()))ok=true; if(minRisk!=null&&(n.risk||0)>=minRisk)ok=true; if(!labels.size&&!kinds.size&&minRisk==null)ok=true; return ok; };
+  const keep=new Set(); t.graph.nodes.forEach(n=>{ if(match(n)) keep.add(n.id); });
+  if(!keep.size) return;
+  showView("graph"); requestAnimationFrame(()=>{ initCy(); if(!cy)return; cy.resize();
+    if(focus.action==="isolate"){ cy.nodes().forEach(nd=>nd.style("display",keep.has(nd.id())?"element":"none")); cy.fit(cy.nodes(":visible"),60); }
+    else { cy.elements().addClass("faded"); keep.forEach(id=>{ const e=cy.$id(id); if(e){ e.removeClass("faded"); e.connectedEdges().removeClass("faded"); } }); cy.fit(cy.nodes(":visible").length?cy.nodes().filter(n=>keep.has(n.id())):cy.elements(),60); }
+  });
+  toast(`AI focus applied — ${keep.size} entities`,"ok");
+}
 
 // ---------- connectors ----------
 const CONNECTORS=[
@@ -629,6 +733,10 @@ $("#btnNewProject2").addEventListener("click",newProjectModal);
 
 // ---------- graph controls ----------
 $("#btnFit").addEventListener("click",()=>{ if(cy) cy.fit(cy.elements(":visible"),50); });
+$("#zoomIn")&&$("#zoomIn").addEventListener("click",()=>{ if(cy) cy.zoom({level:cy.zoom()*1.3, renderedPosition:{x:cy.width()/2,y:cy.height()/2}}); });
+$("#zoomOut")&&$("#zoomOut").addEventListener("click",()=>{ if(cy) cy.zoom({level:cy.zoom()/1.3, renderedPosition:{x:cy.width()/2,y:cy.height()/2}}); });
+$("#zoomFit")&&$("#zoomFit").addEventListener("click",()=>{ if(cy) cy.fit(cy.elements(":visible"),50); });
+$("#zoomIn")&&($("#zoomIn").innerHTML=svg("zoomin")); $("#zoomOut")&&($("#zoomOut").innerHTML=svg("zoomout")); $("#zoomFit")&&($("#zoomFit").innerHTML=svg("fit"));
 $("#btnReset").addEventListener("click",()=>{ if(cy){ cy.nodes().style("display","element"); cy.$(":selected").unselect(); cy.fit(cy.elements(),50); } $("#graphFilter").value=""; $("#context").hidden=true; toast("View reset"); });
 $("#graphLayout").addEventListener("change",runLayout);
 $("#graphFilter").addEventListener("input",e=>{ const q=e.target.value.trim().toLowerCase(); if(!cy)return;
@@ -690,7 +798,9 @@ async function renderTransformStore(){ const w=$("#transformCatalog"); if(!w)ret
       nm.appendChild(el("span","tf-badge "+(t.requires_api_key?"key":"free"), t.requires_api_key?("key: "+t.service):"no key"));
       meta.appendChild(nm); meta.appendChild(el("div","tf-desc",t.description)); it.appendChild(meta);
       const btn=el("button","btn "+(instIds.has(t.id)?"ghost":"primary"), instIds.has(t.id)?"Installed":"Install");
-      if(!instIds.has(t.id)) btn.addEventListener("click",async()=>{ try{ await api("/api/transforms/install",{method:"POST",body:{id:t.id}}); toast("Installed "+t.name,"ok"); renderTransformStore(); renderInstalledTransforms(); if(t.requires_api_key) openSettingsTab("keys"); }catch(e){toast(e.message,"err");} });
+      if(!instIds.has(t.id)) btn.addEventListener("click",()=>{ const doInstall=async()=>{ try{ await api("/api/transforms/install",{method:"POST",body:{id:t.id}}); toast("Installed "+t.name,"ok"); renderTransformStore(); renderInstalledTransforms(); if(t.requires_api_key) openSettingsTab("keys"); }catch(e){toast(e.message,"err");} };
+        if(t.disclaimer){ openModal("Install "+t.name, `<div class="disclaimer">${esc(t.disclaimer)}</div><p class="muted">${esc(t.description)}</p>`,[{label:"Cancel",cls:"ghost",act:closeModal},{label:"I understand — install",cls:"primary",act:()=>{closeModal();doInstall();}}]); }
+        else doInstall(); });
       it.appendChild(btn); box.appendChild(it); });
     w.appendChild(box); });
   if(!w.children.length) w.innerHTML='<div class="empty">No matches.</div>';
@@ -746,9 +856,11 @@ async function runTransformOnSelected(t){ const id=cy&&cy.$(":selected").length?
 }
 function mergeTransformResult(seed, res){ const tb=activeTab(); if(!tb)return; const byLabel={}; tb.graph.nodes.forEach(n=>byLabel[n.label.toLowerCase()]=n.id);
   (res.entities||[]).forEach(e=>{ const key=(e.label||"").toLowerCase(); if(!key)return; if(!byLabel[key]){ const nid="tf-"+Math.abs(hashStr(key+e.kind)); byLabel[key]=nid; tb.graph.nodes.push({id:nid,kind:e.kind||"unknown",label:e.label,risk:0.3,band:"low",attributes:e.attributes||{},tags:["transform"],sources:["transform"]}); } });
+  const freshIds=(res.entities||[]).map(e=>byLabel[(e.label||"").toLowerCase()]).filter(Boolean);
   (res.relationships||[]).forEach(r=>{ const s=byLabel[(r.source||"").toLowerCase()]||seed.id, tg=byLabel[(r.target||"").toLowerCase()]; if(s&&tg) tb.graph.edges.push({source:s,target:tg,type:r.type||"related",conf:r.confidence||0.5}); });
-  renderGraph(); renderGraphFilters(); selectNode(seed.id);
+  renderGraph(); renderGraphFilters(); flashFresh(freshIds); selectNode(seed.id);
 }
+function flashFresh(ids){ if(!cy||!ids||!ids.length)return; setTimeout(()=>{ ids.forEach(id=>{ const e=cy.$id(id); if(e&&e.length){ e.addClass("fresh"); setTimeout(()=>e.removeClass("fresh"),1800); } }); },100); }
 
 // ---------- intelligence view ----------
 function renderIntelligence(){ const t=activeTab();
@@ -776,10 +888,18 @@ window.addEventListener("keydown",e=>{ const meta=e.metaKey||e.ctrlKey;
   else if(meta&&e.key.toLowerCase()==="r"){e.preventDefault();runModal();}
   else if(meta&&e.key.toLowerCase()==="n"){e.preventDefault();newProjectModal();}
   else if(meta&&e.key==="/"){e.preventDefault();openAsk();}
-  else if(e.key==="Escape"){ closePalette(); closeModal(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); } });
+  else if(e.key==="Escape"){ closePalette(); closeModal(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); if(linkMode){ linkMode=null; const b=$("#linkmodeBanner"); if(b)b.hidden=true; } } });
 
 // ---------- file helpers ----------
-function pickFile(cb){ const inp=$("#filePicker"); inp.value=""; inp.onchange=()=>{ const f=inp.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>cb(rd.result); rd.readAsText(f); }; inp.click(); }
+function pickFile(cb){ const inp=$("#filePicker"); inp.removeAttribute("accept"); inp.value=""; inp.onchange=()=>{ const f=inp.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>cb(rd.result); rd.readAsText(f); }; inp.click(); }
+let npUploadPath=null;
+// Browse a local file, upload its bytes to the server, and return the server-side path.
+function browseUpload(cb, accept){ const inp=$("#filePicker"); if(accept)inp.setAttribute("accept",accept); else inp.removeAttribute("accept"); inp.value="";
+  inp.onchange=async ()=>{ const f=inp.files[0]; if(!f)return;
+    if(MODE!=="http"){ cb("/uploads/"+f.name); toast("Preview: file path simulated","ok"); return; }
+    try{ const buf=await f.arrayBuffer(); const r=await fetch("/api/upload?name="+encodeURIComponent(f.name),{method:"POST",headers:{"Authorization":"Bearer "+TOKEN,"Content-Type":"application/octet-stream"},body:buf}); const j=await r.json(); if(!r.ok)throw new Error(j.error||"upload failed"); cb(j.path); toast("Uploaded "+f.name,"ok"); }
+    catch(e){ toast(e.message,"err"); } };
+  inp.click(); }
 function downloadText(name,text){ const b=new Blob([text],{type:"application/json"}); const a=el("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
 
 // ---------- mock backend (artifact preview / static) ----------
