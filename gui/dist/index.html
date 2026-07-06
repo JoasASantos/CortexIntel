@@ -63,7 +63,7 @@
       </div>
       <div class="topbar-right">
         <div class="sync-status" id="syncStatus"><span class="dot idle"></span><span id="syncLabel">idle</span></div>
-        <button class="btn ghost" id="btnAsk" title="Ask the AI copilot (⌘/)">✦ Ask AI</button>
+        <button class="btn ghost" id="btnAsk" title="Ask AI — summarize, navigate, act anywhere (⌘/)">✦ Ask AI</button>
         <button class="btn primary" id="btnRun" title="Run analysis (⌘R)">▶ Run</button>
         <button class="icon-btn" id="btnNotifications" title="Notifications">🔔<span class="badge" id="notifBadge" hidden>0</span></button>
         <div class="profile" id="profileBtn" title="Account"><span class="avatar" id="avatar">OP</span></div>
@@ -209,6 +209,7 @@
             <button class="btn ghost" id="btnIntelPdf">⬇ PDF report</button>
             <span class="intel-meta" id="intelMeta"></span>
           </div>
+          <div class="intel-flows" id="intelFlows"></div>
           <div class="card intel-exec"><div class="card-head"><h3>Executive assessment</h3><span class="conf-pill" id="intelConf"></span></div>
             <div class="report-body" id="intelBrief"><div class="empty">Generate intelligence to synthesize an assessment.</div></div></div>
           <div class="card"><div class="card-head"><h3>Key judgments</h3><span class="conf-pill">facts vs. inference</span></div><div id="intelJudgments"><div class="empty">—</div></div></div>
@@ -356,6 +357,15 @@
   <div class="palette-backdrop" id="paletteBackdrop" hidden>
     <div class="palette"><input id="paletteInput" placeholder="Type a command…" /><div class="palette-list" id="paletteList"></div>
       <div class="palette-foot">↑↓ navigate · ↵ select · Esc close</div></div>
+  </div>
+
+  <!-- Global Ask AI — summarizes, navigates and acts anywhere (distinct from the graph copilot) -->
+  <div class="palette-backdrop" id="askBackdrop" hidden>
+    <div class="palette askbar">
+      <div class="askbar-head"><span class="askbar-ic">✦</span><input id="askGlobalInput" placeholder="Ask CortexIntel anything — summarize, take me to…, run analysis, show high risk, export report…" /></div>
+      <div class="askbar-body" id="askGlobalBody"><div class="askbar-hint">I can summarize the investigation, jump to any area, or run an action. Try: “summarize this case”, “go to entities”, “generate intelligence”, “show high-risk in the graph”, “export a PDF report”.</div></div>
+      <div class="palette-foot">↵ send · Esc close · this assistant works across the whole app</div>
+    </div>
   </div>
 
   <!-- Generic modal -->

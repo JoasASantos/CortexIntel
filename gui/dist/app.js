@@ -332,7 +332,11 @@ function newProjectModal() {
     <div class="field">Project name<input id="npName" placeholder="e.g. Case 2026-114 · Q3 review · Threat sweep" /></div>
     <div class="field">Business vertical<select id="npDomain" class="select">${domainOpts}</select></div>
     <div class="field">Description<textarea id="npDesc" rows="2" placeholder="what this project investigates"></textarea></div>
-    <div class="field">Instruction for AI (optional)<textarea id="npAI" rows="2" placeholder="focus/context for the AI, e.g. 'prioritize shared-infrastructure clusters; ignore internal test records'"></textarea></div>
+    <div class="field">Data context for the AI — describe what the data IS<textarea id="npAI" rows="4" placeholder="The more you tell the AI, the sharper the analysis. e.g.:
+• What each dataset is (customer export, transaction log, hotline tips…)
+• What the columns mean, especially non-obvious ones
+• What you're trying to find or decide
+• What counts as risk/success here; what to ignore (test accounts, internal traffic…)"></textarea></div>
     <div class="field">Import a file now (optional)<div style="display:flex;gap:8px"><input id="npFile" placeholder="no file selected" readonly style="flex:1" /><button class="btn ghost" id="npBrowse">Browse…</button></div></div>
     <div class="modal-note" id="npNote"></div>
   `, [
@@ -919,8 +923,61 @@ function openAsk(){ $("#askDock").hidden=false; showView("graph"); $("#askText")
       : `✦ Copilot ready (provider: <b>${esc(state.provider)}</b>). Ask about the current graph.`;
     log.appendChild(h); }
 }
-$("#btnAsk").addEventListener("click",openAsk);
+// The graph toolbar's Ask (btnAsk2) opens the graph-only copilot dock.
 $("#btnAsk2").addEventListener("click",openAsk);
+
+// ---------- Global Ask AI (top bar): summarize / navigate / act anywhere ----------
+// Distinct from the graph AI Copilot (which stays inside the graph). This is an
+// app-wide assistant: it can jump to any view, run actions, and summarize.
+function openGlobalAsk(){ $("#askBackdrop").hidden=false; const i=$("#askGlobalInput"); i.value=""; i.focus(); }
+function closeGlobalAsk(){ $("#askBackdrop").hidden=true; }
+$("#btnAsk")&&$("#btnAsk").addEventListener("click",openGlobalAsk);
+$("#askBackdrop")&&$("#askBackdrop").addEventListener("click",e=>{ if(e.target===$("#askBackdrop")) closeGlobalAsk(); });
+$("#askGlobalInput")&&$("#askGlobalInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); runGlobalAsk($("#askGlobalInput").value); } });
+
+// Deterministic intent router — navigation + core actions, offline. Returns a
+// handled result {msg, run:fn} or null if it's a free-form question for the LLM.
+function globalIntent(q){
+  const s=q.toLowerCase().trim();
+  const views={dashboard:["dashboard","overview","command","início","inicio","home"],graph:["graph","grafo","network","rede"],intelligence:["intelligence","inteligência","inteligencia","assessment","analysis","análise"],entities:["entities","entidades","registry","registro"],timeline:["timeline","linha do tempo","tempo"],alerts:["alerts","alertas"],reports:["reports","relatório","relatorios","relatórios","pdf"],settings:["settings","config","configuração","ajustes"]};
+  // navigation
+  if(/\b(go to|open|take me|ir para|abrir|vá para|va para|mostrar? a aba|show me the)\b/.test(s) || /^(dashboard|graph|intelligence|entities|timeline|alerts|reports|settings)$/.test(s)){
+    for(const [v,keys] of Object.entries(views)){ if(keys.some(k=>s.includes(k))){ return { msg:`Opening ${v}.`, run:()=>{ if(v==="settings")openSettingsTab("account"); else { showView(v); if(v==="intelligence")renderIntelligence(); if(v==="entities")renderEntities(); if(v==="reports"){renderReport();renderReports();} } } }; } }
+  }
+  // core actions
+  if(/\b(run|rode|rodar|executar|analy[sz]e|análise)\b/.test(s) && /\b(analysis|análise|pipeline|dados|data)\b/.test(s)) return { msg:"Opening the Run dialog.", run:runModal };
+  if(/\b(generate|gerar|synthesi[sz]e|produce)\b/.test(s) && /\b(intelligence|inteligência|inteligencia|assessment|brief)\b/.test(s)) return { msg:"Generating intelligence…", run:()=>{ showView("intelligence"); generateIntelligence(); } };
+  if(/\b(export|exportar|gerar|generate|baixar|download)\b/.test(s) && /\b(pdf|report|relatório|relatorio)\b/.test(s)) return { msg:"Generating a PDF report…", run:()=>{ showView("reports"); exportReportPdf(); } };
+  if(/\b(isolate|isolar|show|mostr)\b.*\b(critical|crítico|critico|high[- ]?risk|alto risco)\b/.test(s) || /\b(high[- ]?risk|alto risco)\b/.test(s)) return { msg:"Isolating high-risk entities in the graph.", run:()=>{ setGraphMode("risk"); } };
+  if(/\b(new|novo|criar|create)\b.*\b(project|projeto)\b/.test(s)) return { msg:"Opening New Project.", run:newProjectModal };
+  if(/\b(add|adicionar|criar)\b.*\b(entit|entidade|node|nó)\b/.test(s)) return { msg:"Opening Add Entity.", run:addEntityModal };
+  return null;
+}
+async function runGlobalAsk(q){ q=(q||"").trim(); if(!q) return;
+  const body=$("#askGlobalBody"); body.innerHTML="";
+  const u=el("div","askbar-msg u","» "+q); body.appendChild(u);
+  const intent=globalIntent(q);
+  if(intent){ const a=el("div","askbar-msg a",intent.msg); body.appendChild(a); setTimeout(()=>{ closeGlobalAsk(); intent.run(); }, 350); return; }
+  // Free-form → summarize/answer using the active project's graph, then optionally act.
+  const t=activeTab();
+  const think=el("div","askbar-msg a","✦ thinking…"); body.appendChild(think);
+  try{
+    const graph=t?{nodes:t.graph.nodes,edges:t.graph.edges}:{nodes:[],edges:[]};
+    const res=await runJob("ask",{question:q+"\n\n(You are the app-wide assistant. Summarize clearly for a non-technical user; if a specific view/action would help, mention it.)", domain:t?t.project.domain:"generic", provider:state.provider, graph, aiInstructions:t?t.project.ai_instructions:""});
+    think.remove(); const a=el("div","askbar-msg a"); let h=`<div>${esc(res.answer||"(no answer)")}</div>`;
+    if(res.key_points&&res.key_points.length) h+="<ul>"+res.key_points.slice(0,5).map(p=>`<li>${esc(p)}</li>`).join("")+"</ul>";
+    a.innerHTML=h;
+    // offer quick follow-through
+    const goIntel=el("span","askbar-do","✦ Open Intelligence"); goIntel.addEventListener("click",()=>{closeGlobalAsk();showView("intelligence");renderIntelligence();}); a.appendChild(goIntel);
+    if(res.focus&&res.focus.action&&res.focus.action!=="none"){ const goG=el("span","askbar-do","Show in graph"); goG.addEventListener("click",()=>{closeGlobalAsk();applyFocus(res.focus);}); a.appendChild(goG); }
+    body.appendChild(a);
+  }catch(e){ think.remove();
+    // offline fallback: local filter or a plain message
+    const local=localFilterAnswer(q,t); const a=el("div","askbar-msg a");
+    if(local){ a.innerHTML=local.html; body.appendChild(a); if(local.ids.length){ const g=el("span","askbar-do","Show in graph"); g.addEventListener("click",()=>{closeGlobalAsk();applyLocalFocus(local.ids);}); a.appendChild(g);} }
+    else { a.innerHTML="✦ No LLM backend reachable — I can still navigate and run actions. Try “go to intelligence” or “export a PDF report”."; body.appendChild(a); }
+  }
+}
 $("#askClose").addEventListener("click",()=>$("#askDock").hidden=true);
 $("#askSend").addEventListener("click",()=>askAbout($("#askText").value));
 $("#askText").addEventListener("keydown",e=>{ if(e.key==="Enter"&&(e.metaKey||e.ctrlKey)){ e.preventDefault(); askAbout($("#askText").value);} });
@@ -1534,7 +1591,28 @@ function renderDecisionMatrix(t,g,m){ const tb=$("#intelDecision tbody"); if(!tb
       $("#nbaGo")&&$("#nbaGo").addEventListener("click",b.go); } }
 }
 
+// Pre-defined analysis flows (one-click prompts that steer the assessment).
+const FLOW_COMMON=[
+  ["◆","Executive summary","Give a 3-sentence executive summary for a non-technical decision-maker: what's happening, why it matters, and the single most important next step."],
+  ["⚠","Biggest risks","What are the top 3 risks in this data, ranked, each with the evidence and how confident we are?"],
+  ["◇","What's missing","What data or verification is missing that would most change the conclusion, and why?"],
+  ["▶","Action plan","Produce a prioritized action plan: what to do first, second, third, with expected impact and effort."],
+];
+const FLOW_DOMAIN={
+  fraud:[["$","Money-flow","Trace the money flows and shared infrastructure; where is exposure concentrated and who are the likely controllers?"]],
+  kyc:[["ID","Identity risk","Assess identity plausibility: which persons/documents look weak or conflated and what verification is needed?"]],
+  cybersecurity:[["⌘","Infra & actors","Map infrastructure and actors: shared hosts/IPs/domains, likely operators, and containment leads."]],
+  commerce:[["♥","Churn & value","Which customers/segments are highest value or at-risk, and what outreach should happen?"]],
+  "child-protection":[["!","Victim priority","Which entities indicate imminent risk or victim-identification leads that need escalation now?"]],
+  logistics:[["⛓","Bottlenecks","Where are the operational bottlenecks or single points of failure, and how to make routing resilient?"]],
+};
+function renderFlows(){ const w=$("#intelFlows"); if(!w)return; const t=activeTab(); w.innerHTML="";
+  const flows=[...(FLOW_DOMAIN[t?t.project.domain:""]||[]), ...FLOW_COMMON];
+  flows.forEach(([ic,label,prompt])=>{ const b=el("button","flow-btn"); b.innerHTML=`<span class="fb-ic">${ic}</span>${esc(label)}`; b.title=prompt; b.addEventListener("click",()=>generateIntelligence(prompt)); w.appendChild(b); });
+}
+
 function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],edges:[]}; const m=computeMetrics(g);
+  renderFlows();
   if(t){ renderHypotheses(t,g,m); renderDecisionMatrix(t,g,m); }
   const top=$("#intelTop"); if(top){ top.innerHTML=""; const nodes=[...g.nodes].sort((a,b)=>b.risk-a.risk).slice(0,12); if(!nodes.length)top.innerHTML='<div class="empty">—</div>';
     nodes.forEach(n=>{ const li=el("div","li"); const l=el("div","l"); const d=el("span","kdot"); d.style.background=kColor(n.kind); l.appendChild(d); l.appendChild(el("span","label",n.label)); li.appendChild(l); li.appendChild(el("span","band "+(n.band||bandOf(n.risk)),(n.band||bandOf(n.risk)))); li.addEventListener("click",()=>focusEntity(n.id,true)); top.appendChild(li); }); }
@@ -1611,8 +1689,8 @@ window.addEventListener("keydown",e=>{ const meta=e.metaKey||e.ctrlKey;
   if(meta&&e.key.toLowerCase()==="k"){e.preventDefault();openPalette();}
   else if(meta&&e.key.toLowerCase()==="r"){e.preventDefault();runModal();}
   else if(meta&&e.key.toLowerCase()==="n"){e.preventDefault();newProjectModal();}
-  else if(meta&&e.key==="/"){e.preventDefault();openAsk();}
-  else if(e.key==="Escape"){ closePalette(); closeModal(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); if(linkMode){ linkMode=null; const b=$("#linkmodeBanner"); if(b)b.hidden=true; } if(pathSource) clearPath(); } });
+  else if(meta&&e.key==="/"){e.preventDefault();openGlobalAsk();}
+  else if(e.key==="Escape"){ closePalette(); closeModal(); closeGlobalAsk(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); if(linkMode){ linkMode=null; const b=$("#linkmodeBanner"); if(b)b.hidden=true; } if(pathSource) clearPath(); } });
 
 // ---------- file helpers ----------
 function pickFile(cb){ const inp=$("#filePicker"); inp.removeAttribute("accept"); inp.value=""; inp.onchange=()=>{ const f=inp.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>cb(rd.result); rd.readAsText(f); }; inp.click(); }
