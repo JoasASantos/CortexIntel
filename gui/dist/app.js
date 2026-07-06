@@ -33,6 +33,7 @@ const I18N = {
     "band.critical":"critical","band.high":"high","band.medium":"medium","band.low":"low",
     "ready.ready":"Ready for decision","ready.needs-review":"Needs review","ready.insufficient":"Insufficient data","ready.conflicting":"Conflicting evidence",
     "rd.label":"Decision readiness","btn.genIntel":"Generate intelligence","btn.openGraph":"Open graph","decision.matrix.sub":"impact · confidence · risk · effort",
+    "canvas.graph":"Graph","canvas.map":"Map","map.none":"No geolocated entities in this view. Entities with latitude/longitude (or GPS/EXIF) plot here; the rest stay in the graph.","map.plotted":"{0} geolocated entities","map.trajectories":"{0} trajectories",
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
@@ -61,6 +62,7 @@ const I18N = {
     "band.critical":"crítico","band.high":"alto","band.medium":"médio","band.low":"baixo",
     "ready.ready":"Pronto para decisão","ready.needs-review":"Precisa de revisão","ready.insufficient":"Dados insuficientes","ready.conflicting":"Evidências conflitantes",
     "rd.label":"Prontidão para decisão","btn.genIntel":"Gerar inteligência","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confiança · risco · esforço",
+    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias",
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
@@ -89,6 +91,7 @@ const I18N = {
     "band.critical":"crítico","band.high":"alto","band.medium":"medio","band.low":"bajo",
     "ready.ready":"Listo para decidir","ready.needs-review":"Necesita revisión","ready.insufficient":"Datos insuficientes","ready.conflicting":"Evidencia contradictoria",
     "rd.label":"Preparación para decidir","btn.genIntel":"Generar inteligencia","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confianza · riesgo · esfuerzo",
+    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias",
   },
 };
 function detectLang(){ const s=localStorage.getItem("cortex_lang"); if(s&&I18N[s])return s; const n=(navigator.language||"en").slice(0,2).toLowerCase(); return I18N[n]?n:"en"; }
@@ -866,7 +869,9 @@ function showView(name){ currentView=name; $$(".view").forEach(v=>v.hidden=true)
     // races the reflow on the desktop WebView, leaving the viewport zoomed on an
     // empty corner of the graph (looks blank). A trailing settle() re-fits after
     // the layout has committed.
-    const settle=()=>{ initCy(); if(!cy) return; cy.resize();
+    const settle=()=>{ initCy(); if(!cy) return;
+      if(canvasMode==="map"){ renderMap(); return; }
+      cy.resize();
       const t=activeTab();
       if(t && t._needsRelayout && cy.nodes().length){ t._needsRelayout=false; runLayout(t._perf); }
       if(cy.nodes().length) cy.fit(cy.elements(":visible"),50);
@@ -1979,6 +1984,63 @@ function focusCoaEntities(ids){ if(!ids||!ids.length)return; showView("graph");
     const eles=cy.nodes().filter(n=>keep.has(n.id())); if(eles.length){ cy.animate({fit:{eles:eles.closedNeighborhood(),padding:80},duration:350}); }
     toast(`Focused ${ids.length} supporting ${ids.length>1?"entities":"entity"}`); });
 }
+// ============ G3 — Map lens (offline geo-canvas) ============
+// A second view of the SAME object: geolocated entities plotted on an
+// equirectangular canvas with temporal trajectories. Fully offline (no tiles,
+// no external deps) so it works in the desktop WebView and respects the rule
+// that the browser never holds raw data — it plots the served slice only.
+let canvasMode = "graph";
+// Extract {lat,lon} from an entity's attributes across common key spellings.
+function geoOf(n){ const a=n.attributes||{}; const get=(...ks)=>{ for(const k of Object.keys(a)){ const lk=k.toLowerCase().replace(/[^a-z]/g,""); if(ks.includes(lk)){ const v=parseFloat(String(a[k]).split(",")[0]); if(!isNaN(v))return v; } } return null; };
+  let lat=get("lat","latitude","latitudeapprox","gpslatitude"); let lon=get("lon","lng","longitude","longitudeapprox","gpslongitude");
+  // "lat,lon" packed in one field (e.g. EXIF label "12.3,-45.6")
+  if(lat==null){ for(const k of Object.keys(a)){ const m=String(a[k]).match(/^\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/); if(m){ lat=parseFloat(m[1]); lon=parseFloat(m[2]); break; } } }
+  if(lat==null||lon==null||Math.abs(lat)>90||Math.abs(lon)>180) return null; return {lat,lon}; }
+function setCanvasMode(mode){ canvasMode=mode;
+  $$("#canvasSwitch .cmode").forEach(b=>b.classList.toggle("active",b.dataset.canvas===mode));
+  const isMap=mode==="map";
+  $("#cy").style.display=isMap?"none":""; $("#mapCanvas").hidden=!isMap; $("#minimapWrap")&&($("#minimapWrap").style.display=isMap?"none":"");
+  $("#graphModes")&&($("#graphModes").style.display=isMap?"none":""); $("#graphZoom")&&($("#graphZoom").style.display=isMap?"none":"");
+  if(isMap) renderMap(); else { requestAnimationFrame(()=>{ if(cy){cy.resize();cy.fit(cy.elements(":visible"),50);} }); }
+}
+let _mapState=null;
+function renderMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=$("#mapEmpty"); if(!cv||!t) return;
+  const wrap=cv.parentElement; const W=wrap.clientWidth, H=wrap.clientHeight; const dpr=Math.min(2,window.devicePixelRatio||1);
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px";
+  const ctx=cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  // Collect geolocated nodes (cap for very large graphs — served-slice rule).
+  let pts=t.graph.nodes.map(n=>{ const g=geoOf(n); return g?{n,...g}:null; }).filter(Boolean);
+  const capped = pts.length>2000; if(capped){ pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,2000); }
+  if(empty){ empty.hidden=pts.length>0; if(!pts.length){ empty.innerHTML=`<div class="ge-inner"><div class="ge-icon">🗺</div><p>${esc(t2("map.none"))}</p></div>`; } }
+  // Equirectangular projection with padding.
+  const pad=44; const proj=(lat,lon)=>({ x:pad+(lon+180)/360*(W-2*pad), y:pad+(90-lat)/180*(H-2*pad) });
+  // graticule
+  ctx.strokeStyle="rgba(148,163,184,0.12)"; ctx.fillStyle="rgba(148,163,184,0.45)"; ctx.lineWidth=1; ctx.font="10px SF Mono, Menlo, monospace";
+  for(let lon=-180;lon<=180;lon+=30){ const p=proj(0,lon); ctx.beginPath(); ctx.moveTo(p.x,pad); ctx.lineTo(p.x,H-pad); ctx.stroke(); ctx.fillText(lon+"°",p.x+2,H-pad+12); }
+  for(let lat=-90;lat<=90;lat+=30){ const p=proj(lat,0); ctx.beginPath(); ctx.moveTo(pad,p.y); ctx.lineTo(W-pad,p.y); ctx.stroke(); ctx.fillText(lat+"°",4,p.y-2); }
+  ctx.strokeStyle="rgba(87,215,232,0.25)"; const eq=proj(0,0); ctx.beginPath(); ctx.moveTo(pad,eq.y); ctx.lineTo(W-pad,eq.y); ctx.stroke();
+  // trajectories: group temporally-ordered points sharing a trajectory key.
+  const groups={}; pts.forEach(p=>{ const key=(p.n.attributes&&(p.n.attributes.trajectory||p.n.attributes.track||p.n.attributes.vessel||p.n.attributes.subject))||null; if(key){ (groups[key]=groups[key]||[]).push(p); } });
+  let trajCount=0;
+  Object.values(groups).forEach(list=>{ if(list.length<2)return; trajCount++;
+    list.sort((a,b)=>(parseTs(a.n)||0)-(parseTs(b.n)||0));
+    ctx.strokeStyle="rgba(87,215,232,0.6)"; ctx.lineWidth=1.6; ctx.beginPath();
+    list.forEach((p,i)=>{ const xy=proj(p.lat,p.lon); i?ctx.lineTo(xy.x,xy.y):ctx.moveTo(xy.x,xy.y); }); ctx.stroke(); });
+  // points (same badge colours as the graph)
+  const screenPts=[];
+  pts.forEach(p=>{ const xy=proj(p.lat,p.lon); const r=5+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
+    const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+4,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.25)":"rgba(251,113,133,0.22)"); ctx.fill(); }
+    ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.5)"; ctx.stroke(); });
+  _mapState={screenPts};
+  // header note
+  const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${trajCount?` · ${t2("map.trajectories",trajCount)}`:""}${capped?" · (top 2000)":""}`;
+}
+// Click a plotted point → open its dossier (same panel as the graph).
+$("#mapCanvas")&&$("#mapCanvas").addEventListener("click",e=>{ if(!_mapState)return; const rect=e.target.getBoundingClientRect(); const x=e.clientX-rect.left, y=e.clientY-rect.top;
+  let best=null,bd=1e9; _mapState.screenPts.forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} });
+  if(best){ selectNode(best.n.id); } });
+$$("#canvasSwitch .cmode").forEach(b=>b.addEventListener("click",()=>setCanvasMode(b.dataset.canvas)));
+
 // Pre-defined analysis flows (one-click prompts that steer the assessment).
 const FLOW_COMMON=[
   ["◆","Executive summary","Give a 3-sentence executive summary for a non-technical decision-maker: what's happening, why it matters, and the single most important next step."],

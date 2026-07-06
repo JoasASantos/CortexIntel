@@ -143,6 +143,10 @@
           <div class="graph-wrap">
             <div class="graph-toolbar">
               <div class="gt-left">
+                <div class="canvas-switch" id="canvasSwitch">
+                  <button class="cmode active" data-canvas="graph" data-i18n="canvas.graph">Graph</button>
+                  <button class="cmode" data-canvas="map" data-i18n="canvas.map">Map</button>
+                </div>
                 <div class="mode-switch" id="graphModes">
                   <button class="gmode active" data-mode="overview" title="High-level clusters" data-i18n="gmode.overview">Overview</button>
                   <button class="gmode" data-mode="risk" title="High &amp; critical only" data-i18n="gmode.risk">Risk</button>
@@ -174,6 +178,8 @@
               <div class="gf-kinds" id="gfKinds"></div>
             </div>
             <div id="cy"></div>
+            <canvas id="mapCanvas" hidden></canvas>
+            <div class="map-empty" id="mapEmpty" hidden></div>
             <div class="graph-zoom" id="graphZoom">
               <button id="zoomIn" title="Zoom in">+</button>
               <button id="zoomOut" title="Zoom out">−</button>

@@ -130,6 +130,11 @@ fn attach_attrs(e: &mut Entity, rec: &Record) {
         "transaction_type", "url_type", "group_type", "report_category",
         "student_type", "student type", "created_at", "created at", "role",
         "customer_type", "order_status", "product_category", "department",
+        // Geo / temporal / trajectory: needed by the map lens to plot entities
+        // and draw movement paths. Coordinates are references, not raw content.
+        "latitude", "longitude", "lat", "lon", "lng", "latitude_approx", "longitude_approx",
+        "gpslatitude", "gpslongitude", "city", "location", "trajectory", "track",
+        "vessel", "subject", "timestamp", "first_seen_at", "observed_at", "received_at", "date",
     ];
     for k in SAFE {
         if let Some(v) = rec.get_any(&[k]) {
