@@ -17,6 +17,22 @@ const I18N = {
     "ingest.title":"Prepare this source","ingest.relevant":"Ingest only what's relevant to this context","ingest.all":"Ingest everything","ingest.detected":"Detected columns","ingest.rows":"rows",
     "sev.critical":"Critical","sev.high":"High","sev.medium":"Medium","sev.low":"Low","sev.none":"No severity",
     "sit.domain":"Vertical","sit.owner":"Owner","sit.jurisdiction":"Jurisdiction","sit.created":"Created","sit.updated":"Updated","sit.entities":"entities","sit.relationships":"relationships","sit.critical":"critical","sit.alerts":"alerts",
+    "auth.signin":"Sign in","auth.register":"Create account",
+    "gmode.overview":"Overview","gmode.risk":"Risk","gmode.neighborhood":"Neighborhood","gmode.timeline":"Timeline","gmode.full":"Full",
+    "gtool.entity":"Entity","gtool.fit":"Fit","gtool.path":"Path","gtool.reset":"Reset","gtool.ask":"Ask",
+    "gf.all":"All","gf.crit":"Critical + High","gf.suspicious":"Suspicious/Malicious","gf.sensitive":"Sensitive",
+    "view.entities":"Entity Registry","view.entities.sub":"Validate, resolve, enrich and prioritize the entities that feed your intelligence.",
+    "view.intelligence":"Intelligence","view.intelligence.sub":"Decision-ready product synthesized from the current investigation.",
+    "view.timeline":"Timeline","view.timeline.sub":"Audit & discovery events.",
+    "view.alerts":"Alerts","view.alerts.sub":"Flagged for human review.",
+    "view.reports":"Reports","view.reports.sub":"Investigative brief, governance & PDF export.",
+    "view.dash.sub":"Investigation state, data confidence, risk drivers and the next best action.",
+    "card.topPriorities":"Top priorities","card.riskOverview":"Risk overview","card.nextActions":"Recommended next actions","card.dataQuality":"Data quality","card.recentSignals":"Recent signals","card.yourProjects":"Your projects",
+    "card.execAssessment":"Executive assessment","card.keyJudgments":"Key judgments","card.hypotheses":"Competing hypotheses","card.priorityActors":"Priority actors & entities","card.intelGaps":"Intelligence gaps","card.decisionMatrix":"Decision matrix","card.nextBestAction":"Next best action","card.riskClusters":"Risk clusters","card.generatedReports":"Generated reports",
+    "btn.generate":"Generate","btn.pdfReport":"PDF report","btn.send":"Send","btn.newShort":"New","btn.refresh":"Refresh","btn.addEntityFull":"Add entity","btn.runAnalysis":"Run analysis",
+    "band.critical":"critical","band.high":"high","band.medium":"medium","band.low":"low",
+    "ready.ready":"Ready for decision","ready.needs-review":"Needs review","ready.insufficient":"Insufficient data","ready.conflicting":"Conflicting evidence",
+    "rd.label":"Decision readiness","btn.genIntel":"Generate intelligence","btn.openGraph":"Open graph","decision.matrix.sub":"impact · confidence · risk · effort",
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
@@ -29,6 +45,22 @@ const I18N = {
     "ingest.title":"Preparar esta fonte","ingest.relevant":"Ingerir só o que é relevante para este contexto","ingest.all":"Ingerir tudo","ingest.detected":"Colunas detectadas","ingest.rows":"linhas",
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Médio","sev.low":"Baixo","sev.none":"Sem severidade",
     "sit.domain":"Vertical","sit.owner":"Responsável","sit.jurisdiction":"Jurisdição","sit.created":"Criado","sit.updated":"Atualizado","sit.entities":"entidades","sit.relationships":"relações","sit.critical":"críticos","sit.alerts":"alertas",
+    "auth.signin":"Entrar","auth.register":"Criar conta",
+    "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Linha do tempo","gmode.full":"Completo",
+    "gtool.entity":"Entidade","gtool.fit":"Ajustar","gtool.path":"Caminho","gtool.reset":"Redefinir","gtool.ask":"Perguntar",
+    "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Suspeito/Malicioso","gf.sensitive":"Sensível",
+    "view.entities":"Registro de Entidades","view.entities.sub":"Valide, resolva, enriqueça e priorize as entidades que alimentam sua inteligência.",
+    "view.intelligence":"Inteligência","view.intelligence.sub":"Produto pronto para decisão, sintetizado da investigação atual.",
+    "view.timeline":"Linha do tempo","view.timeline.sub":"Eventos de auditoria e descoberta.",
+    "view.alerts":"Alertas","view.alerts.sub":"Sinalizados para revisão humana.",
+    "view.reports":"Relatórios","view.reports.sub":"Resumo investigativo, governança e exportação em PDF.",
+    "view.dash.sub":"Estado da investigação, confiança dos dados, fatores de risco e a próxima melhor ação.",
+    "card.topPriorities":"Principais prioridades","card.riskOverview":"Panorama de risco","card.nextActions":"Próximas ações recomendadas","card.dataQuality":"Qualidade dos dados","card.recentSignals":"Sinais recentes","card.yourProjects":"Seus projetos",
+    "card.execAssessment":"Avaliação executiva","card.keyJudgments":"Julgamentos-chave","card.hypotheses":"Hipóteses concorrentes","card.priorityActors":"Atores e entidades prioritárias","card.intelGaps":"Lacunas de inteligência","card.decisionMatrix":"Matriz de decisão","card.nextBestAction":"Próxima melhor ação","card.riskClusters":"Clusters de risco","card.generatedReports":"Relatórios gerados",
+    "btn.generate":"Gerar","btn.pdfReport":"Relatório PDF","btn.send":"Enviar","btn.newShort":"Novo","btn.refresh":"Atualizar","btn.addEntityFull":"Adicionar entidade","btn.runAnalysis":"Executar análise",
+    "band.critical":"crítico","band.high":"alto","band.medium":"médio","band.low":"baixo",
+    "ready.ready":"Pronto para decisão","ready.needs-review":"Precisa de revisão","ready.insufficient":"Dados insuficientes","ready.conflicting":"Evidências conflitantes",
+    "rd.label":"Prontidão para decisão","btn.genIntel":"Gerar inteligência","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confiança · risco · esforço",
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
@@ -41,6 +73,22 @@ const I18N = {
     "ingest.title":"Preparar esta fuente","ingest.relevant":"Ingerir solo lo relevante para este contexto","ingest.all":"Ingerir todo","ingest.detected":"Columnas detectadas","ingest.rows":"filas",
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Medio","sev.low":"Bajo","sev.none":"Sin severidad",
     "sit.domain":"Vertical","sit.owner":"Responsable","sit.jurisdiction":"Jurisdicción","sit.created":"Creado","sit.updated":"Actualizado","sit.entities":"entidades","sit.relationships":"relaciones","sit.critical":"críticos","sit.alerts":"alertas",
+    "auth.signin":"Iniciar sesión","auth.register":"Crear cuenta",
+    "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Línea de tiempo","gmode.full":"Completo",
+    "gtool.entity":"Entidad","gtool.fit":"Ajustar","gtool.path":"Ruta","gtool.reset":"Restablecer","gtool.ask":"Preguntar",
+    "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Sospechoso/Malicioso","gf.sensitive":"Sensible",
+    "view.entities":"Registro de Entidades","view.entities.sub":"Valida, resuelve, enriquece y prioriza las entidades que alimentan tu inteligencia.",
+    "view.intelligence":"Inteligencia","view.intelligence.sub":"Producto listo para decidir, sintetizado de la investigación actual.",
+    "view.timeline":"Línea de tiempo","view.timeline.sub":"Eventos de auditoría y descubrimiento.",
+    "view.alerts":"Alertas","view.alerts.sub":"Marcados para revisión humana.",
+    "view.reports":"Informes","view.reports.sub":"Resumen investigativo, gobernanza y exportación en PDF.",
+    "view.dash.sub":"Estado de la investigación, confianza de los datos, factores de riesgo y la próxima mejor acción.",
+    "card.topPriorities":"Prioridades principales","card.riskOverview":"Panorama de riesgo","card.nextActions":"Próximas acciones recomendadas","card.dataQuality":"Calidad de datos","card.recentSignals":"Señales recientes","card.yourProjects":"Tus proyectos",
+    "card.execAssessment":"Evaluación ejecutiva","card.keyJudgments":"Juicios clave","card.hypotheses":"Hipótesis en competencia","card.priorityActors":"Actores y entidades prioritarias","card.intelGaps":"Brechas de inteligencia","card.decisionMatrix":"Matriz de decisión","card.nextBestAction":"Próxima mejor acción","card.riskClusters":"Clústeres de riesgo","card.generatedReports":"Informes generados",
+    "btn.generate":"Generar","btn.pdfReport":"Informe PDF","btn.send":"Enviar","btn.newShort":"Nuevo","btn.refresh":"Actualizar","btn.addEntityFull":"Añadir entidad","btn.runAnalysis":"Ejecutar análisis",
+    "band.critical":"crítico","band.high":"alto","band.medium":"medio","band.low":"bajo",
+    "ready.ready":"Listo para decidir","ready.needs-review":"Necesita revisión","ready.insufficient":"Datos insuficientes","ready.conflicting":"Evidencia contradictoria",
+    "rd.label":"Preparación para decidir","btn.genIntel":"Generar inteligencia","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confianza · riesgo · esfuerzo",
   },
 };
 function detectLang(){ const s=localStorage.getItem("cortex_lang"); if(s&&I18N[s])return s; const n=(navigator.language||"en").slice(0,2).toLowerCase(); return I18N[n]?n:"en"; }
@@ -887,14 +935,14 @@ async function renderSituation(t){ const w=$("#situationHeader"); if(!w)return;
 function renderDashboard(){ const t=activeTab();
   renderSituation(t);
   $("#dashTitle").textContent = t? t.project.name : "Command Center";
-  $("#dashSub").textContent = t? `${t.project.domain} · investigation state, confidence, risk & next best action` : "Open or create a project to begin turning data into decisions.";
+  $("#dashSub").textContent = t? `${t.project.domain} · ${t2("view.dash.sub")}` : t2("view.dash.sub");
   const g=t?t.graph:{nodes:[],edges:[]}; const m=computeMetrics(g);
-  const rdState=$("#rdState"); rdState.textContent={ready:"Ready for decision","needs-review":"Needs review",insufficient:"Insufficient data",conflicting:"Conflicting evidence"}[m.readiness]; rdState.className="rd-state "+m.readiness;
+  const rdState=$("#rdState"); rdState.textContent=t2("ready."+m.readiness); rdState.className="rd-state "+m.readiness;
   $("#rdMeter").style.width=Math.round(m.readinessScore*100)+"%";
   $("#rdNote").textContent = !m.total?"No data yet — run an analysis or import a source." : `${pct(m.readinessScore)} · avg confidence ${pct(m.avgConf)} · data quality ${pct(m.avgQual)} · coverage ${pct(m.coverage)} · ${m.sourceDiversity} source(s).`;
   const rda=$("#rdActions"); rda.innerHTML="";
   const rdBtn=(lbl,fn)=>{ const b=el("button","btn "+(rda.children.length?"ghost":"primary"),lbl); b.addEventListener("click",fn); rda.appendChild(b); };
-  if(m.total){ rdBtn("✦ Generate intelligence",()=>generateIntelligence()); rdBtn("Open graph",()=>showView("graph")); } else { rdBtn("▶ Run analysis",runModal); rdBtn("+ Add entity",addEntityModal); }
+  if(m.total){ rdBtn("✦ "+t2("btn.genIntel"),()=>generateIntelligence()); rdBtn(t2("btn.openGraph"),()=>showView("graph")); } else { rdBtn("▶ "+t2("btn.runAnalysis"),runModal); rdBtn("+ "+t2("btn.addEntityFull"),addEntityModal); }
   const cards=[
     {v:pct(m.readinessScore),l:"Decision readiness",sub:m.readiness.replace("-"," "),bar:m.readinessScore,cls:m.readiness==="ready"?"":"warn",go:()=>{}},
     {v:pct(m.avgQual),l:"Data quality",sub:qualityLabel(m.avgQual),bar:m.avgQual,go:()=>{showView("entities");entityFilter="missing";renderEntities();}},

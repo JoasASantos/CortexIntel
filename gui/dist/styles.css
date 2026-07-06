@@ -279,6 +279,17 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .sit-stat.crit b { color: #fb7185; }
 .sit-stat.warn b { color: #f59e0b; }
 @media (max-width: 780px){ .situation { flex-direction: column; align-items: stretch; } .sit-counts { justify-content: space-between; } .sit-stat { flex: 1; } }
+/* i18n responsiveness: localized strings (esp. PT/ES) run longer than English —
+   keep chrome from clipping or overflowing. */
+.nav li span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.nav li { gap: 9px; }
+.graph-toolbar, .gmodes, .graph-actions { flex-wrap: wrap; }
+.gmode, .gf-preset { white-space: nowrap; }
+.view-head h1 { text-wrap: balance; }
+.sit-title { white-space: normal; }
+.coa-seal, .sit-sev { white-space: nowrap; }
+.rd-actions { flex-wrap: wrap; }
+.card-head h3 { min-width: 0; overflow-wrap: anywhere; }
 .ask-input { display: flex; gap: 7px; padding: 9px; border-top: 1px solid var(--stroke); }
 .ask-input textarea { flex: 1; resize: none; max-height: 120px; background: var(--bg-2); border: 1px solid var(--stroke); color: var(--text); border-radius: var(--r); padding: 8px 10px; font-size: 12.5px; font-family: var(--font); outline: none; }
 .ask-input textarea:focus { border-color: var(--accent-2); }

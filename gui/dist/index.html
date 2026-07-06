@@ -28,8 +28,8 @@
       <div class="auth-brand"><span class="logo">◈</span> CortexIntel</div>
       <div class="auth-sub" id="authSub">Sign in to your workspace</div>
       <div class="auth-tabs">
-        <button class="auth-tab active" data-auth="login">Sign in</button>
-        <button class="auth-tab" data-auth="register">Create account</button>
+        <button class="auth-tab active" data-auth="login" data-i18n="auth.signin">Sign in</button>
+        <button class="auth-tab" data-auth="register" data-i18n="auth.register">Create account</button>
       </div>
       <form id="authForm" class="auth-form">
         <label id="nameField" hidden>Display name
@@ -111,11 +111,11 @@
       <main class="main" id="main">
         <!-- Dashboard — Decision Command Center -->
         <section class="view" id="view-dashboard">
-          <div class="view-head"><h1 id="dashTitle">Command Center</h1><p class="muted" id="dashSub">Investigation state, data confidence, risk drivers and the next best action.</p></div>
+          <div class="view-head"><h1 id="dashTitle">Command Center</h1><p class="muted" id="dashSub" data-i18n="view.dash.sub">Investigation state, data confidence, risk drivers and the next best action.</p></div>
           <div class="situation" id="situationHeader" hidden></div>
           <div class="card readiness" id="readinessCard">
             <div class="rd-left">
-              <div class="rd-label">Decision readiness</div>
+              <div class="rd-label" data-i18n="rd.label">Decision readiness</div>
               <div class="rd-state" id="rdState">—</div>
               <div class="rd-meter"><span id="rdMeter"></span></div>
               <div class="rd-note muted" id="rdNote" style="margin:8px 0 0"></div>
@@ -124,16 +124,16 @@
           </div>
           <div class="cards dash-cards" id="dashCards"></div>
           <div class="cards two">
-            <div class="card"><div class="card-head"><h3>Top priorities</h3></div><div class="list" id="topPriorities"><div class="empty">—</div></div></div>
-            <div class="card"><div class="card-head"><h3>Risk overview</h3></div><div id="riskOverview"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3 data-i18n="card.topPriorities">Top priorities</h3></div><div class="list" id="topPriorities"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3 data-i18n="card.riskOverview">Risk overview</h3></div><div id="riskOverview"><div class="empty">—</div></div></div>
           </div>
           <div class="cards two">
-            <div class="card"><div class="card-head"><h3>Recommended next actions</h3></div><div class="list" id="nextActions"><div class="empty">—</div></div></div>
-            <div class="card"><div class="card-head"><h3>Data quality</h3></div><div id="dqOverview"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3 data-i18n="card.nextActions">Recommended next actions</h3></div><div class="list" id="nextActions"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3 data-i18n="card.dataQuality">Data quality</h3></div><div id="dqOverview"><div class="empty">—</div></div></div>
           </div>
           <div class="cards two">
-            <div class="card"><div class="card-head"><h3>Recent signals</h3></div><div class="list" id="signalsList"><div class="empty">—</div></div></div>
-            <div class="card"><div class="card-head"><h3>Your projects</h3><button class="btn ghost" id="btnNewProject2">＋ New</button></div>
+            <div class="card"><div class="card-head"><h3 data-i18n="card.recentSignals">Recent signals</h3></div><div class="list" id="signalsList"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3 data-i18n="card.yourProjects">Your projects</h3><button class="btn ghost" id="btnNewProject2"><span>＋ </span><span data-i18n="btn.newShort">New</span></button></div>
               <div class="list" id="projectList"><div class="empty">No projects yet.</div></div></div>
           </div>
         </section>
@@ -144,11 +144,11 @@
             <div class="graph-toolbar">
               <div class="gt-left">
                 <div class="mode-switch" id="graphModes">
-                  <button class="gmode active" data-mode="overview" title="High-level clusters">Overview</button>
-                  <button class="gmode" data-mode="risk" title="High &amp; critical only">Risk</button>
-                  <button class="gmode" data-mode="neighborhood" title="Around the selected entity">Neighborhood</button>
-                  <button class="gmode" data-mode="timeline" title="By time">Timeline</button>
-                  <button class="gmode" data-mode="full" title="Everything">Full</button>
+                  <button class="gmode active" data-mode="overview" title="High-level clusters" data-i18n="gmode.overview">Overview</button>
+                  <button class="gmode" data-mode="risk" title="High &amp; critical only" data-i18n="gmode.risk">Risk</button>
+                  <button class="gmode" data-mode="neighborhood" title="Around the selected entity" data-i18n="gmode.neighborhood">Neighborhood</button>
+                  <button class="gmode" data-mode="timeline" title="By time" data-i18n="gmode.timeline">Timeline</button>
+                  <button class="gmode" data-mode="full" title="Everything" data-i18n="gmode.full">Full</button>
                 </div>
                 <span class="muted" id="graphStats">0 nodes · 0 edges</span>
               </div>
@@ -156,20 +156,20 @@
                 <input id="graphFilter" placeholder="Filter…" />
                 <select id="graphCluster" class="mini-select" title="Collapse into clusters"><option value="none">Cluster: off</option><option value="kind">By type</option><option value="component">By component</option></select>
                 <select id="graphLayout" class="mini-select"><option value="fcose">Force (fcose)</option><option value="concentric">Concentric</option><option value="breadthfirst">Hierarchy</option><option value="circle">Circle</option><option value="grid">Grid</option></select>
-                <button class="btn ghost" id="btnAddEntity">+ Entity</button>
-                <button class="btn ghost" id="btnFit">Fit</button>
-                <button class="btn ghost" id="btnPath">Path</button>
-                <button class="btn ghost" id="btnReset">Reset</button>
-                <button class="btn ghost" id="btnAsk2">✦ Ask</button>
+                <button class="btn ghost" id="btnAddEntity"><span>+ </span><span data-i18n="gtool.entity">Entity</span></button>
+                <button class="btn ghost" id="btnFit" data-i18n="gtool.fit">Fit</button>
+                <button class="btn ghost" id="btnPath" data-i18n="gtool.path">Path</button>
+                <button class="btn ghost" id="btnReset" data-i18n="gtool.reset">Reset</button>
+                <button class="btn ghost" id="btnAsk2"><span>✦ </span><span data-i18n="gtool.ask">Ask</span></button>
               </div>
             </div>
             <div class="graph-filters" id="graphFilters">
               <span class="gf-label">Filters</span>
               <div class="gf-presets">
-                <button class="gf-preset active" data-preset="all">All</button>
-                <button class="gf-preset" data-preset="crit">Critical + High</button>
-                <button class="gf-preset" data-preset="suspicious">Suspicious/Malicious</button>
-                <button class="gf-preset" data-preset="sensitive">Sensitive</button>
+                <button class="gf-preset active" data-preset="all" data-i18n="gf.all">All</button>
+                <button class="gf-preset" data-preset="crit" data-i18n="gf.crit">Critical + High</button>
+                <button class="gf-preset" data-preset="suspicious" data-i18n="gf.suspicious">Suspicious/Malicious</button>
+                <button class="gf-preset" data-preset="sensitive" data-i18n="gf.sensitive">Sensitive</button>
               </div>
               <div class="gf-kinds" id="gfKinds"></div>
             </div>
@@ -192,7 +192,7 @@
               <div class="ask-log" id="askLog"></div>
               <div class="ask-input">
                 <textarea id="askText" rows="2" placeholder="Ask about this graph… e.g. 'which accounts share infrastructure and why?'"></textarea>
-                <button class="btn primary" id="askSend">Send</button>
+                <button class="btn primary" id="askSend" data-i18n="btn.send">Send</button>
               </div>
             </div>
           </div>
@@ -200,7 +200,7 @@
 
         <!-- Entities — Entity Registry -->
         <section class="view" id="view-entities" hidden>
-          <div class="view-head"><h1>Entity Registry</h1><p class="muted">Validate, resolve, enrich and prioritize the entities that feed your intelligence.</p></div>
+          <div class="view-head"><h1 data-i18n="view.entities">Entity Registry</h1><p class="muted" data-i18n="view.entities.sub">Validate, resolve, enrich and prioritize the entities that feed your intelligence.</p></div>
           <div class="cards" id="entSummary"></div>
           <div class="ent-controls">
             <div class="chips" id="entFilters"></div>
@@ -223,51 +223,51 @@
 
         <!-- Intelligence (decision-grade product) -->
         <section class="view" id="view-intelligence" hidden>
-          <div class="view-head"><h1>Intelligence</h1><p class="muted">Decision-ready product synthesized from the current investigation: assessment, judgments, clusters, actors, gaps.</p></div>
+          <div class="view-head"><h1 data-i18n="view.intelligence">Intelligence</h1><p class="muted" data-i18n="view.intelligence.sub">Decision-ready product synthesized from the current investigation.</p></div>
           <div class="intel-ask">
             <input id="intelPrompt" placeholder="Steer the analysis — e.g. focus on money flow and cross-border links" />
-            <button class="btn primary" id="btnIntelSend">✦ Generate</button>
-            <button class="btn ghost" id="btnIntelPdf">⬇ PDF report</button>
+            <button class="btn primary" id="btnIntelSend"><span>✦ </span><span data-i18n="btn.generate">Generate</span></button>
+            <button class="btn ghost" id="btnIntelPdf"><span>⬇ </span><span data-i18n="btn.pdfReport">PDF report</span></button>
             <span class="intel-meta" id="intelMeta"></span>
           </div>
           <div class="intel-flows" id="intelFlows"></div>
           <div class="card coa-card"><div class="card-head"><h3 data-i18n="decision.title">Decision panel</h3><span class="conf-pill">courses of action</span></div>
             <div id="coaPanel" class="coa-panel"><div class="empty" data-i18n="decision.none">Run an analysis to generate decision options.</div></div></div>
-          <div class="card intel-exec"><div class="card-head"><h3>Executive assessment</h3><span class="conf-pill" id="intelConf"></span></div>
+          <div class="card intel-exec"><div class="card-head"><h3 data-i18n="card.execAssessment">Executive assessment</h3><span class="conf-pill" id="intelConf"></span></div>
             <div class="report-body" id="intelBrief"><div class="empty">Generate intelligence to synthesize an assessment.</div></div></div>
-          <div class="card"><div class="card-head"><h3>Key judgments</h3><span class="conf-pill">facts vs. inference</span></div><div id="intelJudgments"><div class="empty">—</div></div></div>
-          <div class="card"><div class="card-head"><h3>Competing hypotheses</h3><span class="conf-pill">ranked by likelihood</span></div>
+          <div class="card"><div class="card-head"><h3 data-i18n="card.keyJudgments">Key judgments</h3><span class="conf-pill">facts vs. inference</span></div><div id="intelJudgments"><div class="empty">—</div></div></div>
+          <div class="card"><div class="card-head"><h3 data-i18n="card.hypotheses">Competing hypotheses</h3><span class="conf-pill">ranked by likelihood</span></div>
             <div id="intelHypotheses"><div class="empty">Generate intelligence to derive competing hypotheses.</div></div></div>
           <div class="intel-grid">
-            <div class="card"><div class="card-head"><h3>Priority actors & entities</h3></div><div class="list" id="intelTop"><div class="empty">—</div></div></div>
-            <div class="card"><div class="card-head"><h3>Intelligence gaps</h3></div><div id="intelGaps"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3 data-i18n="card.priorityActors">Priority actors & entities</h3></div><div class="list" id="intelTop"><div class="empty">—</div></div></div>
+            <div class="card"><div class="card-head"><h3 data-i18n="card.intelGaps">Intelligence gaps</h3></div><div id="intelGaps"><div class="empty">—</div></div></div>
           </div>
-          <div class="card"><div class="card-head"><h3>Decision matrix</h3><span class="conf-pill">impact · confidence · risk · effort</span></div>
+          <div class="card"><div class="card-head"><h3 data-i18n="card.decisionMatrix">Decision matrix</h3><span class="conf-pill">impact · confidence · risk · effort</span></div>
             <div class="dm-wrap"><table class="tbl dmtable" id="intelDecision"><thead><tr><th>Action</th><th>Impact</th><th>Confidence</th><th>Risk if wrong</th><th>Effort</th><th>Score</th><th>Route</th></tr></thead><tbody></tbody></table></div></div>
-          <div class="card nba" id="intelNbaCard"><div class="card-head"><h3>Next best action</h3></div><div id="intelNba"><div class="empty">Generate intelligence to get a recommended decision.</div></div></div>
-          <div class="card"><div class="card-head"><h3>Risk clusters</h3></div><div id="intelClusters"><div class="empty">—</div></div></div>
+          <div class="card nba" id="intelNbaCard"><div class="card-head"><h3 data-i18n="card.nextBestAction">Next best action</h3></div><div id="intelNba"><div class="empty">Generate intelligence to get a recommended decision.</div></div></div>
+          <div class="card"><div class="card-head"><h3 data-i18n="card.riskClusters">Risk clusters</h3></div><div id="intelClusters"><div class="empty">—</div></div></div>
         </section>
 
         <!-- Timeline -->
         <section class="view" id="view-timeline" hidden>
-          <div class="view-head"><h1>Timeline</h1><p class="muted">Audit & discovery events.</p></div>
+          <div class="view-head"><h1 data-i18n="view.timeline">Timeline</h1><p class="muted" data-i18n="view.timeline.sub">Audit & discovery events.</p></div>
           <div class="timeline" id="timeline"><div class="empty">—</div></div>
         </section>
 
         <!-- Alerts -->
         <section class="view" id="view-alerts" hidden>
-          <div class="view-head"><h1>Alerts</h1><p class="muted">Flagged for human review.</p></div>
+          <div class="view-head"><h1 data-i18n="view.alerts">Alerts</h1><p class="muted" data-i18n="view.alerts.sub">Flagged for human review.</p></div>
           <div class="list" id="alertsList"><div class="empty">—</div></div>
         </section>
 
         <!-- Reports -->
         <section class="view" id="view-reports" hidden>
-          <div class="view-head"><h1>Reports</h1><p class="muted">Investigative brief, governance & PDF export.</p></div>
+          <div class="view-head"><h1 data-i18n="view.reports">Reports</h1><p class="muted" data-i18n="view.reports.sub">Investigative brief, governance & PDF export.</p></div>
           <div class="row-actions" style="margin-bottom:14px">
-            <button class="btn primary" id="btnReportPdf">⬇ Generate PDF report</button>
-            <button class="btn ghost" id="btnReportRefresh">Refresh</button>
+            <button class="btn primary" id="btnReportPdf"><span>⬇ </span><span data-i18n="btn.pdfReport">Generate PDF report</span></button>
+            <button class="btn ghost" id="btnReportRefresh" data-i18n="btn.refresh">Refresh</button>
           </div>
-          <div class="card"><div class="card-head"><h3>Generated reports</h3></div><div class="list" id="reportsList"><div class="empty">No reports generated yet — click "Generate PDF".</div></div></div>
+          <div class="card"><div class="card-head"><h3 data-i18n="card.generatedReports">Generated reports</h3></div><div class="list" id="reportsList"><div class="empty">No reports generated yet — click "Generate PDF".</div></div></div>
           <div class="card"><div class="card-head"><h3>Current brief</h3></div><div class="report-body" id="reportBody"><div class="empty">Run an analysis to produce a report.</div></div></div>
         </section>
 
