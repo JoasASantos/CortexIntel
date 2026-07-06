@@ -378,7 +378,7 @@ function initCy() {
       { selector:"node", style:{
         "background-color": NODE_FILL, "background-image":"data(icon)", "background-width":"52%", "background-height":"52%", "background-fit":"none", "background-clip":"none",
         "width":"data(size)", "height":"data(size)", "shape":"ellipse",
-        "label":"data(label)", "font-size":"9px", "font-weight":600, "font-family":"var(--mono)", "color":"#E6EDF7",
+        "label":"data(label)", "font-size":"9px", "font-weight":600, "font-family":"SF Mono, Menlo, monospace", "color":"#E6EDF7",
         "text-wrap":"wrap", "text-max-width":"88px", "text-valign":"bottom", "text-margin-y":5, "min-zoomed-font-size":8,
         "text-outline-color":"#070A0F", "text-outline-width":2, "text-outline-opacity":0.85,
         "border-width":"data(bw)", "border-color":"data(kc)", "border-opacity":0.95,
@@ -390,7 +390,7 @@ function initCy() {
       { selector:"edge", style:{
         "width":"data(w)", "line-color":"rgba(148,163,184,0.16)", "target-arrow-color":"rgba(148,163,184,0.24)",
         "target-arrow-shape":"triangle", "arrow-scale":0.55, "curve-style":"bezier",
-        "label":"", "font-size":"7px", "font-family":"var(--mono)", "color":"rgba(200,214,230,0.7)",
+        "label":"", "font-size":"7px", "font-family":"SF Mono, Menlo, monospace", "color":"rgba(200,214,230,0.7)",
         "text-rotation":"autorotate", "text-background-color":"#070A0F", "text-background-opacity":0.7, "text-background-padding":2,
         "transition-property":"opacity line-color width", "transition-duration":"140ms" }},
       // ---- focus / hover / selection ----
@@ -530,7 +530,11 @@ function renderGraph() {
   });
   g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:e.hypothesis?"hyp":"" }); });
   cy.elements().remove(); cy.add(els);
-  runLayout(perf);
+  // If the graph container isn't visible yet (0×0), layout would be degenerate;
+  // defer it to when the Graph view is shown (see showView).
+  const cyEl=$("#cy"); const hidden = !cyEl || cyEl.offsetWidth===0 || cyEl.offsetHeight===0;
+  if(hidden){ t._needsRelayout=true; try{ cy.layout({name:"grid",animate:false}).run(); }catch(e){} }
+  else { t._needsRelayout=false; runLayout(perf); }
   const full=t.graph; const clustered=(t.clusterMode||"none")!=="none";
   $("#graphStats").textContent = clustered ? `${g.nodes.length} shown · ${full.nodes.length} entities · ${full.edges.length} edges` : `${full.nodes.length} nodes · ${full.edges.length} edges`;
   const cs=$("#graphCluster"); if(cs) cs.value=t.clusterMode||"none";
@@ -583,7 +587,15 @@ function selectNode(id) {
   const rc=n._rc!=null?n._rc:entResolution(n,deg); const q=n._q!=null?n._q:entQuality(n,deg);
   $("#ctxRisk").innerHTML = `<span class="band ${band}">${band} · ${(n.risk||0).toFixed(2)}</span><div class="risk-bar"><span style="width:${Math.round((n.risk||0)*100)}%;background:${bandColor(band)}"></span></div>`+
     (n.meta?"":`<div class="ctx-scores"><span class="score-badge ${scoreCls(rc)}">resolution ${pct(rc)}</span> <span class="qual-badge ${qualityLabel(q)}">quality ${qualityLabel(q)}</span> <span class="chip">${deg} conns</span></div>`);
-  const tags=$("#ctxTags"); tags.innerHTML = n.tags.length?"":'<span class="chip">none</span>'; n.tags.forEach(x=>tags.appendChild(el("span","chip",x)));
+  const tags=$("#ctxTags"); tags.innerHTML = n.tags.length?"":'<span class="chip">none</span>';
+  n.tags.forEach(x=>{ const c=el("span","chip tag-chip"); c.appendChild(document.createTextNode(x));
+    if(!n.meta){ const rm=el("span","tag-x"," ×"); rm.title="remove tag"; rm.addEventListener("click",e=>{ e.stopPropagation(); n.tags=n.tags.filter(t=>t!==x); selectNode(id); renderGraphFilters&&renderGraphFilters(); }); c.appendChild(rm); }
+    tags.appendChild(c); });
+  const addBtn=$("#ctxAddTag");
+  if(addBtn){ addBtn.onclick=()=>{ if(n.meta){ toast("Can't tag a cluster","err"); return; }
+    openModal("Add tag", `<div class="field">Tag<input id="newTag" placeholder="e.g. reviewed, priority, watchlist" /></div>`,
+      [{label:"Cancel",cls:"ghost",act:closeModal},{label:"Add",cls:"primary",act:()=>{ const v=$("#newTag").value.trim().toLowerCase(); if(v){ n.tags=n.tags||[]; if(!n.tags.includes(v)){ n.tags.push(v); if(cy){const ne=cy.$id(id); if(ne&&ne.length&&!ne.hasClass("hyp")){}} } closeModal(); selectNode(id); renderGraphFilters&&renderGraphFilters(); pushNotif("entity","Tagged "+n.label+" · "+v); } else closeModal(); }}]);
+    setTimeout(()=>$("#newTag")&&$("#newTag").focus(),40); }; }
   const meta=$("#ctxMeta"); meta.innerHTML=""; const es=Object.entries(n.attributes||{});
   if(!es.length) meta.innerHTML='<div class="empty">no metadata</div>';
   es.slice(0,24).forEach(([k,v])=>{ const r=el("div","row"); r.appendChild(el("span","k",k)); r.appendChild(el("span","v",String(v))); meta.appendChild(r); });
@@ -671,7 +683,13 @@ window.addEventListener("click",()=>{ $("#ctxmenu").hidden=true; closeAllSelects
 let currentView="dashboard";
 function showView(name){ currentView=name; $$(".view").forEach(v=>v.hidden=true); const v=$("#view-"+name); if(v)v.hidden=false;
   $$(".nav li").forEach(li=>li.classList.toggle("active",li.dataset.view===name));
-  if(name==="graph"){ requestAnimationFrame(()=>{ initCy(); if(cy) cy.resize(); }); } }
+  if(name==="graph"){ requestAnimationFrame(()=>{ initCy(); if(!cy) return; cy.resize();
+    // If the graph was rendered while its container was hidden (0×0), the layout
+    // produced degenerate positions — re-run it now that we have real dimensions.
+    const t=activeTab();
+    if(t && t._needsRelayout && cy.nodes().length){ t._needsRelayout=false; runLayout(t._perf); setTimeout(()=>{ if(cy) cy.fit(cy.elements(":visible"),50); }, 60); }
+    else if(cy.nodes().length){ cy.fit(cy.elements(":visible"),50); }
+  }); } }
 $$(".nav li").forEach(li=>li.addEventListener("click",()=>showView(li.dataset.view)));
 
 function renderAll(){ renderGraph(); renderDashboard(); renderEntities(); renderReport(); renderTimeline(); renderAlerts(); renderSavedConnectors(); renderIntelligence(); }

@@ -490,3 +490,9 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .time-scrub { position: absolute; bottom: 56px; left: 12px; right: 12px; z-index: 6; display: flex; align-items: center; gap: 12px; background: var(--panel-glass); backdrop-filter: blur(14px); border: 1px solid var(--stroke); border-radius: var(--r); padding: 8px 14px; }
 .time-scrub input[type=range] { flex: 1; accent-color: var(--accent); }
 .time-scrub .ts-label { font-family: var(--mono); font-size: 11px; color: var(--text-2); min-width: 150px; }
+
+/* tag add/remove in dossier */
+.tag-add { background: var(--panel-2); border: 1px solid var(--stroke); color: var(--accent); width: 18px; height: 18px; border-radius: 5px; cursor: pointer; font-size: 12px; line-height: 1; padding: 0; margin-left: 6px; }
+.tag-add:hover { border-color: var(--accent-2); }
+.tag-chip .tag-x { color: var(--muted-2); cursor: pointer; }
+.tag-chip .tag-x:hover { color: var(--red-2); }

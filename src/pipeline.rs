@@ -200,6 +200,30 @@ pub fn run(
             e.risk_band = Some(RiskBand::from_score(a.risk_score));
         }
     }
+    // Automatic tags: derived, deterministic labels that make the graph filterable
+    // (email provider, risk band, hub, isolated, sensitive) without manual work.
+    let deg_all = graph.degree_centrality();
+    let ids: Vec<String> = graph.entities.keys().cloned().collect();
+    for id in ids {
+        let d = *deg_all.get(&id).unwrap_or(&0);
+        let mut adds: Vec<String> = Vec::new();
+        if let Some(e) = graph.entities.get(&id) {
+            if let Some(b) = e.risk_band {
+                if b >= RiskBand::High { adds.push(format!("risk:{}", b.as_str())); }
+            }
+            if e.kind == EntityKind::Account {
+                if let Some((_, dom)) = e.label.split_once('@') {
+                    adds.push(format!("provider:{}", dom.trim().to_lowercase()));
+                }
+            }
+            if d >= 8 { adds.push("hub".into()); }
+            if d == 0 { adds.push("isolated".into()); }
+            if e.sensitive { adds.push("sensitive".into()); }
+        }
+        if let Some(e) = graph.entities.get_mut(&id) {
+            for t in adds { if !e.tags.contains(&t) { e.tags.push(t); } }
+        }
+    }
     audit.record(
         Utc::now(),
         "run_ai_assessment",
