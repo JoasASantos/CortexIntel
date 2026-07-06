@@ -49,6 +49,21 @@
     </div>
   </div>
 
+  <!-- ===== Project launcher (shown on entry: pick existing or create new) ===== -->
+  <div class="launcher" id="launcher" hidden>
+    <div class="launcher-inner">
+      <div class="launcher-head">
+        <div class="auth-brand"><span class="logo">◈</span> CortexIntel</div>
+        <div class="launcher-actions">
+          <button class="btn ghost" id="lnImport">⬆ Import project</button>
+          <button class="btn primary" id="lnNew">＋ New project</button>
+        </div>
+      </div>
+      <p class="muted" id="lnSub">Open a recent project or start a new investigation.</p>
+      <div class="launcher-grid" id="launcherGrid"><div class="empty">No projects yet — create your first.</div></div>
+    </div>
+  </div>
+
   <!-- ===== Main app ===== -->
   <div class="app" id="app" hidden>
     <header class="topbar">
@@ -57,6 +72,11 @@
       </div>
       <div class="tabs" id="tabs"></div>
       <button class="icon-btn newtab" id="btnNewProject" title="New project (⌘N)">＋</button>
+      <div class="hdr-proj">
+        <button class="icon-btn" id="btnHdrOpen" title="Open project">☰</button>
+        <button class="icon-btn" id="btnHdrExport" title="Export active project">⬇</button>
+        <button class="icon-btn" id="btnHdrImport" title="Import project">⬆</button>
+      </div>
       <div class="global-search">
         <span class="gs-icon">⌕</span>
         <input id="globalSearch" type="text" placeholder="Search entities…  (⌘K commands)" />
@@ -204,7 +224,7 @@
         <section class="view" id="view-intelligence" hidden>
           <div class="view-head"><h1>Intelligence</h1><p class="muted">Decision-ready product synthesized from the current investigation: assessment, judgments, clusters, actors, gaps.</p></div>
           <div class="intel-ask">
-            <input id="intelPrompt" placeholder="Ask / steer the intelligence — e.g. 'focus on money-flow risk and cross-border links'  (Enter to run)" />
+            <input id="intelPrompt" placeholder="Steer the analysis — e.g. focus on money flow and cross-border links" />
             <button class="btn primary" id="btnIntelSend">✦ Generate</button>
             <button class="btn ghost" id="btnIntelPdf">⬇ PDF report</button>
             <span class="intel-meta" id="intelMeta"></span>
@@ -239,9 +259,9 @@
 
         <!-- Reports -->
         <section class="view" id="view-reports" hidden>
-          <div class="view-head"><h1>Reports</h1><p class="muted">Investigative brief, governance & PDF export (Typst).</p></div>
+          <div class="view-head"><h1>Reports</h1><p class="muted">Investigative brief, governance & PDF export.</p></div>
           <div class="row-actions" style="margin-bottom:14px">
-            <button class="btn primary" id="btnReportPdf">⬇ Generate PDF (Typst)</button>
+            <button class="btn primary" id="btnReportPdf">⬇ Generate PDF report</button>
             <button class="btn ghost" id="btnReportRefresh">Refresh</button>
           </div>
           <div class="card"><div class="card-head"><h3>Generated reports</h3></div><div class="list" id="reportsList"><div class="empty">No reports generated yet — click "Generate PDF".</div></div></div>
@@ -260,15 +280,21 @@
               <button class="snav" data-tab="keys">API Keys</button>
               <button class="snav" data-tab="plugins">Classifier Plugins</button>
               <button class="snav" data-tab="project">Project</button>
+              <button class="snav" data-tab="users">Users &amp; Access</button>
               <button class="snav" data-tab="security">Security</button>
             </div>
             <div class="settings-body">
+              <div class="stab" id="stab-users" hidden>
+                <div class="card"><div class="card-head"><h3>Users &amp; access</h3><button class="btn primary" id="btnAddUser">＋ Add user</button></div>
+                  <p class="muted">The first account is the administrator. Admins add users and set roles. Roles: <b>admin</b> (manage everything), <b>analyst</b> (run & edit), <b>viewer</b> (read-only).</p>
+                  <div class="list" id="usersList"><div class="empty">—</div></div></div>
+              </div>
               <div class="stab" id="stab-account">
                 <div class="card"><div class="card-head"><h3>Account</h3></div><div class="kv" id="acctInfo"></div>
                   <button class="btn ghost" id="btnLogout" style="margin-top:12px">Sign out</button></div>
               </div>
               <div class="stab" id="stab-providers" hidden>
-                <div class="card"><div class="card-head"><h3>Default LLM provider</h3></div>
+                <div class="card"><div class="card-head"><h3>AI provider</h3></div>
                   <div class="cselect" id="setProvider"></div>
                   <div class="route-table">
                     <div class="rt-row"><span>Classification / Audit</span><span class="tag off">simple → Codex gpt-5.5</span></div>

@@ -516,3 +516,21 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .flow-btn { font-size: 11.5px; padding: 6px 11px; border-radius: 20px; border: 1px solid var(--stroke-2); background: var(--panel-2); color: var(--text-2); cursor: pointer; transition: var(--t); }
 .flow-btn:hover { border-color: var(--accent-2); color: var(--text); }
 .flow-btn .fb-ic { color: var(--accent); margin-right: 5px; }
+
+/* ===================== Project launcher ===================== */
+.launcher { position: fixed; inset: 0; z-index: 150; background: radial-gradient(900px 520px at 50% 20%, rgba(14,56,67,0.4), transparent 60%), var(--bg); overflow: auto; padding: 48px 24px; }
+.launcher-inner { max-width: 980px; margin: 0 auto; }
+.launcher-head { display: flex; align-items: center; justify-content: space-between; }
+.launcher-head .auth-brand { font-size: 22px; }
+.launcher-actions { display: flex; gap: 10px; }
+.launcher-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-top: 22px; }
+.proj-card { background: var(--panel); border: 1px solid var(--stroke); border-radius: var(--r-l); padding: 16px; cursor: pointer; transition: var(--t); }
+.proj-card:hover { border-color: var(--accent-2); transform: translateY(-2px); }
+.proj-card .pc-name { font-size: 15px; font-weight: 700; }
+.proj-card .pc-meta { font-size: 11.5px; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; }
+.proj-card .pc-vert { color: var(--accent); }
+.proj-card .pc-foot { display: flex; gap: 8px; margin-top: 12px; }
+.proj-card .pc-x { margin-left: auto; color: var(--muted-2); font-size: 12px; }
+.proj-card .pc-x:hover { color: var(--red-2); }
+.hdr-proj { display: flex; gap: 4px; }
+.hdr-proj .icon-btn { width: 30px; height: 30px; }

@@ -143,7 +143,67 @@ fn normalize_email(email: &str) -> String {
 }
 
 /// Register a new account. First-ever account becomes the `admin`.
+/// Valid roles, most→least privileged. admin manages users & everything;
+/// analyst runs analyses & edits; viewer is read-only.
+pub const ROLES: [&str; 3] = ["admin", "analyst", "viewer"];
+fn valid_role(r: &str) -> bool { ROLES.contains(&r) }
+
+fn new_user(email: &str, display_name: &str, password: &str, role: &str) -> Result<User> {
+    Ok(User {
+        id: format!("usr-{}", uuid::Uuid::new_v4().simple()),
+        email: email.to_string(),
+        display_name: if display_name.trim().is_empty() { email.to_string() } else { display_name.trim().to_string() },
+        role: role.to_string(),
+        password_hash: hash_password(password)?,
+        created_at: now(),
+        failed_attempts: 0,
+        locked_until: 0,
+    })
+}
+
+/// Bootstrap registration: ONLY allowed for the very first account (which becomes
+/// the admin). After that, sign-up is closed — an admin must add users.
 pub fn register(email: &str, display_name: &str, password: &str) -> Result<AuthResult> {
+    let email = normalize_email(email);
+    if !email.contains('@') || !email.contains('.') {
+        return Err(anyhow!("enter a valid email address"));
+    }
+    let mut db = load_db();
+    if !db.users.is_empty() {
+        return Err(anyhow!("sign-up is closed — ask an administrator to create your account"));
+    }
+    check_password_policy(password)?;
+    let user = new_user(&email, display_name, password, "admin")?;
+    db.users.push(user.clone());
+    save_db(&db)?;
+    Ok(issue_session(&user))
+}
+
+/// Public view of a user for admin listings.
+#[derive(Debug, Clone, Serialize)]
+pub struct UserRow {
+    pub id: String,
+    pub email: String,
+    pub display_name: String,
+    pub role: String,
+    pub created_at: u64,
+    pub locked: bool,
+}
+
+pub fn list_users() -> Vec<UserRow> {
+    let n = now();
+    load_db().users.iter().map(|u| UserRow {
+        id: u.id.clone(), email: u.email.clone(), display_name: u.display_name.clone(),
+        role: u.role.clone(), created_at: u.created_at, locked: u.locked_until > n,
+    }).collect()
+}
+
+/// Admin-only: create a user with a role (default analyst).
+pub fn admin_create_user(actor: &AuthUser, email: &str, display_name: &str, password: &str, role: &str) -> Result<UserRow> {
+    if actor.role != "admin" {
+        return Err(anyhow!("only an administrator can add users"));
+    }
+    let role = if valid_role(role) { role } else { "analyst" };
     let email = normalize_email(email);
     if !email.contains('@') || !email.contains('.') {
         return Err(anyhow!("enter a valid email address"));
@@ -153,20 +213,28 @@ pub fn register(email: &str, display_name: &str, password: &str) -> Result<AuthR
     if db.users.iter().any(|u| u.email == email) {
         return Err(anyhow!("an account with that email already exists"));
     }
-    let role = if db.users.is_empty() { "admin" } else { "analyst" };
-    let user = User {
-        id: format!("usr-{}", uuid::Uuid::new_v4().simple()),
-        email: email.clone(),
-        display_name: if display_name.trim().is_empty() { email.clone() } else { display_name.trim().to_string() },
-        role: role.to_string(),
-        password_hash: hash_password(password)?,
-        created_at: now(),
-        failed_attempts: 0,
-        locked_until: 0,
-    };
-    db.users.push(user.clone());
+    let u = new_user(&email, display_name, password, role)?;
+    db.users.push(u.clone());
     save_db(&db)?;
-    Ok(issue_session(&user))
+    Ok(UserRow { id: u.id, email: u.email, display_name: u.display_name, role: u.role, created_at: u.created_at, locked: false })
+}
+
+/// Admin-only: change a user's role. Cannot demote the last remaining admin.
+pub fn admin_set_role(actor: &AuthUser, user_id: &str, role: &str) -> Result<()> {
+    if actor.role != "admin" {
+        return Err(anyhow!("only an administrator can change roles"));
+    }
+    if !valid_role(role) {
+        return Err(anyhow!("invalid role"));
+    }
+    let mut db = load_db();
+    let admins = db.users.iter().filter(|u| u.role == "admin").count();
+    let target = db.users.iter_mut().find(|u| u.id == user_id).ok_or_else(|| anyhow!("user not found"))?;
+    if target.role == "admin" && role != "admin" && admins <= 1 {
+        return Err(anyhow!("cannot demote the last administrator"));
+    }
+    target.role = role.to_string();
+    save_db(&db)
 }
 
 /// Log in with email + password, enforcing lockout on repeated failures.

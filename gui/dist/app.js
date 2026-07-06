@@ -247,16 +247,40 @@ async function enterApp() {
   buildProviderSelect();
   refreshDoctor(); renderConnectorCards(); renderPluginExample();
   $("#providerPill").textContent = "provider: "+state.provider;
-  // Onboarding: ask country (BR/US) once.
-  try { const cfg=await api("/api/config"); state.country=cfg.country; if(!cfg.onboarded) onboardCountry(); } catch(e){}
-  await loadProjects();
-  if (!state.tabs.length) {
-    // open most recent project or prompt to create
-    const list = await api("/api/projects").catch(()=>[]);
-    if (list.length) openProject(list[0].id);
-    else showView("dashboard");
-  }
+  // Onboarding: ask country (BR/US) once, THEN show the project launcher.
+  try { const cfg=await api("/api/config"); state.country=cfg.country; if(!cfg.onboarded){ onboardCountry(()=>showLauncher()); return; } } catch(e){}
+  showLauncher();
 }
+
+// Project launcher — the entry screen: pick a saved/recent project or create new.
+async function showLauncher(){
+  $("#app").hidden=true; $("#launcher").hidden=false;
+  const grid=$("#launcherGrid"); grid.innerHTML='<div class="empty">Loading…</div>';
+  let list=[]; try{ list=await api("/api/projects"); }catch(e){}
+  grid.innerHTML="";
+  if(!list.length){ grid.innerHTML='<div class="empty">No projects yet — create your first investigation.</div>'; return; }
+  list.forEach(p=>{ const c=el("div","proj-card");
+    const when=p.updated_at?new Date(p.updated_at*1000).toISOString().slice(0,10):"";
+    c.innerHTML=`<div class="pc-name">${esc(p.name)}</div>
+      <div class="pc-meta"><span class="pc-vert">${esc(p.domain)}</span><span>${p.activity_count} activities</span><span>${p.connector_count} sources</span>${p.has_result?'<span>✓ analyzed</span>':''}</div>
+      <div class="pc-foot"><span class="muted" style="margin:0">updated ${when}</span><span class="pc-x" title="Delete">✕</span></div>`;
+    c.addEventListener("click",e=>{ if(e.target.classList.contains("pc-x")) return; enterWorkspace(p.id); });
+    c.querySelector(".pc-x").addEventListener("click",async e=>{ e.stopPropagation(); if(!confirm(`Delete project "${p.name}"?`))return; try{ await api("/api/projects/delete",{method:"POST",body:{id:p.id}}); showLauncher(); }catch(err){toast(err.message,"err");} });
+    grid.appendChild(c); });
+}
+// Enter the main workspace with a project open.
+async function enterWorkspace(projectId){ $("#launcher").hidden=true; $("#app").hidden=false; applyIcons();
+  await loadProjects(); if(projectId) await openProject(projectId); else showView("dashboard"); }
+$("#lnNew")&&$("#lnNew").addEventListener("click",()=>{ $("#launcher").hidden=true; $("#app").hidden=false; applyIcons(); newProjectModal(); });
+$("#lnImport")&&$("#lnImport").addEventListener("click",()=>importProjectFlow(()=>{}));
+// Header project actions
+$("#btnHdrOpen")&&$("#btnHdrOpen").addEventListener("click",showLauncher);
+$("#btnHdrImport")&&$("#btnHdrImport").addEventListener("click",()=>importProjectFlow());
+$("#btnHdrExport")&&$("#btnHdrExport").addEventListener("click",()=>exportActiveProject());
+function importProjectFlow(){ pickFile(async text=>{ try{ const p=await api("/api/projects/import",{method:"POST",raw:true,body:text}); toast("Project imported","ok"); $("#launcher").hidden=true; $("#app").hidden=false; applyIcons(); await loadProjects(); openProject(p.id); }catch(e){toast("Import failed: "+e.message,"err");} }); }
+async function exportActiveProject(){ const t=activeTab(); if(!t){toast("Open a project first","err");return;}
+  try{ const bundle = MODE==="mock" ? JSON.stringify(t.project,null,2) : await (await fetch(`/api/projects/export?id=${encodeURIComponent(t.project.id)}`,{headers:{Authorization:"Bearer "+TOKEN}})).text();
+    downloadText(`${t.project.name.replace(/\s+/g,"_")}.cortex`, bundle); toast("Project exported","ok"); }catch(e){toast(e.message,"err");} }
 
 // ---------- projects & tabs ----------
 async function loadProjects() {
@@ -314,7 +338,7 @@ function renderTabs() {
 }
 
 let onboardSel="BR";
-function onboardCountry(){
+function onboardCountry(done){
   openModal("Welcome — set your region", `
     <p class="muted">CortexIntel tailors identity/KYC checks and disclaimers to your country. Supported now: Brazil & United States.</p>
     <div class="country-grid">
@@ -322,7 +346,7 @@ function onboardCountry(){
       <div class="country-opt" data-c="US"><div class="flag">🇺🇸</div><div class="cn">United States</div><div class="muted" style="margin:0">SSN · privacy</div></div>
     </div>
     <div class="disclaimer">Person/identity data is regulated. Processing requires a lawful basis under LGPD (BR) / GDPR & state law (US). Validation is decision-support, never a definitive identity ruling.</div>
-  `,[{label:"Continue",cls:"primary",act:async()=>{ try{ await api("/api/config",{method:"POST",body:{country:onboardSel,onboarded:true}}); state.country=onboardSel; }catch(e){} closeModal(); toast("Region set: "+onboardSel,"ok"); }}]);
+  `,[{label:"Continue",cls:"primary",act:async()=>{ try{ await api("/api/config",{method:"POST",body:{country:onboardSel,onboarded:true}}); state.country=onboardSel; }catch(e){} closeModal(); toast("Region set: "+onboardSel,"ok"); if(typeof done==="function") done(); }}]);
   onboardSel="BR";
   setTimeout(()=>{ $$(".country-opt").forEach(o=>o.addEventListener("click",()=>{ $$(".country-opt").forEach(x=>x.classList.remove("sel")); o.classList.add("sel"); onboardSel=o.dataset.c; })); },40);
 }
@@ -881,7 +905,7 @@ function runModal(){
   openModal("Run analysis", `
     <div class="field">Business vertical<select id="rDomain" class="select">${domainOpts}</select></div>
     <div class="field">Data type (category → type, or auto)<select id="rType" class="select">${typeOpts}</select></div>
-    <div class="field">LLM provider<select id="rProvider" class="select">
+    <div class="field">AI provider<select id="rProvider" class="select">
       <option value="auto">Auto — smart routing (Opus/Sonnet ⇄ Codex)</option><option value="claude">Claude (Opus/Sonnet)</option><option value="codex">Codex (gpt-5.5)</option><option value="mock">Offline mock</option></select></div>
     <div class="field">Input source(s)<div style="display:flex;gap:8px"><input id="rInputs" placeholder="/path/to/data.csv or .json  (or Browse)" style="flex:1" /><button class="btn ghost" id="rBrowse">Browse…</button></div></div>
     <div class="field">Max records (graph cap)<input id="rMax" type="number" value="4000" /></div>
@@ -975,7 +999,7 @@ async function runGlobalAsk(q){ q=(q||"").trim(); if(!q) return;
     // offline fallback: local filter or a plain message
     const local=localFilterAnswer(q,t); const a=el("div","askbar-msg a");
     if(local){ a.innerHTML=local.html; body.appendChild(a); if(local.ids.length){ const g=el("span","askbar-do","Show in graph"); g.addEventListener("click",()=>{closeGlobalAsk();applyLocalFocus(local.ids);}); a.appendChild(g);} }
-    else { a.innerHTML="✦ No LLM backend reachable — I can still navigate and run actions. Try “go to intelligence” or “export a PDF report”."; body.appendChild(a); }
+    else { a.innerHTML="✦ No AI backend reachable — I can still navigate and run actions. Try “go to intelligence” or “export a PDF report”."; body.appendChild(a); }
   }
 }
 $("#askClose").addEventListener("click",()=>$("#askDock").hidden=true);
@@ -1009,7 +1033,7 @@ async function askAbout(q){
     if(local){ a.innerHTML=local.html; log.appendChild(a); log.scrollTop=log.scrollHeight; applyLocalFocus(local.ids); }
     else { const noProvider=/spawn|installed|providers failed/.test(e.message||"");
       a.innerHTML = noProvider
-        ? `✦ No LLM backend reachable (Claude/Codex not found on PATH). I answered locally where I could. Set a provider in Settings, or run <code>cortex serve</code> from a terminal where <code>claude</code>/<code>codex</code> are on PATH.`
+        ? `✦ No AI backend reachable (Claude/Codex not found on PATH). I answered locally where I could. Set a provider in Settings, or run <code>cortex serve</code> from a terminal where <code>claude</code>/<code>codex</code> are on PATH.`
         : "✦ error: "+esc(e.message);
       log.appendChild(a); }
     log.scrollTop=log.scrollHeight;
@@ -1097,6 +1121,12 @@ const CONNECTORS=[
   {kind:"mysql",name:"MySQL / MariaDB",desc:"Connect by host/IP, user & password; run a query."},
   {kind:"bigquery",name:"Google BigQuery",desc:"Query BigQuery via the bq CLI."},
   {kind:"datalake",name:"Data lake (S3 / GCS / local)",desc:"Pull CSV/JSON from a bucket or path."},
+  {kind:"mssql",name:"SQL Server",desc:"Connect by host/IP, user & password; run a query.",api:true},
+  {kind:"mongodb",name:"MongoDB",desc:"Connect by URI; pull a collection as records.",api:true},
+  {kind:"jira",name:"Jira",desc:"Pull issues via the Jira REST API (base URL + token).",api:true},
+  {kind:"powerbi",name:"Power BI",desc:"Pull a dataset/query via the Power BI REST API.",api:true},
+  {kind:"looker",name:"Looker",desc:"Pull a Look/query result via the Looker API.",api:true},
+  {kind:"webhook",name:"REST / Webhook / API",desc:"Pull JSON records from any REST endpoint.",api:true},
 ];
 function renderConnectorCards(){ const w=$("#connectorCards"); if(!w)return; w.innerHTML="";
   CONNECTORS.forEach(c=>{ const card=el("div","card conn"); card.innerHTML=`<div class="ct">⇄ ${esc(c.name)}</div><div class="cd">${esc(c.desc)}</div>`; card.addEventListener("click",()=>connectorModal(c)); w.appendChild(card); }); }
@@ -1114,6 +1144,25 @@ function connectorModal(c){
   else if(c.kind==="datalake"){ fields=`
     <div class="field">Provider<select id="cProv" class="select"><option value="local">local</option><option value="s3">s3</option><option value="gcs">gcs</option></select></div>
     <div class="field">URI<input id="cUri" placeholder="s3://bucket/export.csv or /path/file.json" /></div>`; }
+  else if(c.kind==="mssql"){ fields=`
+    <div class="field">Host / IP<input id="cHost" placeholder="127.0.0.1" /></div>
+    <div class="field">Port<input id="cPort" placeholder="1433" /></div>
+    <div class="field">Database<input id="cDb" placeholder="intel" /></div>
+    <div class="field">User<input id="cUser" placeholder="analyst" /></div>
+    <div class="field">Password<input id="cPass" type="password" placeholder="••••••" /></div>
+    <div class="field">Query<textarea id="cQuery" rows="2" placeholder="SELECT TOP 5000 * FROM people"></textarea></div>`; }
+  else if(c.kind==="mongodb"){ fields=`
+    <div class="field">Connection URI<input id="cUri" placeholder="mongodb://user:pass@host:27017/intel" /></div>
+    <div class="field">Collection<input id="cColl" placeholder="people" /></div>
+    <div class="field">Filter (optional JSON)<input id="cQuery" placeholder='{"active":true}' /></div>
+    <div class="field">Limit<input id="cLimit" placeholder="5000" /></div>`; }
+  else if(c.kind==="jira"){ fields=`
+    <div class="field">Endpoint URL<input id="cEndpoint" placeholder="https://org.atlassian.net/rest/api/3/search?jql=project=OPS" /></div>
+    <div class="field">Email<input id="cUser" placeholder="you@org.com" /></div>
+    <div class="field">API token<input id="cToken" type="password" placeholder="Jira API token" /></div>`; }
+  else if(c.kind==="powerbi"||c.kind==="looker"||c.kind==="webhook"){ fields=`
+    <div class="field">Endpoint URL<input id="cEndpoint" placeholder="https://api.example.com/v1/data" /></div>
+    <div class="field">Bearer token (optional)<input id="cToken" type="password" placeholder="access token" /></div>`; }
   openModal(`Connect: ${c.name}`, fields+`<div class="modal-note" id="connNote"></div>`,[
     {label:"Test",cls:"ghost",act:()=>connectorAction(c,"test")},
     {label:"Import & run",cls:"primary",act:()=>connectorAction(c,"run")},
@@ -1124,6 +1173,10 @@ function connectorConfig(c){
   if(c.kind==="postgres"||c.kind==="mysql") return {host:$("#cHost").value.trim(),port:$("#cPort").value.trim(),database:$("#cDb").value.trim(),user:$("#cUser").value.trim(),password:$("#cPass").value,query:$("#cQuery").value.trim()};
   if(c.kind==="bigquery") return {query:$("#cQuery").value.trim()};
   if(c.kind==="datalake") return {provider:$("#cProv").value,uri:$("#cUri").value.trim()};
+  if(c.kind==="mssql") return {host:$("#cHost").value.trim(),port:$("#cPort").value.trim(),database:$("#cDb").value.trim(),user:$("#cUser").value.trim(),password:$("#cPass").value,query:$("#cQuery").value.trim()};
+  if(c.kind==="mongodb") return {uri:$("#cUri").value.trim(),collection:$("#cColl").value.trim(),query:$("#cQuery").value.trim(),limit:$("#cLimit").value.trim()};
+  if(c.kind==="jira") return {endpoint:$("#cEndpoint").value.trim(),user:$("#cUser").value.trim(),token:$("#cToken").value};
+  if(c.kind==="powerbi"||c.kind==="looker"||c.kind==="webhook") return {endpoint:$("#cEndpoint").value.trim(),token:$("#cToken").value};
   return {};
 }
 async function connectorAction(c,mode){
@@ -1392,8 +1445,31 @@ function openSettingsTab(tab){ currentSettingsTab=tab; showView("settings");
   if(tab==="transforms"){ renderTransformStore(); renderInstalledTransforms(); }
   if(tab==="keys") renderKeys();
   if(tab==="plugins"){ renderPlugins(); renderPluginExample(); }
+  if(tab==="users") renderUsers();
 }
 $$(".snav").forEach(b=>b.addEventListener("click",()=>openSettingsTab(b.dataset.tab)));
+
+// ---------- RBAC: users & access (admin only) ----------
+async function renderUsers(){ const w=$("#usersList"); if(!w)return; const isAdmin=(state.user&&state.user.role==="admin");
+  $("#btnAddUser")&&($("#btnAddUser").style.display=isAdmin?"":"none");
+  if(!isAdmin){ w.innerHTML='<div class="empty">Only administrators can manage users.</div>'; return; }
+  let users=[]; try{ users=await api("/api/users"); }catch(e){ w.innerHTML='<div class="empty">'+esc(e.message)+'</div>'; return; }
+  w.innerHTML="";
+  users.forEach(u=>{ const li=el("div","li"); const l=el("div","l"); l.appendChild(el("span","label",`${u.display_name} · ${u.email}`)); li.appendChild(l);
+    const roleSel=el("select","mini-select"); ["admin","analyst","viewer"].forEach(r=>{ const o=el("option",null,r); o.value=r; if(u.role===r)o.selected=true; roleSel.appendChild(o); });
+    roleSel.addEventListener("change",async()=>{ try{ await api("/api/users/role",{method:"POST",body:{id:u.id,role:roleSel.value}}); toast("Role updated","ok"); }catch(e){ toast(e.message,"err"); renderUsers(); } });
+    const wrap=el("div"); wrap.style.display="flex"; wrap.style.gap="8px"; wrap.style.alignItems="center"; if(u.locked)wrap.appendChild(el("span","tag err","locked")); wrap.appendChild(roleSel); li.appendChild(wrap); w.appendChild(li); });
+}
+$("#btnAddUser")&&$("#btnAddUser").addEventListener("click",()=>{
+  openModal("Add user", `
+    <div class="field">Display name<input id="uName" placeholder="Full name" /></div>
+    <div class="field">Email<input id="uEmail" type="email" placeholder="user@org.com" /></div>
+    <div class="field">Temporary password<input id="uPass" type="text" placeholder="min 10 chars, upper+lower+digit" /></div>
+    <div class="field">Role<select id="uRole" class="select"><option value="analyst">analyst — run & edit</option><option value="viewer">viewer — read-only</option><option value="admin">admin — full control</option></select></div>
+  `,[{label:"Cancel",cls:"ghost",act:closeModal},{label:"Create user",cls:"primary",act:async()=>{
+    try{ await api("/api/users",{method:"POST",body:{email:$("#uEmail").value,display_name:$("#uName").value,password:$("#uPass").value,role:$("#uRole").value}}); closeModal(); renderUsers(); toast("User created","ok"); }catch(e){ toast(e.message,"err"); } }}]);
+  setTimeout(()=>$("#uName")&&$("#uName").focus(),40);
+});
 
 // ---------- transform store ----------
 const TF_CATS=[["people","People Search"],["kyc","KYC / Identity (BR·US)"],["cyber","Cybersecurity"],["investigative","Investigative / OSINT"],["media","Media Forensics"],["journalism","Journalism"],["hr","Human Resources"],["business","Business & Corporate"],["military","Military Intelligence"]];
@@ -1640,7 +1716,7 @@ function renderIntelligence(){ const t=activeTab(); const g=t?t.graph:{nodes:[],
   // "generate" enriches the exec summary + competing hypotheses on top.
   const intel=t&&t.intel; const backAsmt=(t&&t.graph.meta&&t.graph.meta.assessment)||[];
   const brief=$("#intelBrief"), jud=$("#intelJudgments"), conf=$("#intelConf");
-  if(brief){ if(intel){ brief.innerHTML=`<p>${esc(intel.answer||"")}</p>`; } else if(backAsmt.length){ brief.innerHTML=`<p>${esc(backAsmt[0].statement)}</p><p class="muted" style="margin:6px 0 0">Deterministic assessment — click ✦ Generate for an AI-enriched synthesis.</p>`; } else { brief.innerHTML='<div class="empty">Run an analysis, then Generate for a synthesized assessment.</div>'; } }
+  if(brief){ if(intel){ brief.innerHTML=`<p>${esc(intel.answer||"")}</p>`; } else if(backAsmt.length){ brief.innerHTML=`<p>${esc(backAsmt[0].statement)}</p>`; } else { brief.innerHTML='<div class="empty">Run an analysis, then Generate for a synthesized assessment.</div>'; } }
   if(conf){ conf.textContent = intel&&intel.confidence? ("confidence: "+intel.confidence) : (backAsmt.length? ("confidence: "+Math.round(backAsmt[0].confidence*100)+"%") : ""); }
   if(jud){ jud.innerHTML="";
     // Prefer LLM key judgments; else show the deterministic assessment statements.
@@ -1668,8 +1744,8 @@ $("#btnIntelPdf")&&$("#btnIntelPdf").addEventListener("click",()=>exportReportPd
 $("#btnReportRefresh")&&$("#btnReportRefresh").addEventListener("click",()=>{renderReport();renderReports();});
 $("#btnReportPdf")&&$("#btnReportPdf").addEventListener("click",()=>exportReportPdf());
 async function exportReportPdf(){ const t=activeTab(); if(!t||!t.result){ toast("Run an analysis first","err"); return; }
-  if(MODE!=="http"){ toast("PDF export runs in the app/server (Typst).","err"); return; }
-  setSync("busy","report"); toast("Rendering PDF via Typst…");
+  if(MODE!=="http"){ toast("PDF export runs in the app or via cortex serve.","err"); return; }
+  setSync("busy","report"); toast("Rendering PDF report…");
   try{ const r=await runJob("report_pdf",{project_id:t.project.id});
     const name=(t.project.name.replace(/\s+/g,"_"))+"_intel_"+new Date().toISOString().slice(0,16).replace(/[:T]/g,"")+".pdf";
     t.reports=t.reports||[]; t.reports.unshift({name, path:r.path, at:new Date().toISOString().replace("T"," ").slice(0,16)});

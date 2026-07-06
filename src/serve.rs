@@ -198,9 +198,35 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         None => return respond(stream, 401, "application/json; charset=utf-8", br#"{"error":"authentication required"}"#),
     };
 
+    // RBAC: a viewer is read-only — block state-changing endpoints.
+    if user.role == "viewer" && m != "GET" {
+        let writes = p.starts_with("/api/projects") || p.starts_with("/api/run") || p.starts_with("/api/jobs")
+            || p.starts_with("/api/transforms") || p.starts_with("/api/connectors") || p.starts_with("/api/keys")
+            || p.starts_with("/api/plugins") || p.starts_with("/api/report") || p.starts_with("/api/users");
+        if writes {
+            return respond(stream, 403, "application/json; charset=utf-8", br#"{"error":"read-only role (viewer): ask an admin for access"}"#);
+        }
+    }
+
     match (m, p) {
         ("POST", "/api/auth/logout") => { if let Some(t) = &req.token { auth::logout(t); } json_ok(stream, &serde_json::json!({"ok": true})) }
         ("GET", "/api/me") => json_ok(stream, &user),
+        // --- User management (admin only; enforced inside auth) ---
+        ("GET", "/api/users") => { if user.role != "admin" { return respond(stream, 403, "application/json; charset=utf-8", br#"{"error":"admin only"}"#); } json_ok(stream, &auth::list_users()) }
+        ("POST", "/api/users") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, auth::admin_create_user(&user,
+                b.get("email").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("display_name").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("password").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("role").and_then(|v| v.as_str()).unwrap_or("analyst")))
+        }
+        ("POST", "/api/users/role") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, auth::admin_set_role(&user,
+                b.get("id").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("role").and_then(|v| v.as_str()).unwrap_or("analyst")).map(|_| serde_json::json!({"ok":true})))
+        }
         ("GET", "/api/domains") => json_ok(stream, &api::list_domains()),
         ("GET", "/api/data_types") => json_ok(stream, &api::list_data_types()),
         ("GET", "/api/agents") => json_ok(stream, &api::list_agents(&param(&req.query, "domain").unwrap_or_else(|| "generic".into()))),
