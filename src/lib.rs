@@ -3,6 +3,7 @@
 //! the GUI calls over Tauri commands.
 
 pub mod agents;
+pub mod assessment;
 pub mod audit;
 pub mod auth;
 pub mod cli;

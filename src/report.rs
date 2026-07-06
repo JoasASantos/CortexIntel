@@ -21,6 +21,7 @@ pub struct RunOutput<'a> {
     pub audit_summary: &'a Value,
     pub audit: &'a AuditLog,
     pub retention: &'a RetentionPolicy,
+    pub assessment: &'a [crate::assessment::Assessment],
     pub started_at: DateTime<Utc>,
     pub finished_at: DateTime<Utc>,
 }
@@ -81,6 +82,7 @@ impl<'a> RunOutput<'a> {
             },
             "relationships": self.graph.relationships,
             "ai_assessments": self.risk,
+            "assessment": self.assessment,
             "investigation": self.investigation,
             "audit_events": self.audit.events,
             "governance": {
@@ -139,6 +141,10 @@ impl<'a> RunOutput<'a> {
             "- **Case risk:** {} ({:.2})\n\n",
             self.risk.case_risk_band, self.risk.case_risk_score
         ));
+
+        // Progressive disclosure: the natural-language Assessment comes first
+        // (for whoever decides), the tables/graph below (for whoever investigates).
+        s.push_str(&crate::assessment::to_markdown(self.assessment));
 
         s.push_str("## Top prioritized entities\n\n");
         s.push_str("| Risk | Band | Kind | Entity | Recommended action | Review |\n");
