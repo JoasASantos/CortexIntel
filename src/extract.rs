@@ -89,8 +89,30 @@ pub fn extract_record(rec: &Record, _dt: DataType, extra: &[(String, EntityKind)
         }
     }
 
+    // 2b) For email accounts, materialize the email DOMAIN as its own entity and
+    // link the account to it. This is what lets the graph answer "how many are
+    // @gmail.com?" (the domain node's degree) and cluster accounts by provider.
+    let mut email_domains: Vec<(String, String)> = Vec::new(); // (account_label, domain)
+    for e in &out.entities {
+        if e.kind == EntityKind::Account {
+            if let Some((_, dom)) = e.label.split_once('@') {
+                let dom = dom.trim().to_lowercase();
+                if !dom.is_empty() && dom.contains('.') {
+                    email_domains.push((e.label.clone(), dom));
+                }
+            }
+        }
+    }
+    for (acct, dom) in email_domains {
+        if !by_kind.iter().any(|(k, l)| *k == EntityKind::Domain && *l == dom) {
+            out.entities.push(Entity::new(EntityKind::Domain, &dom).with_source(&origin));
+            by_kind.push((EntityKind::Domain, dom.clone()));
+        }
+        out.links.push(LabelLink { source_label: acct, rel_type: "uses_email_domain".into(), target_label: dom, confidence: 0.9 });
+    }
+
     // 3) Intra-record relationships from co-occurrence (DATA.md relations).
-    out.links = infer_links(&by_kind);
+    out.links.extend(infer_links(&by_kind));
 
     out
 }

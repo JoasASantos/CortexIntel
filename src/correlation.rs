@@ -52,9 +52,15 @@ pub fn correlate(graph: &mut KnowledgeGraph) -> usize {
         let mut uniq: Vec<&String> = neighbors.iter().collect();
         uniq.sort();
         uniq.dedup();
-        // Pairwise peer links (cap to keep the graph readable on big hubs).
+        // Large hubs (e.g. a common email domain like gmail.com, or a shared
+        // NAT IP) would generate O(n²) noise. The hub node itself already groups
+        // its members, so only draw pairwise peer edges for small, meaningful
+        // shared hubs — that's where "same infrastructure" is actually a signal.
+        if uniq.len() > 12 {
+            continue;
+        }
         for i in 0..uniq.len() {
-            for j in (i + 1)..uniq.len().min(i + 25) {
+            for j in (i + 1)..uniq.len() {
                 let mut r = Relationship::new(uniq[i].clone(), rel, uniq[j].clone(), 0.5);
                 r.source_reference = Some(format!("shared:{}", hub_e.label));
                 new_edges.push(r);

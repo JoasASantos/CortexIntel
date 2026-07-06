@@ -468,7 +468,10 @@ function selectNode(id) {
   $("#ctxKind").textContent = n.kind + (n.sensitive?" · sensitive":"");
   $("#ctxName").textContent = n.label;
   const band=n.band||bandOf(n.risk);
-  $("#ctxRisk").innerHTML = `<span class="band ${band}">${band} · ${(n.risk||0).toFixed(2)}</span><div class="risk-bar"><span style="width:${Math.round((n.risk||0)*100)}%;background:${bandColor(band)}"></span></div>`;
+  const deg=activeTab()?graphDegrees(activeTab().graph)[n.id]||0:0;
+  const rc=n._rc!=null?n._rc:entResolution(n,deg); const q=n._q!=null?n._q:entQuality(n,deg);
+  $("#ctxRisk").innerHTML = `<span class="band ${band}">${band} · ${(n.risk||0).toFixed(2)}</span><div class="risk-bar"><span style="width:${Math.round((n.risk||0)*100)}%;background:${bandColor(band)}"></span></div>`+
+    (n.meta?"":`<div class="ctx-scores"><span class="score-badge ${scoreCls(rc)}">resolution ${pct(rc)}</span> <span class="qual-badge ${qualityLabel(q)}">quality ${qualityLabel(q)}</span> <span class="chip">${deg} conns</span></div>`);
   const tags=$("#ctxTags"); tags.innerHTML = n.tags.length?"":'<span class="chip">none</span>'; n.tags.forEach(x=>tags.appendChild(el("span","chip",x)));
   const meta=$("#ctxMeta"); meta.innerHTML=""; const es=Object.entries(n.attributes||{});
   if(!es.length) meta.innerHTML='<div class="empty">no metadata</div>';
@@ -561,29 +564,159 @@ $$(".nav li").forEach(li=>li.addEventListener("click",()=>showView(li.dataset.vi
 
 function renderAll(){ renderGraph(); renderDashboard(); renderEntities(); renderReport(); renderTimeline(); renderAlerts(); renderSavedConnectors(); renderIntelligence(); }
 
-function renderDashboard(){
-  const t=activeTab();
-  $("#dashTitle").textContent = t? t.project.name : "Dashboard";
-  $("#dashSub").textContent = t? `${t.project.domain} · ${t.project.description||"no description"}` : "Open or create a project to begin.";
-  const nodes=t?t.graph.nodes:[]; const edges=t?t.graph.edges:[];
-  $("#kpiEntities").textContent=nodes.length; $("#kpiRels").textContent=edges.length;
-  $("#kpiCrit").textContent=nodes.filter(n=>(n.band||bandOf(n.risk))==="critical").length;
-  $("#kpiActs").textContent=t?t.project.activities.length:0;
-  const cl=$("#criticalList"); cl.innerHTML=""; const top=[...nodes].sort((a,b)=>b.risk-a.risk).slice(0,10);
-  if(!top.length) cl.innerHTML='<div class="empty">Run an analysis to populate.</div>';
-  top.forEach(n=>{ const li=el("div","li"); const l=el("div","l"); const d=el("span","kdot"); d.style.background=kColor(n.kind); l.appendChild(d); l.appendChild(el("span","label",n.label)); li.appendChild(l); li.appendChild(el("span","band "+(n.band||bandOf(n.risk)),(n.band||bandOf(n.risk)))); li.addEventListener("click",()=>focusEntity(n.id,true)); cl.appendChild(li); });
-  const al=$("#activityList"); al.innerHTML="";
-  const acts=t? [...t.project.activities].reverse().slice(0,10):[];
-  if(!acts.length) al.innerHTML='<div class="empty">—</div>';
-  acts.forEach(a=>{ const li=el("div","li"); li.appendChild(el("span","label",a.summary)); li.appendChild(el("span","chip",a.kind)); al.appendChild(li); });
+// ===== decision-oriented metrics engine (shared by Dashboard + Entities + Intelligence) =====
+function entResolution(n, deg){ let s=0.4; s+=Math.min(0.25,(n.sources?n.sources.length:0)*0.12);
+  const attrs=Object.keys(n.attributes||{}).length; s+=Math.min(0.2,attrs*0.04);
+  if((deg||0)>0)s+=0.1; if(n.tags&&n.tags.includes("manual"))s=Math.max(s,0.85);
+  if(n.hypothesis||(n.tags&&n.tags.includes("hypothesis")))s=Math.min(s,0.35); return Math.min(1,Math.max(0.05,s)); }
+function entQuality(n, deg){ let q=0.2; if(n.sources&&n.sources.length)q+=0.25; const attrs=Object.keys(n.attributes||{}).length; q+=Math.min(0.3,attrs*0.06);
+  if((deg||0)>0)q+=0.15; else q-=0.05; if(n.label&&n.label.length>2)q+=0.1; return Math.max(0.05,Math.min(1,q)); }
+function qualityLabel(q){ return q>=0.75?"clean":q>=0.5?"fair":q>=0.3?"incomplete":"weak"; }
+function computeMetrics(g){ const deg=graphDegrees(g); const nodes=g.nodes;
+  let highRisk=0,unresolved=0,missingSource=0,missingMeta=0,isolated=0,sensitive=0,hyp=0,confSum=0,qualSum=0;
+  const groups={}; const bandCount={low:0,medium:0,high:0,critical:0}; const riskByKind={};
+  nodes.forEach(n=>{ const dg=deg[n.id]||0; n._deg=dg; n._rc=entResolution(n,dg); n._q=entQuality(n,dg);
+    confSum+=n._rc; qualSum+=n._q; const band=n.band||bandOf(n.risk); bandCount[band]=(bandCount[band]||0)+1;
+    if(band==="critical"||band==="high")highRisk++; if(n._rc<0.5)unresolved++; if(!(n.sources&&n.sources.length))missingSource++;
+    if(!Object.keys(n.attributes||{}).length)missingMeta++; if(dg===0)isolated++; if(n.sensitive)sensitive++;
+    if(n.hypothesis||(n.tags&&n.tags.includes("hypothesis")))hyp++; riskByKind[n.kind]=(riskByKind[n.kind]||0)+(n.risk||0);
+    const key=n.kind+"|"+n.label.trim().toLowerCase(); (groups[key]=groups[key]||[]).push(n.id); });
+  const dupGroups=Object.values(groups).filter(a=>a.length>1); const duplicates=dupGroups.reduce((s,a)=>s+a.length,0);
+  const N=nodes.length||1; const avgConf=confSum/N, avgQual=qualSum/N; const coverage=nodes.length?(nodes.length-isolated)/nodes.length:0;
+  const sourceDiversity=new Set(nodes.flatMap(x=>x.sources||[])).size; const resolvedRatio=1-(unresolved/N);
+  const readinessScore=nodes.length? (0.30*avgQual+0.25*resolvedRatio+0.20*avgConf+0.15*coverage+0.10*Math.min(1,sourceDiversity/5)) : 0;
+  let readiness = !nodes.length?"insufficient": readinessScore>=0.72?"ready": readinessScore>=0.5?"needs-review": (highRisk>0&&avgConf<0.4?"conflicting":"insufficient");
+  return { deg,highRisk,unresolved,missingSource,missingMeta,isolated,sensitive,hyp,duplicates,dupGroups,avgConf,avgQual,coverage,sourceDiversity,readinessScore,readiness,bandCount,riskByKind,total:nodes.length,edges:g.edges.length }; }
+const pct=x=>Math.round((x||0)*100)+"%";
+
+function renderDashboard(){ const t=activeTab();
+  $("#dashTitle").textContent = t? t.project.name : "Command Center";
+  $("#dashSub").textContent = t? `${t.project.domain} · investigation state, confidence, risk & next best action` : "Open or create a project to begin turning data into decisions.";
+  const g=t?t.graph:{nodes:[],edges:[]}; const m=computeMetrics(g);
+  const rdState=$("#rdState"); rdState.textContent={ready:"Ready for decision","needs-review":"Needs review",insufficient:"Insufficient data",conflicting:"Conflicting evidence"}[m.readiness]; rdState.className="rd-state "+m.readiness;
+  $("#rdMeter").style.width=Math.round(m.readinessScore*100)+"%";
+  $("#rdNote").textContent = !m.total?"No data yet — run an analysis or import a source." : `${pct(m.readinessScore)} · avg confidence ${pct(m.avgConf)} · data quality ${pct(m.avgQual)} · coverage ${pct(m.coverage)} · ${m.sourceDiversity} source(s).`;
+  const rda=$("#rdActions"); rda.innerHTML="";
+  const rdBtn=(lbl,fn)=>{ const b=el("button","btn "+(rda.children.length?"ghost":"primary"),lbl); b.addEventListener("click",fn); rda.appendChild(b); };
+  if(m.total){ rdBtn("✦ Generate intelligence",()=>generateIntelligence()); rdBtn("Open graph",()=>showView("graph")); } else { rdBtn("▶ Run analysis",runModal); rdBtn("+ Add entity",addEntityModal); }
+  const cards=[
+    {v:pct(m.readinessScore),l:"Decision readiness",sub:m.readiness.replace("-"," "),bar:m.readinessScore,cls:m.readiness==="ready"?"":"warn",go:()=>{}},
+    {v:pct(m.avgQual),l:"Data quality",sub:qualityLabel(m.avgQual),bar:m.avgQual,go:()=>{showView("entities");entityFilter="missing";renderEntities();}},
+    {v:pct(m.avgConf),l:"Avg confidence",sub:m.avgConf>=0.6?"solid":"soft",bar:m.avgConf,go:()=>{showView("entities");entityFilter="lowconf";renderEntities();}},
+    {v:m.highRisk,l:"High-risk entities",sub:"critical + high",cls:m.highRisk?"crit":"",go:()=>isolateCritical()},
+    {v:m.unresolved,l:"Unresolved",sub:"low resolution conf.",cls:m.unresolved?"warn":"",go:()=>{showView("entities");entityFilter="lowconf";renderEntities();}},
+    {v:m.missingSource+m.missingMeta,l:"Missing evidence",sub:`${m.missingSource} no-source · ${m.missingMeta} no-meta`,cls:(m.missingSource+m.missingMeta)?"warn":"",go:()=>{showView("entities");entityFilter="missing";renderEntities();}},
+    {v:m.hyp,l:"Active hypotheses",sub:"AI-proposed, unconfirmed",go:()=>{showView("intelligence");renderIntelligence();}},
+    {v:pct(m.coverage),l:"Graph coverage",sub:`${m.isolated} isolated`,bar:m.coverage,go:()=>showView("graph")},
+  ];
+  const dc=$("#dashCards"); dc.innerHTML="";
+  cards.forEach(c=>{ const d=el("div","dcard "+(c.cls||"")); let h=`<div class="dc-v">${c.v}</div><div class="dc-l">${esc(c.l)}</div><div class="dc-sub">${esc(c.sub||"")}</div>`;
+    if(c.bar!=null)h+=`<div class="dc-bar"><span style="width:${Math.round(c.bar*100)}%;background:${c.bar>=0.6?"var(--green)":c.bar>=0.35?"var(--amber)":"var(--red)"}"></span></div>`;
+    d.innerHTML=h; d.addEventListener("click",c.go); dc.appendChild(d); });
+  renderPriorities(m,g);
+  const ro=$("#riskOverview"); ro.innerHTML=""; if(!m.total){ ro.innerHTML='<div class="empty">—</div>'; }
+  else { [["critical",m.bandCount.critical||0],["high",m.bandCount.high||0],["medium",m.bandCount.medium||0],["low",m.bandCount.low||0]].forEach(([b,n])=>{ const row=el("div","riskrow"); row.innerHTML=`<span class="rr-l">${b}</span><div class="rr-track"><span style="width:${Math.round(n/m.total*100)}%;background:${bandColor(b)}"></span></div><span class="rr-n">${n}</span>`; if(n){row.style.cursor="pointer"; row.addEventListener("click",()=>{showView("graph");gfPreset=(b==="critical"||b==="high")?"crit":"all"; try{applyFilters();}catch(e){}});} ro.appendChild(row); });
+    const topKinds=Object.entries(m.riskByKind).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${k} ${v.toFixed(1)}`).join(" · ");
+    if(topKinds){ const foot=el("div","muted"); foot.style.marginTop="8px"; foot.textContent="Top risk contributors: "+topKinds; ro.appendChild(foot); } }
+  renderNextActions(m,g);
+  const dq=$("#dqOverview"); dq.innerHTML=""; if(!m.total){ dq.innerHTML='<div class="empty">—</div>'; }
+  else { [["no source",m.missingSource],["no metadata",m.missingMeta],["isolated",m.isolated],["likely duplicates",m.duplicates],["sensitive",m.sensitive]].forEach(([l,n])=>{ const row=el("div","dqrow"); const frac=m.total?n/m.total:0; row.innerHTML=`<span class="dq-l">${l}</span><div class="dq-track"><span style="width:${Math.round(frac*100)}%;background:${frac>0.3?"var(--red)":frac>0.1?"var(--amber)":"var(--green)"}"></span></div><span class="dq-n">${n}</span>`; dq.appendChild(row); });
+    const note=el("div","muted"); note.style.marginTop="8px"; note.textContent="Low quality lowers Intelligence confidence — resolve in Entities."; dq.appendChild(note); }
+  const sl=$("#signalsList"); sl.innerHTML="";
+  const acts=t? [...t.project.activities].reverse().slice(0,8):[];
+  if(!acts.length) sl.innerHTML='<div class="empty">—</div>';
+  const sig={run:"spark",import:"sources",connect:"sources",ai:"spark",entity:"entities",transform:"run",report:"reports",note:"timeline",plugin:"operations",alert:"alerts"};
+  acts.forEach(a=>{ const li=el("div","signal"); li.innerHTML=`<span class="s-ic">${svg(sig[a.kind]||"timeline")}</span><span class="label" style="flex:1">${esc(a.summary)}</span>`; sl.appendChild(li); });
   loadProjects();
 }
-function renderEntities(){ const t=activeTab(); const tb=$("#entitiesTable tbody"); tb.innerHTML="";
-  const nodes=t?[...t.graph.nodes].sort((a,b)=>b.risk-a.risk):[];
-  nodes.forEach(n=>{ const tr=el("tr"); const b=n.band||bandOf(n.risk);
-    const r=el("td"); r.appendChild(el("span","band "+b,(n.risk||0).toFixed(2))); tr.appendChild(r);
-    tr.appendChild(el("td",null,n.kind)); tr.appendChild(el("td",null,n.label)); tr.appendChild(el("td",null,(n.tags||[]).join(", ")||"—"));
-    tr.addEventListener("click",()=>selectNode(n.id)); tb.appendChild(tr); }); }
+function renderPriorities(m,g){ const w=$("#topPriorities"); w.innerHTML=""; const P=[];
+  if(!m.total){ w.innerHTML='<div class="empty">Run an analysis or add entities to surface priorities.</div>'; return; }
+  const crit=[...g.nodes].filter(n=>(n.band||bandOf(n.risk))==="critical").sort((a,b)=>b.risk-a.risk);
+  if(crit.length) P.push({t:`Review ${crit.length} critical ${crit.length>1?"entities":"entity"}`,why:"Highest risk — may require escalation or protective action.",impact:"high",conf:"high",go:()=>isolateCritical()});
+  if(m.duplicates) P.push({t:`Resolve ${m.duplicates} likely duplicates`,why:"Duplicates distort clusters and inflate risk.",impact:"medium",conf:"medium",go:()=>{showView("entities");entityFilter="dupes";renderEntities();}});
+  if(m.missingMeta) P.push({t:`Enrich ${m.missingMeta} entities missing metadata`,why:"Sparse data lowers resolution confidence.",impact:"medium",conf:"high",go:()=>{showView("entities");entityFilter="missing";renderEntities();}});
+  const bigHub=[...g.nodes].map(n=>({n,d:m.deg[n.id]||0})).sort((a,b)=>b.d-a.d)[0];
+  if(bigHub&&bigHub.d>=8) P.push({t:`Inspect dense cluster around "${bigHub.n.label}"`,why:`${bigHub.d} connections — a structural hub worth examining.`,impact:"medium",conf:"medium",go:()=>focusEntity(bigHub.n.id,true)});
+  if(m.readiness==="ready") P.push({t:"Generate action plan from intelligence",why:"Data supports a decision — synthesize the product.",impact:"high",conf:"high",go:()=>generateIntelligence()});
+  if(!P.length) P.push({t:"Generate intelligence",why:"Baseline assessment of the current graph.",impact:"medium",conf:"medium",go:()=>generateIntelligence()});
+  P.slice(0,6).forEach(p=>{ const d=el("div","prio"); d.innerHTML=`<span class="p-ic">${svg("alerts")}</span><div class="p-body"><div class="p-title">${esc(p.t)}</div><div class="p-why">${esc(p.why)}</div><div class="p-meta"><span class="p-tag">impact ${p.impact}</span><span class="p-tag">conf ${p.conf}</span></div></div>`; d.addEventListener("click",p.go); w.appendChild(d); });
+}
+function renderNextActions(m,g){ const w=$("#nextActions"); w.innerHTML=""; if(!m.total){ w.innerHTML='<div class="empty">—</div>'; return; }
+  const A=[];
+  if(m.unresolved) A.push({t:`Review ${m.unresolved} low-confidence entities`,go:()=>{showView("entities");entityFilter="lowconf";renderEntities();}});
+  if(m.duplicates) A.push({t:`Merge ${m.duplicates} likely duplicates`,go:()=>{showView("entities");entityFilter="dupes";renderEntities();}});
+  if(m.missingSource) A.push({t:`Trace source for ${m.missingSource} entities`,go:()=>{showView("entities");entityFilter="missing";renderEntities();}});
+  if(m.highRisk) A.push({t:`Isolate ${m.highRisk} high-risk entities in graph`,go:()=>isolateCritical()});
+  A.push({t:"Generate intelligence product",go:()=>generateIntelligence()});
+  A.push({t:"Export PDF report",go:()=>{showView("reports");exportReportPdf();}});
+  A.slice(0,6).forEach(a=>{ const li=el("div","li"); li.appendChild(el("span","label","▸ "+a.t)); const b=el("span","tag ok","do"); li.appendChild(b); li.addEventListener("click",a.go); w.appendChild(li); });
+}
+// ===== Entity Registry =====
+let entityFilter="all"; let entSel=new Set();
+function entStatus(t,n){ if(t._reviewed&&t._reviewed.has(n.id))return "reviewed"; if(n.tags&&n.tags.includes("manual"))return "manual"; if(n.hypothesis||(n.tags&&n.tags.includes("hypothesis")))return "hypothesis"; if((n._rc||0)<0.5)return "review"; return "resolved"; }
+function scoreCls(x){ return x>=0.66?"hi":x>=0.4?"mid":"lo"; }
+function entIntent(q,n,dupSet){ q=q.toLowerCase();
+  const hay=(n.label+" "+n.kind+" "+(n.tags||[]).join(" ")+" "+Object.entries(n.attributes||{}).map(([k,v])=>k+" "+v).join(" ")).toLowerCase();
+  const band=n.band||bandOf(n.risk);
+  if(/high risk|critical/.test(q) && !(band==="high"||band==="critical")) return false;
+  if(/low conf/.test(q) && (n._rc||0)>=0.5) return false;
+  if(/(no|missing) source/.test(q) && (n.sources&&n.sources.length)) return false;
+  if(/(no|missing) (meta|metadata)/.test(q) && Object.keys(n.attributes||{}).length) return false;
+  if(/duplicat/.test(q) && !dupSet.has(n.id)) return false;
+  if(/(isolated|no relation|no connection)/.test(q) && (n._deg||0)>0) return false;
+  if(/sensitive/.test(q) && !n.sensitive) return false;
+  // remaining free words must all be present somewhere
+  const words=q.replace(/high risk|low conf(idence)?|no source|missing source|no metadata|missing metadata|duplicat\w*|isolated|no relation|no connection|sensitive|people|entities|accounts?|connected to|with|and|show/g,"").split(/\s+/).filter(Boolean);
+  return words.every(w=>hay.includes(w));
+}
+function renderEntities(){ const t=activeTab(); const tb=$("#entitiesTable tbody"); if(!tb)return; tb.innerHTML="";
+  const g=t?t.graph:{nodes:[],edges:[]}; const m=computeMetrics(g); const dupSet=new Set(m.dupGroups.flat());
+  // summary cards
+  const sc=$("#entSummary"); if(sc){ sc.innerHTML="";
+    [["Total",m.total,""],["High risk",m.highRisk,"crit"],["Low confidence",m.unresolved,"warn"],["Likely duplicates",m.duplicates,"warn"]].forEach(([l,v,cls])=>{ const d=el("div","dcard "+cls); d.innerHTML=`<div class="dc-v">${v}</div><div class="dc-l">${l}</div>`; sc.appendChild(d); }); }
+  // filter chips
+  const filters=[["all","All",m.total],["highrisk","High risk",m.highRisk],["lowconf","Low confidence",m.unresolved],["dupes","Duplicates",m.duplicates],["missing","Missing evidence",m.missingSource+m.missingMeta],["norel","No relations",m.isolated],["hub","High degree",g.nodes.filter(n=>(m.deg[n.id]||0)>=8).length],["sensitive","Sensitive",m.sensitive],["manual","Manual",g.nodes.filter(n=>n.tags&&n.tags.includes("manual")).length],["review","Needs review",g.nodes.filter(n=>entStatus(t,n)==="review").length]];
+  const fw=$("#entFilters"); if(fw){ fw.innerHTML=""; filters.forEach(([id,label,cnt])=>{ const c=el("button","efilter"+(entityFilter===id?" active":"")); c.innerHTML=`${esc(label)}<span class="cnt">${cnt}</span>`; c.addEventListener("click",()=>{entityFilter=id;renderEntities();}); fw.appendChild(c); }); }
+  // filter + search
+  const q=($("#entSearch")&&$("#entSearch").value||"").trim();
+  let rows=[...g.nodes];
+  const pass=n=>{ const band=n.band||bandOf(n.risk); switch(entityFilter){
+    case "highrisk": return band==="high"||band==="critical"; case "lowconf": return (n._rc||0)<0.5;
+    case "dupes": return dupSet.has(n.id); case "missing": return !(n.sources&&n.sources.length)||!Object.keys(n.attributes||{}).length;
+    case "norel": return (n._deg||0)===0; case "hub": return (m.deg[n.id]||0)>=8; case "sensitive": return !!n.sensitive;
+    case "manual": return n.tags&&n.tags.includes("manual"); case "review": return entStatus(t,n)==="review"; default: return true; } };
+  rows=rows.filter(pass); if(q) rows=rows.filter(n=>entIntent(q,n,dupSet));
+  rows.sort((a,b)=>(b.risk||0)-(a.risk||0));
+  const shown=rows.slice(0,400);
+  shown.forEach(n=>{ const band=n.band||bandOf(n.risk); const tr=el("tr");
+    const cb=el("td"); const box=el("input"); box.type="checkbox"; box.checked=entSel.has(n.id); box.addEventListener("click",e=>{e.stopPropagation(); if(box.checked)entSel.add(n.id); else entSel.delete(n.id); updateBulkBar();}); cb.appendChild(box); tr.appendChild(cb);
+    const ent=el("td"); const wrap=el("div","ent-ent"); const ic=el("span","eic"); ic.style.color=kColor(n.kind); ic.innerHTML=svg2(n.kind); wrap.appendChild(ic); wrap.appendChild(el("span","label",n.label)); ent.appendChild(wrap); tr.appendChild(ent);
+    tr.appendChild(el("td",null,n.kind));
+    const rk=el("td"); rk.appendChild(el("span","band "+band,(n.risk||0).toFixed(2))); tr.appendChild(rk);
+    const cf=el("td"); cf.appendChild(el("span","score-badge "+scoreCls(n._rc),pct(n._rc))); tr.appendChild(cf);
+    const ql=el("td"); ql.appendChild(el("span","qual-badge "+qualityLabel(n._q),qualityLabel(n._q))); tr.appendChild(ql);
+    tr.appendChild(el("td",null,String(m.deg[n.id]||0)));
+    tr.appendChild(el("td",null,String((n.sources||[]).length)||"0"));
+    const st=entStatus(t,n); const stc=el("td"); stc.appendChild(el("span","st-badge "+st, st==="review"?"needs review":st)); tr.appendChild(stc);
+    tr.addEventListener("click",()=>selectNode(n.id)); tb.appendChild(tr); });
+  window._entShownIds = shown.map(n=>n.id);
+  const foot=$("#entFoot"); if(foot) foot.textContent = `${rows.length} matching · showing ${shown.length}`+(rows.length>shown.length?` (capped) · refine with filters/search`:"");
+  const selAll=$("#entSelAll"); if(selAll) selAll.checked = shown.length>0 && shown.every(n=>entSel.has(n.id));
+  updateBulkBar();
+}
+// small icon reuse from graph glyphs (dark on kind color)
+function svg2(kind){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown; return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`; }
+function updateBulkBar(){ const bar=$("#entBulkBar"); if(!bar)return; bar.hidden=entSel.size===0; $("#entSelCount").textContent=entSel.size+" selected"; }
+$("#entSearch")&&$("#entSearch").addEventListener("input",()=>{ clearTimeout(window._es); window._es=setTimeout(renderEntities,180); });
+$("#entSelAll")&&$("#entSelAll").addEventListener("change",e=>{ const ids=window._entShownIds||[]; if(e.target.checked) ids.forEach(id=>entSel.add(id)); else ids.forEach(id=>entSel.delete(id)); renderEntities(); });
+$$("#entBulkBar button").forEach(b=>b.addEventListener("click",()=>{ const act=b.dataset.bulk; const t=activeTab(); if(!t)return; const ids=[...entSel];
+  if(act==="clear"){ entSel.clear(); renderEntities(); return; }
+  if(!ids.length){ toast("Select entities first","err"); return; }
+  if(act==="graph"){ if(cy){ const keep=new Set(ids); cy.nodes().forEach(nd=>nd.style("display",keep.has(nd.id())?"element":"none")); cy.edges().forEach(ed=>ed.style("display",(keep.has(ed.source().id())&&keep.has(ed.target().id()))?"element":"none")); showView("graph"); requestAnimationFrame(()=>{initCy();cy.resize();cy.fit(cy.nodes(":visible"),70);}); toast(`Isolated ${ids.length} in graph`,"ok"); } }
+  else if(act==="review"){ t._reviewed=t._reviewed||new Set(); ids.forEach(id=>t._reviewed.add(id)); toast(`${ids.length} marked reviewed`,"ok"); renderEntities(); }
+  else if(act==="tag"){ openModal("Bulk tag",`<div class="field">Tag<input id="btag" placeholder="e.g. reviewed-batch-1"/></div>`,[{label:"Cancel",cls:"ghost",act:closeModal},{label:"Apply",cls:"primary",act:()=>{ const tag=$("#btag").value.trim(); if(tag){ ids.forEach(id=>{ const n=t.graph.nodes.find(x=>x.id===id); if(n){ n.tags=n.tags||[]; if(!n.tags.includes(tag))n.tags.push(tag);} }); } closeModal(); renderEntities(); toast("Tagged","ok"); }}]); }
+  else if(act==="intel"){ const labels=ids.map(id=>{ const n=t.graph.nodes.find(x=>x.id===id); return n?n.label:""; }).filter(Boolean).slice(0,40); generateIntelligence("Focus the intelligence on these selected entities: "+labels.join(", ")); }
+}));
 function renderReport(){ const t=activeTab(); const b=$("#reportBody");
   const inv=t&&t.graph.meta&&t.graph.meta.investigation; const gov=t&&t.graph.meta&&t.graph.meta.governance;
   if(!inv){ b.innerHTML='<div class="empty">Run an analysis to generate a brief.</div>'; return; }
@@ -967,7 +1100,7 @@ $("#paletteInput").addEventListener("keydown",e=>{ const items=$("#paletteList")
 $("#paletteBackdrop").addEventListener("click",e=>{ if(e.target===$("#paletteBackdrop")) closePalette(); });
 
 // nav hooks that need lazy render
-$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
+$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="entities")renderEntities(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
 $("#profileBtn").addEventListener("click",()=>{showView("settings");openSettingsTab("account");});
 
 // ---------- settings tabs ----------
@@ -1055,11 +1188,37 @@ async function runTransformOnSelected(t){ const id=cy&&cy.$(":selected").length?
     mergeTransformResult(n, res); setSync("ok","complete"); pushNotif("transform",`${t.name} → ${(res.entities||[]).length} new`); toast(`+${(res.entities||[]).length} entities`,"ok");
   }catch(e){ setSync("err","failed"); toast(e.message,"err"); }
 }
+// Build a cytoscape element for one graph node (shared by render + append).
+function graphNodeEl(n){ const band=n.band||bandOf(n.risk); const hot=band==="critical"||band==="high";
+  return { data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind), kc:kColor(n.kind), hc:bandColor(band), size:24+(n.risk||0)*26, bw:hot?2.5:1.5, halo:hot?1:undefined }, classes:n.hypothesis?"hyp":"" }; }
+// Incrementally add nodes/edges near an anchor WITHOUT re-laying-out the whole
+// graph — new results appear next to the seed and settle with a small local layout.
+function appendToCy(newNodes, newEdges, anchorId){ if(!cy){ renderGraph(); return; }
+  const anchor=cy.$id(anchorId); const ap=(anchor&&anchor.length)?anchor.position():{x:0,y:0};
+  let added=cy.collection(); let ei=cy.edges().length+1;
+  newNodes.forEach((n,i)=>{ if(cy.$id(n.id).length) return; const ne=cy.add(graphNodeEl(n)); const ang=(i/Math.max(1,newNodes.length))*Math.PI*2;
+    ne.position({x:ap.x+Math.cos(ang)*100+(Math.random()*24-12), y:ap.y+Math.sin(ang)*100+(Math.random()*24-12)}); added=added.union(ne); });
+  newEdges.forEach(e=>{ if(cy.$id(e.source).length&&cy.$id(e.target).length){ const dup=cy.edges().some(x=>x.data("source")===e.source&&x.data("target")===e.target);
+    if(!dup) cy.add({ data:{ id:"ex"+(ei++), source:e.source, target:e.target, type:e.type, w:0.6+(e.conf||0.5)*1.8 }, classes:e.hypothesis?"hyp":"" }); } });
+  if(added.length){ const region=anchor.union(added).union(added.connectedEdges());
+    region.layout({ name:"cose", fit:false, animate:true, animationDuration:400, randomize:false, nodeRepulsion:5000, idealEdgeLength:75,
+      boundingBox:{x1:ap.x-240,y1:ap.y-240,x2:ap.x+240,y2:ap.y+240} }).run(); }
+  return added;
+}
 function mergeTransformResult(seed, res){ const tb=activeTab(); if(!tb)return; const byLabel={}; tb.graph.nodes.forEach(n=>byLabel[n.label.toLowerCase()]=n.id);
-  (res.entities||[]).forEach(e=>{ const key=(e.label||"").toLowerCase(); if(!key)return; if(!byLabel[key]){ const nid="tf-"+Math.abs(hashStr(key+e.kind)); byLabel[key]=nid; tb.graph.nodes.push({id:nid,kind:e.kind||"unknown",label:e.label,risk:0.3,band:"low",attributes:e.attributes||{},tags:["transform"],sources:["transform"]}); } });
-  const freshIds=(res.entities||[]).map(e=>byLabel[(e.label||"").toLowerCase()]).filter(Boolean);
-  (res.relationships||[]).forEach(r=>{ const s=byLabel[(r.source||"").toLowerCase()]||seed.id, tg=byLabel[(r.target||"").toLowerCase()]; if(s&&tg) tb.graph.edges.push({source:s,target:tg,type:r.type||"related",conf:r.confidence||0.5}); });
-  renderGraph(); renderGraphFilters(); flashFresh(freshIds); selectNode(seed.id);
+  const newNodes=[];
+  (res.entities||[]).forEach(e=>{ const key=(e.label||"").toLowerCase(); if(!key||byLabel[key])return; const nid="tf-"+Math.abs(hashStr(key+(e.kind||"")+String(tb.graph.nodes.length)));
+    byLabel[key]=nid; const node={id:nid,kind:e.kind||"unknown",label:e.label,risk:0.3,band:"low",attributes:e.attributes||{},tags:["transform"],sources:["transform:"+(res._src||"")]}; tb.graph.nodes.push(node); newNodes.push(node); });
+  const newEdges=[];
+  (res.relationships||[]).forEach(r=>{ const s=byLabel[(r.source||"").toLowerCase()]||seed.id, tg=byLabel[(r.target||"").toLowerCase()]; if(s&&tg){ const edge={source:s,target:tg,type:r.type||"related",conf:r.confidence||0.5}; tb.graph.edges.push(edge); newEdges.push(edge); } });
+  // any new node with no link gets attached to the seed so nothing floats isolated
+  newNodes.forEach(n=>{ if(!newEdges.some(e=>e.source===n.id||e.target===n.id)){ const edge={source:seed.id,target:n.id,type:"from_transform",conf:0.6}; tb.graph.edges.push(edge); newEdges.push(edge); } });
+  const freshIds=newNodes.map(n=>n.id);
+  if((tb.clusterMode||"none")==="none" && cy && cy.$id(seed.id).length){
+    appendToCy(newNodes,newEdges,seed.id); flashFresh(freshIds);
+    setTimeout(()=>{ if(cy) cy.animate({fit:{eles:cy.$id(seed.id).closedNeighborhood(),padding:90},duration:420}); },430);
+  } else { renderGraph(); flashFresh(freshIds); }
+  renderGraphFilters(); selectNode(seed.id);
 }
 function flashFresh(ids){ if(!cy||!ids||!ids.length)return; setTimeout(()=>{ ids.forEach(id=>{ const e=cy.$id(id); if(e&&e.length){ e.addClass("fresh"); setTimeout(()=>e.removeClass("fresh"),1800); } }); },100); }
 
