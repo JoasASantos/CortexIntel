@@ -1,6 +1,52 @@
 /* ===== CortexIntel GUI (v2) ===== */
 "use strict";
 
+// ---------- i18n (EN / PT / ES, switchable in Settings) ----------
+// Continuous coverage: static shell strings carry data-i18n / data-i18n-ph in
+// index.html; dynamic strings call t("key"). Missing keys fall back to English,
+// then to the key itself, so partial coverage never breaks the UI.
+const I18N = {
+  en: {
+    "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
+    "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
+    "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store",
+    "set.keys":"API Keys","set.plugins":"Classifier Plugins","set.project":"Project","set.users":"Users & Access","set.security":"Security","set.language":"Language",
+    "btn.run":"Run","btn.askai":"Ask AI","btn.newProject":"New project","btn.fit":"Fit","btn.reset":"Reset","btn.path":"Path","btn.addEntity":"Entity",
+    "launcher.open":"Open a recent project or start a new investigation.","launcher.new":"New project","launcher.import":"Import project","launcher.empty":"No projects yet — create your first investigation.",
+    "decision.title":"Decision panel","decision.recommended":"Recommended","decision.feasible":"Feasible","decision.highrisk":"High risk","decision.viewGraph":"View in graph","decision.why":"Why","decision.attributedTo":"Analyzed by","decision.none":"Run an analysis to generate decision options.",
+    "ingest.title":"Prepare this source","ingest.relevant":"Ingest only what's relevant to this context","ingest.all":"Ingest everything","ingest.detected":"Detected columns","ingest.rows":"rows",
+  },
+  pt: {
+    "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
+    "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
+    "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms",
+    "set.keys":"Chaves de API","set.plugins":"Plugins de Classificação","set.project":"Projeto","set.users":"Usuários & Acesso","set.security":"Segurança","set.language":"Idioma",
+    "btn.run":"Executar","btn.askai":"Perguntar à IA","btn.newProject":"Novo projeto","btn.fit":"Ajustar","btn.reset":"Redefinir","btn.path":"Caminho","btn.addEntity":"Entidade",
+    "launcher.open":"Abra um projeto recente ou inicie uma nova investigação.","launcher.new":"Novo projeto","launcher.import":"Importar projeto","launcher.empty":"Nenhum projeto ainda — crie sua primeira investigação.",
+    "decision.title":"Painel de decisão","decision.recommended":"Recomendado","decision.feasible":"Viável","decision.highrisk":"Alto risco","decision.viewGraph":"Ver no grafo","decision.why":"Por quê","decision.attributedTo":"Analisado por","decision.none":"Execute uma análise para gerar opções de decisão.",
+    "ingest.title":"Preparar esta fonte","ingest.relevant":"Ingerir só o que é relevante para este contexto","ingest.all":"Ingerir tudo","ingest.detected":"Colunas detectadas","ingest.rows":"linhas",
+  },
+  es: {
+    "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
+    "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
+    "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms",
+    "set.keys":"Claves de API","set.plugins":"Plugins de Clasificación","set.project":"Proyecto","set.users":"Usuarios y Acceso","set.security":"Seguridad","set.language":"Idioma",
+    "btn.run":"Ejecutar","btn.askai":"Preguntar a la IA","btn.newProject":"Nuevo proyecto","btn.fit":"Ajustar","btn.reset":"Restablecer","btn.path":"Ruta","btn.addEntity":"Entidad",
+    "launcher.open":"Abre un proyecto reciente o inicia una nueva investigación.","launcher.new":"Nuevo proyecto","launcher.import":"Importar proyecto","launcher.empty":"Aún no hay proyectos — crea tu primera investigación.",
+    "decision.title":"Panel de decisión","decision.recommended":"Recomendado","decision.feasible":"Viable","decision.highrisk":"Alto riesgo","decision.viewGraph":"Ver en el grafo","decision.why":"Por qué","decision.attributedTo":"Analizado por","decision.none":"Ejecuta un análisis para generar opciones de decisión.",
+    "ingest.title":"Preparar esta fuente","ingest.relevant":"Ingerir solo lo relevante para este contexto","ingest.all":"Ingerir todo","ingest.detected":"Columnas detectadas","ingest.rows":"filas",
+  },
+};
+function detectLang(){ const s=localStorage.getItem("cortex_lang"); if(s&&I18N[s])return s; const n=(navigator.language||"en").slice(0,2).toLowerCase(); return I18N[n]?n:"en"; }
+let LANG = detectLang();
+function t(key, ...args){ let s=(I18N[LANG]&&I18N[LANG][key]) || I18N.en[key] || key; args.forEach((a,i)=>{ s=s.replace("{"+i+"}",a); }); return s; }
+function setLang(l){ if(!I18N[l])return; LANG=l; localStorage.setItem("cortex_lang",l); document.documentElement.lang=l; applyI18n(); try{ applyIcons(); }catch(e){} try{ if(typeof showLauncher==="function" && !document.getElementById("launcher").hidden) showLauncher(); }catch(e){} }
+function applyI18n(){
+  document.querySelectorAll("[data-i18n]").forEach(e=>{ const k=e.getAttribute("data-i18n"); const v=t(k); if(v)e.textContent=v; });
+  document.querySelectorAll("[data-i18n-ph]").forEach(e=>{ const k=e.getAttribute("data-i18n-ph"); const v=t(k); if(v)e.setAttribute("placeholder",v); });
+  document.querySelectorAll("[data-i18n-title]").forEach(e=>{ const k=e.getAttribute("data-i18n-title"); const v=t(k); if(v)e.title=v; });
+}
+
 // ---------- transport ----------
 const TAURI = window.__TAURI__ || null;
 let MODE = "mock"; // "http" | "mock"
@@ -158,7 +204,7 @@ function applyIcons(){
   $$('.logo').forEach(l=>l.innerHTML=svg('logo'));
   const set=(sel,name,keepText)=>{ const e=$(sel); if(e){ e.innerHTML=svg(name)+(keepText?(' '+keepText):''); } };
   set('#btnNewProject','plus'); const gs=$('.gs-icon'); if(gs)gs.innerHTML=svg('search');
-  set('#btnRun','play','Run'); set('#btnAsk','spark','Ask AI');
+  set('#btnRun','play',t('btn.run')); set('#btnAsk','spark',t('btn.askai'));
   const bn=$('#btnNotifications'); if(bn){ bn.innerHTML=svg('bell')+'<span class="badge" id="notifBadge" hidden>0</span>'; }
   const sl=$('.splash-logo'); if(sl)sl.innerHTML=`<svg class="ic" style="width:52px;height:52px" viewBox="0 0 24 24">${ICONS.logo}</svg>`;
   const ge=$('.ge-icon'); if(ge)ge.innerHTML=`<svg class="ic" style="width:44px;height:44px" viewBox="0 0 24 24">${ICONS.graph}</svg>`;
@@ -167,6 +213,7 @@ function applyIcons(){
 // ---------- boot ----------
 async function boot() {
   applyIcons();
+  document.documentElement.lang=LANG; applyI18n();
   await detectTransport();
   const steps = [];
   const push = (label, ok, cls) => steps.push({label, ok, cls});
@@ -255,10 +302,11 @@ async function enterApp() {
 // Project launcher — the entry screen: pick a saved/recent project or create new.
 async function showLauncher(){
   $("#app").hidden=true; $("#launcher").hidden=false;
+  applyI18n();
   const grid=$("#launcherGrid"); grid.innerHTML='<div class="empty">Loading…</div>';
   let list=[]; try{ list=await api("/api/projects"); }catch(e){}
   grid.innerHTML="";
-  if(!list.length){ grid.innerHTML='<div class="empty">No projects yet — create your first investigation.</div>'; return; }
+  if(!list.length){ grid.innerHTML=`<div class="empty">${esc(t("launcher.empty"))}</div>`; return; }
   list.forEach(p=>{ const c=el("div","proj-card");
     const when=p.updated_at?new Date(p.updated_at*1000).toISOString().slice(0,10):"";
     c.innerHTML=`<div class="pc-name">${esc(p.name)}</div>
@@ -1287,6 +1335,8 @@ $("#btnDeleteProject").addEventListener("click",async()=>{ const t=activeTab(); 
 function renderSettings(){ const a=$("#acctInfo"); if(a){ a.innerHTML=""; const u=state.user||{}; [["Name",u.display_name],["Email",u.email],["Role",u.role]].forEach(([k,v])=>{ const r=el("div","row"); r.appendChild(el("span","k",k)); r.appendChild(el("span","v",v||"—")); a.appendChild(r); }); }
   const p=$("#projInfo"); const t=activeTab(); if(p){ p.innerHTML=""; if(t){ [["Name",t.project.name],["Vertical",t.project.domain],["Connectors",String(t.project.connectors.length)],["Activities",String(t.project.activities.length)]].forEach(([k,v])=>{ const r=el("div","row"); r.appendChild(el("span","k",k)); r.appendChild(el("span","v",v)); p.appendChild(r); }); } else p.innerHTML='<div class="empty">No active project.</div>'; } }
 $("#btnLogout").addEventListener("click",logout);
+// language selector: reflect current, switch on change
+(function(){ const sel=$("#setLang"); if(sel){ sel.value=LANG; sel.addEventListener("change",()=>setLang(sel.value)); } })();
 
 // ---------- provider select (custom) ----------
 const SELECTS={};

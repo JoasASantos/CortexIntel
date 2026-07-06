@@ -55,11 +55,11 @@
       <div class="launcher-head">
         <div class="auth-brand"><span class="logo">◈</span> CortexIntel</div>
         <div class="launcher-actions">
-          <button class="btn ghost" id="lnImport">⬆ Import project</button>
-          <button class="btn primary" id="lnNew">＋ New project</button>
+          <button class="btn ghost" id="lnImport"><span>⬆ </span><span data-i18n="launcher.import">Import project</span></button>
+          <button class="btn primary" id="lnNew"><span>＋ </span><span data-i18n="launcher.new">New project</span></button>
         </div>
       </div>
-      <p class="muted" id="lnSub">Open a recent project or start a new investigation.</p>
+      <p class="muted" id="lnSub" data-i18n="launcher.open">Open a recent project or start a new investigation.</p>
       <div class="launcher-grid" id="launcherGrid"><div class="empty">No projects yet — create your first.</div></div>
     </div>
   </div>
@@ -93,14 +93,14 @@
     <div class="shell">
       <nav class="sidebar">
         <ul class="nav">
-          <li data-view="dashboard" class="active"><span class="ni">▤</span><span>Dashboard</span></li>
-          <li data-view="graph"><span class="ni">◕</span><span>Graph</span></li>
-          <li data-view="intelligence"><span class="ni">✦</span><span>Intelligence</span></li>
-          <li data-view="entities"><span class="ni">⬡</span><span>Entities</span></li>
-          <li data-view="timeline"><span class="ni">⧗</span><span>Timeline</span></li>
-          <li data-view="alerts"><span class="ni">⚠</span><span>Alerts</span></li>
-          <li data-view="reports"><span class="ni">▦</span><span>Reports</span></li>
-          <li data-view="settings"><span class="ni">⚙</span><span>Settings</span></li>
+          <li data-view="dashboard" class="active"><span class="ni">▤</span><span data-i18n="nav.dashboard">Dashboard</span></li>
+          <li data-view="graph"><span class="ni">◕</span><span data-i18n="nav.graph">Graph</span></li>
+          <li data-view="intelligence"><span class="ni">✦</span><span data-i18n="nav.intelligence">Intelligence</span></li>
+          <li data-view="entities"><span class="ni">⬡</span><span data-i18n="nav.entities">Entities</span></li>
+          <li data-view="timeline"><span class="ni">⧗</span><span data-i18n="nav.timeline">Timeline</span></li>
+          <li data-view="alerts"><span class="ni">⚠</span><span data-i18n="nav.alerts">Alerts</span></li>
+          <li data-view="reports"><span class="ni">▦</span><span data-i18n="nav.reports">Reports</span></li>
+          <li data-view="settings"><span class="ni">⚙</span><span data-i18n="nav.settings">Settings</span></li>
         </ul>
         <div class="sidebar-foot">
           <div class="vertical-pill" id="verticalPill">—</div>
@@ -273,15 +273,15 @@
           <div class="view-head"><h1>Settings</h1><p class="muted">Configuration & integrations.</p></div>
           <div class="settings-shell">
             <div class="settings-nav" id="settingsNav">
-              <button class="snav active" data-tab="account">Account</button>
-              <button class="snav" data-tab="providers">Providers & Routing</button>
-              <button class="snav" data-tab="datasources">Data Sources</button>
-              <button class="snav" data-tab="transforms">Transforms Store</button>
-              <button class="snav" data-tab="keys">API Keys</button>
-              <button class="snav" data-tab="plugins">Classifier Plugins</button>
-              <button class="snav" data-tab="project">Project</button>
-              <button class="snav" data-tab="users">Users &amp; Access</button>
-              <button class="snav" data-tab="security">Security</button>
+              <button class="snav active" data-tab="account" data-i18n="set.account">Account</button>
+              <button class="snav" data-tab="providers" data-i18n="set.providers">Providers & Routing</button>
+              <button class="snav" data-tab="datasources" data-i18n="set.datasources">Data Sources</button>
+              <button class="snav" data-tab="transforms" data-i18n="set.transforms">Transforms Store</button>
+              <button class="snav" data-tab="keys" data-i18n="set.keys">API Keys</button>
+              <button class="snav" data-tab="plugins" data-i18n="set.plugins">Classifier Plugins</button>
+              <button class="snav" data-tab="project" data-i18n="set.project">Project</button>
+              <button class="snav" data-tab="users" data-i18n="set.users">Users &amp; Access</button>
+              <button class="snav" data-tab="security" data-i18n="set.security">Security</button>
             </div>
             <div class="settings-body">
               <div class="stab" id="stab-users" hidden>
@@ -292,6 +292,13 @@
               <div class="stab" id="stab-account">
                 <div class="card"><div class="card-head"><h3>Account</h3></div><div class="kv" id="acctInfo"></div>
                   <button class="btn ghost" id="btnLogout" style="margin-top:12px">Sign out</button></div>
+                <div class="card"><div class="card-head"><h3 data-i18n="set.language">Language</h3></div>
+                  <div class="field"><select id="setLang" class="select">
+                    <option value="en">English</option>
+                    <option value="pt">Português</option>
+                    <option value="es">Español</option>
+                  </select></div>
+                </div>
               </div>
               <div class="stab" id="stab-providers" hidden>
                 <div class="card"><div class="card-head"><h3>AI provider</h3></div>
