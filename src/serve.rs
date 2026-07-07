@@ -98,59 +98,78 @@ struct Req {
 }
 
 fn handle(mut stream: TcpStream) -> Result<()> {
-    let mut buf: Vec<u8> = Vec::with_capacity(8192);
+    // Idle keep-alive connections eventually time out and close.
+    let _ = stream.set_read_timeout(Some(std::time::Duration::from_secs(30)));
     let mut tmp = [0u8; 8192];
-    let headers_end = loop {
-        let n = stream.read(&mut tmp)?;
-        if n == 0 {
-            return Ok(());
-        }
-        buf.extend_from_slice(&tmp[..n]);
-        if let Some(pos) = find(&buf, b"\r\n\r\n") {
-            break pos + 4;
-        }
-        if buf.len() > 1 << 20 {
-            return respond(&mut stream, 431, "text/plain", b"headers too large");
-        }
-    };
+    // `carry` holds bytes already read past the previous request's body — the
+    // start of the next pipelined/keep-alive request on this connection.
+    let mut carry: Vec<u8> = Vec::new();
+    loop {
+        // 1) Read until we have a full header block.
+        let headers_end = loop {
+            if let Some(pos) = find(&carry, b"\r\n\r\n") {
+                break pos + 4;
+            }
+            let n = match stream.read(&mut tmp) {
+                Ok(0) => return Ok(()),   // client closed the connection
+                Ok(n) => n,
+                Err(_) => return Ok(()),  // timeout/reset → done with this connection
+            };
+            carry.extend_from_slice(&tmp[..n]);
+            if carry.len() > 1 << 20 {
+                return respond(&mut stream, 431, "text/plain", b"headers too large");
+            }
+        };
 
-    let header_txt = String::from_utf8_lossy(&buf[..headers_end]).into_owned();
-    let mut lines = header_txt.lines();
-    let req_line = lines.next().unwrap_or("");
-    let mut it = req_line.split_whitespace();
-    let method = it.next().unwrap_or("").to_string();
-    let target = it.next().unwrap_or("/").to_string();
+        let header_txt = String::from_utf8_lossy(&carry[..headers_end]).into_owned();
+        let mut lines = header_txt.lines();
+        let req_line = lines.next().unwrap_or("");
+        let mut it = req_line.split_whitespace();
+        let method = it.next().unwrap_or("").to_string();
+        let target = it.next().unwrap_or("/").to_string();
 
-    let mut content_length = 0usize;
-    let mut token = None;
-    for l in lines {
-        if let Some((k, v)) = l.split_once(':') {
-            let k = k.trim();
-            if k.eq_ignore_ascii_case("content-length") {
-                content_length = v.trim().parse().unwrap_or(0);
-            } else if k.eq_ignore_ascii_case("authorization") {
-                let v = v.trim();
-                token = v.strip_prefix("Bearer ").map(|s| s.to_string());
+        let mut content_length = 0usize;
+        let mut token = None;
+        let mut want_close = false;
+        for l in lines {
+            if let Some((k, v)) = l.split_once(':') {
+                let k = k.trim();
+                if k.eq_ignore_ascii_case("content-length") {
+                    content_length = v.trim().parse().unwrap_or(0);
+                } else if k.eq_ignore_ascii_case("authorization") {
+                    token = v.trim().strip_prefix("Bearer ").map(|s| s.to_string());
+                } else if k.eq_ignore_ascii_case("connection") {
+                    if v.trim().eq_ignore_ascii_case("close") { want_close = true; }
+                }
             }
         }
-    }
 
-    let mut body = buf[headers_end..].to_vec();
-    while body.len() < content_length {
-        let n = stream.read(&mut tmp)?;
-        if n == 0 {
-            break;
+        // 2) Read the body up to Content-Length, carrying any extra bytes.
+        let mut body = carry[headers_end..].to_vec();
+        carry.clear();
+        while body.len() < content_length {
+            let n = match stream.read(&mut tmp) { Ok(0) => break, Ok(n) => n, Err(_) => return Ok(()) };
+            body.extend_from_slice(&tmp[..n]);
         }
-        body.extend_from_slice(&tmp[..n]);
+        if body.len() > content_length {
+            carry = body.split_off(content_length); // leftover = next request
+        }
+
+        let (path, query) = match target.split_once('?') {
+            Some((p, q)) => (p.to_string(), q.to_string()),
+            None => (target.clone(), String::new()),
+        };
+
+        let req = Req { method, path, query, body, token };
+        // If routing/writing fails, the client is gone — end the connection.
+        if route(&mut stream, &req).is_err() {
+            return Ok(());
+        }
+        if want_close {
+            return Ok(());
+        }
+        // else loop and read the next request on this kept-alive connection
     }
-
-    let (path, query) = match target.split_once('?') {
-        Some((p, q)) => (p.to_string(), q.to_string()),
-        None => (target.clone(), String::new()),
-    };
-
-    let req = Req { method, path, query, body, token };
-    route(&mut stream, &req)
 }
 
 fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
@@ -434,8 +453,12 @@ fn respond(stream: &mut TcpStream, status: u16, content_type: &str, body: &[u8])
         200 => "OK", 204 => "No Content", 400 => "Bad Request", 401 => "Unauthorized",
         404 => "Not Found", 431 => "Request Header Fields Too Large", _ => "OK",
     };
+    // Keep-alive: WKWebView (the desktop app's engine) pools connections and
+    // races against `Connection: close`, surfacing as intermittent "Load failed"
+    // on POSTs. Advertising keep-alive + a Content-Length (always set) lets the
+    // client reuse the socket reliably; handle() loops requests per connection.
     let head = format!(
-        "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",
+        "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: keep-alive\r\nKeep-Alive: timeout=30\r\n\r\n",
         body.len()
     );
     stream.write_all(head.as_bytes())?;
