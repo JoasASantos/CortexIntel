@@ -73,6 +73,18 @@ fn lens(d: Domain, lang: &str) -> Lens {
     }
 }
 
+/// Localized noun for an entity kind, for use inside generated sentences.
+fn kind_label(k: EntityKind, lang: &str) -> String {
+    use EntityKind::*;
+    let en = k.as_str();
+    let s = match lang {
+        "pt" => match k { Person=>"pessoa",Account=>"conta",Organization=>"organização",Ip=>"IP",Domain=>"domínio",Url=>"URL",Device=>"dispositivo",Wallet=>"carteira",Payment=>"pagamento",Group=>"grupo",Location=>"local",Media=>"mídia",Evidence=>"evidência",Malware=>"malware",Incident=>"incidente",Vulnerability=>"vulnerabilidade",Suspect=>"suspeito",Victim=>"vítima",Communication=>"comunicação",_=>en },
+        "es" => match k { Person=>"persona",Account=>"cuenta",Organization=>"organización",Ip=>"IP",Domain=>"dominio",Url=>"URL",Device=>"dispositivo",Wallet=>"billetera",Payment=>"pago",Group=>"grupo",Location=>"ubicación",Media=>"medio",Evidence=>"evidencia",Malware=>"malware",Incident=>"incidente",Vulnerability=>"vulnerabilidad",Suspect=>"sospechoso",Victim=>"víctima",Communication=>"comunicación",_=>en },
+        _ => en,
+    };
+    s.to_string()
+}
+
 /// Localized label for a case-risk band.
 fn band_label(band: &str, lang: &str) -> &'static str {
     match (lang, band) {
@@ -129,14 +141,15 @@ pub fn assess(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain, lang: &str)
     if let Some((id, d, kind)) = hubs.first() {
         let e = &g.entities[*id];
         let lk = (0.35 + *d as f32 * 0.05).min(0.9);
+        let kl = kind_label(*kind, lang);
         let (statement, evidence, action) = match lang {
-            "pt" => (format!("{} entidades convergem no {} compartilhado \"{}\" — {}.", d, kind.as_str(), e.label, l.hub_meaning),
+            "pt" => (format!("{} entidades convergem no {} compartilhado \"{}\" — {}.", d, kl, e.label, l.hub_meaning),
                 vec![format!("{} conexões com {}", d, e.label)],
                 "Isole este cluster e expanda seus membros; confirme se o hub compartilhado é um vínculo real ou um agregador benigno.".to_string()),
-            "es" => (format!("{} entidades convergen en el {} compartido \"{}\" — {}.", d, kind.as_str(), e.label, l.hub_meaning),
+            "es" => (format!("{} entidades convergen en el {} compartido \"{}\" — {}.", d, kl, e.label, l.hub_meaning),
                 vec![format!("{} conexiones con {}", d, e.label)],
                 "Aísla este clúster y expande sus miembros; confirma si el hub compartido es un vínculo real o un agregador benigno.".to_string()),
-            _ => (format!("{} entities converge on the shared {} \"{}\" — {}.", d, kind.as_str(), e.label, l.hub_meaning),
+            _ => (format!("{} entities converge on the shared {} \"{}\" — {}.", d, kl, e.label, l.hub_meaning),
                 vec![format!("{} connections to {}", d, e.label)],
                 "Isolate this cluster and expand its members; confirm whether the shared hub is a genuine link or a benign aggregator.".to_string()),
         };
@@ -241,10 +254,10 @@ pub fn next_best_actions(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain, 
     let hub_kinds = [EntityKind::Ip, EntityKind::Device, EntityKind::Wallet, EntityKind::Domain];
     if let Some((id, d)) = g.entities.iter().filter(|(_, e)| hub_kinds.contains(&e.kind))
         .map(|(id, _)| (id, *deg.get(id).unwrap_or(&0))).filter(|(_, d)| *d >= 3).max_by_key(|(_, d)| *d) {
-        let e = &g.entities[id];
-        let (a, w) = if pt { (format!("Verificar se o {} compartilhado \"{}\" é um vínculo real ou um agregador benigno", e.kind.as_str(), e.label), format!("{} entidades dependem deste hub — {}. Confirmá-lo colapsa ou confirma o significado de todo o cluster.", d, l.hub_meaning)) }
-            else if es { (format!("Verificar si el {} compartido \"{}\" es un vínculo real o un agregador benigno", e.kind.as_str(), e.label), format!("{} entidades dependen de este hub — {}. Confirmarlo colapsa o confirma el significado de todo el clúster.", d, l.hub_meaning)) }
-            else { (format!("Verify whether the shared {} \"{}\" is a real link or a benign aggregator", e.kind.as_str(), e.label), format!("{} entities hinge on this hub — {}. Confirming it collapses or confirms the whole cluster's meaning.", d, l.hub_meaning)) };
+        let e = &g.entities[id]; let kl = kind_label(e.kind, lang);
+        let (a, w) = if pt { (format!("Verificar se o {} compartilhado \"{}\" é um vínculo real ou um agregador benigno", kl, e.label), format!("{} entidades dependem deste hub — {}. Confirmá-lo colapsa ou confirma o significado de todo o cluster.", d, l.hub_meaning)) }
+            else if es { (format!("Verificar si el {} compartido \"{}\" es un vínculo real o un agregador benigno", kl, e.label), format!("{} entidades dependen de este hub — {}. Confirmarlo colapsa o confirma el significado de todo el clúster.", d, l.hub_meaning)) }
+            else { (format!("Verify whether the shared {} \"{}\" is a real link or a benign aggregator", kl, e.label), format!("{} entities hinge on this hub — {}. Confirming it collapses or confirms the whole cluster's meaning.", d, l.hub_meaning)) };
         mk(a, w, 0.6, 0.3, "graph", vec![id.clone()]);
     }
 
@@ -279,38 +292,41 @@ pub fn next_best_actions(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain, 
     acts
 }
 
-/// Render assessments as a Markdown "Assessment" section.
-pub fn to_markdown(items: &[Assessment]) -> String {
+/// Render assessments as a Markdown "Assessment" section (localized).
+pub fn to_markdown(items: &[Assessment], lang: &str) -> String {
     if items.is_empty() {
         return String::new();
     }
-    let mut s = String::from("## Assessment\n\n");
-    s.push_str("_Data → information → intelligence. Each judgment states its confidence and the evidence behind it. The AI supports decisions; it does not decide._\n\n");
+    let (head, intro, conf_l, basis_l, ev_l, act_l) = match lang {
+        "pt" => ("## Avaliação", "_Dados → informação → inteligência. Cada julgamento declara sua confiança e a evidência por trás. A IA apoia decisões; não decide._", "Confiança", "base", "Evidência", "Ação"),
+        "es" => ("## Evaluación", "_Datos → información → inteligencia. Cada juicio declara su confianza y la evidencia detrás. La IA apoya decisiones; no decide._", "Confianza", "base", "Evidencia", "Acción"),
+        _ => ("## Assessment", "_Data → information → intelligence. Each judgment states its confidence and the evidence behind it. The AI supports decisions; it does not decide._", "Confidence", "basis", "Evidence", "Action"),
+    };
+    let mut s = format!("{head}\n\n{intro}\n\n");
     for (i, a) in items.iter().enumerate() {
-        s.push_str(&format!(
-            "**{}. {}**  \n_Confidence: {:.0}% · basis: {}_  \n",
-            i + 1, a.statement, a.confidence * 100.0, a.basis
-        ));
+        s.push_str(&format!("**{}. {}**  \n_{}: {:.0}% · {}: {}_  \n", i + 1, a.statement, conf_l, a.confidence * 100.0, basis_l, a.basis));
         if !a.evidence.is_empty() {
-            s.push_str(&format!("Evidence: {}.  \n", a.evidence.join("; ")));
+            s.push_str(&format!("{}: {}.  \n", ev_l, a.evidence.join("; ")));
         }
-        s.push_str(&format!("Action: {}\n\n", a.action));
+        s.push_str(&format!("{}: {}\n\n", act_l, a.action));
     }
     s
 }
 
-/// Render the ranked next-best-actions as a Markdown section.
-pub fn nba_to_markdown(items: &[NextAction]) -> String {
+/// Render the ranked next-best-actions as a Markdown section (localized).
+pub fn nba_to_markdown(items: &[NextAction], lang: &str) -> String {
     if items.is_empty() {
         return String::new();
     }
-    let mut s = String::from("## Next best actions\n\n");
-    s.push_str("_Ranked by how much each step reduces uncertainty per unit of effort._\n\n");
+    let (head, intro, unc_l, eff_l, prio_l) = match lang {
+        "pt" => ("## Próximas melhores ações", "_Ordenadas por quanto cada passo reduz a incerteza por unidade de esforço._", "Incerteza", "esforço", "prioridade"),
+        "es" => ("## Próximas mejores acciones", "_Ordenadas por cuánto reduce cada paso la incertidumbre por unidad de esfuerzo._", "Incertidumbre", "esfuerzo", "prioridad"),
+        _ => ("## Next best actions", "_Ranked by how much each step reduces uncertainty per unit of effort._", "Uncertainty", "effort", "priority"),
+    };
+    let mut s = format!("{head}\n\n{intro}\n\n");
     for (i, a) in items.iter().enumerate() {
-        s.push_str(&format!(
-            "**{}. {}**  \n_Uncertainty ↓ {:.0}% · effort {:.0}% · priority {:.0}%_  \n{}\n\n",
-            i + 1, a.action, a.uncertainty_reduction * 100.0, a.effort * 100.0, a.priority * 100.0, a.why
-        ));
+        s.push_str(&format!("**{}. {}**  \n_{} ↓ {:.0}% · {} {:.0}% · {} {:.0}%_  \n{}\n\n",
+            i + 1, a.action, unc_l, a.uncertainty_reduction * 100.0, eff_l, a.effort * 100.0, prio_l, a.priority * 100.0, a.why));
     }
     s
 }

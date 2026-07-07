@@ -92,7 +92,8 @@ impl<'a> RunOutput<'a> {
             "governance": {
                 "audit_summary": self.audit_summary,
                 "retention": self.retention,
-            }
+            },
+            "lang": self.config.lang,
         })
     }
 
@@ -148,8 +149,8 @@ impl<'a> RunOutput<'a> {
 
         // Progressive disclosure: the natural-language Assessment comes first
         // (for whoever decides), the tables/graph below (for whoever investigates).
-        s.push_str(&crate::assessment::to_markdown(self.assessment));
-        s.push_str(&crate::assessment::nba_to_markdown(self.next_actions));
+        s.push_str(&crate::assessment::to_markdown(self.assessment, &self.config.lang));
+        s.push_str(&crate::assessment::nba_to_markdown(self.next_actions, &self.config.lang));
 
         s.push_str("## Top prioritized entities\n\n");
         s.push_str("| Risk | Band | Kind | Entity | Recommended action | Review |\n");
