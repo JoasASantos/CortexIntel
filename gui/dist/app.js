@@ -34,7 +34,7 @@ const I18N = {
     "ready.ready":"Ready for decision","ready.needs-review":"Needs review","ready.insufficient":"Insufficient data","ready.conflicting":"Conflicting evidence",
     "rd.label":"Decision readiness","btn.genIntel":"Generate intelligence","btn.openGraph":"Open graph","decision.matrix.sub":"impact · confidence · risk · effort",
     "canvas.graph":"Graph","canvas.map":"Map","map.none":"No geolocated entities in this view. Entities with latitude/longitude (or GPS/EXIF) plot here; the rest stay in the graph.","map.plotted":"{0} geolocated entities","map.trajectories":"{0} trajectories",
-    "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h","cmt.title":"Comments","cmt.placeholder":"Add a comment…","cmt.post":"Post","cmt.empty":"No comments yet.",
+    "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h","cmt.title":"Comments","cmt.placeholder":"Add a comment…","cmt.post":"Post","cmt.empty":"No comments yet.","banner.disclaimer":"Decision-support — not a definitive ruling. Handle under applicable data-protection law.","banner.jurisdiction":"Jurisdiction","banner.vertical":"Vertical","banner.sev":"Severity",
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
@@ -64,7 +64,7 @@ const I18N = {
     "ready.ready":"Pronto para decisão","ready.needs-review":"Precisa de revisão","ready.insufficient":"Dados insuficientes","ready.conflicting":"Evidências conflitantes",
     "rd.label":"Prontidão para decisão","btn.genIntel":"Gerar inteligência","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confiança · risco · esforço",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias",
-    "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h","cmt.title":"Comentários","cmt.placeholder":"Adicionar um comentário…","cmt.post":"Enviar","cmt.empty":"Nenhum comentário ainda.",
+    "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h","cmt.title":"Comentários","cmt.placeholder":"Adicionar um comentário…","cmt.post":"Enviar","cmt.empty":"Nenhum comentário ainda.","banner.disclaimer":"Apoio à decisão — não é um veredito definitivo. Trate conforme a lei de proteção de dados aplicável.","banner.jurisdiction":"Jurisdição","banner.vertical":"Vertical","banner.sev":"Severidade",
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
@@ -94,7 +94,7 @@ const I18N = {
     "ready.ready":"Listo para decidir","ready.needs-review":"Necesita revisión","ready.insufficient":"Datos insuficientes","ready.conflicting":"Evidencia contradictoria",
     "rd.label":"Preparación para decidir","btn.genIntel":"Generar inteligencia","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confianza · riesgo · esfuerzo",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias",
-    "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h","cmt.title":"Comentarios","cmt.placeholder":"Añadir un comentario…","cmt.post":"Enviar","cmt.empty":"Aún no hay comentarios.",
+    "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h","cmt.title":"Comentarios","cmt.placeholder":"Añadir un comentario…","cmt.post":"Enviar","cmt.empty":"Aún no hay comentarios.","banner.disclaimer":"Apoyo a la decisión — no es un veredicto definitivo. Trátese conforme a la ley de protección de datos aplicable.","banner.jurisdiction":"Jurisdicción","banner.vertical":"Vertical","banner.sev":"Severidad",
   },
 };
 function detectLang(){ const s=localStorage.getItem("cortex_lang"); if(s&&I18N[s])return s; const n=(navigator.language||"en").slice(0,2).toLowerCase(); return I18N[n]?n:"en"; }
@@ -102,7 +102,7 @@ let LANG = detectLang();
 function t(key, ...args){ let s=(I18N[LANG]&&I18N[LANG][key]) || I18N.en[key] || key; args.forEach((a,i)=>{ s=s.replace("{"+i+"}",a); }); return s; }
 // Alias for call sites where `t` is shadowed by a local (e.g. the active tab).
 function t2(...a){ return t(...a); }
-function setLang(l){ if(!I18N[l])return; LANG=l; localStorage.setItem("cortex_lang",l); document.documentElement.lang=l; applyI18n(); try{ applyIcons(); }catch(e){} try{ if(typeof showLauncher==="function" && !document.getElementById("launcher").hidden) showLauncher(); }catch(e){} }
+function setLang(l){ if(!I18N[l])return; LANG=l; localStorage.setItem("cortex_lang",l); document.documentElement.lang=l; applyI18n(); try{ applyIcons(); }catch(e){} try{ if(typeof showLauncher==="function" && !document.getElementById("launcher").hidden) showLauncher(); }catch(e){} try{ if(typeof activeTab==="function") renderClassBanner(activeTab()); }catch(e){} }
 function applyI18n(){
   document.querySelectorAll("[data-i18n]").forEach(e=>{ const k=e.getAttribute("data-i18n"); const v=t(k); if(v)e.textContent=v; });
   document.querySelectorAll("[data-i18n-ph]").forEach(e=>{ const k=e.getAttribute("data-i18n-ph"); const v=t(k); if(v)e.setAttribute("placeholder",v); });
@@ -424,8 +424,22 @@ function switchTab(i) {
   const t = activeTab(); if (!t) return;
   const d = state.domains.find(x=>x.slug===t.project.domain);
   $("#verticalPill").textContent = t.project.domain;
+  renderClassBanner(t);
   renderAll();
   showView(currentView);
+}
+// G6 — classification / context banner: the operational context an analyst
+// needs at a glance (severity, vertical, jurisdiction) plus the standing
+// decision-support disclaimer. Severity comes from the situation endpoint.
+async function renderClassBanner(t){ const b=$("#classBanner"); if(!b)return; if(!t){ b.hidden=true; return; }
+  let sev=null, country="—"; if(MODE==="http"){ try{ const s=await api("/api/situations/get?id="+encodeURIComponent(t.project.id)); sev=s.severity&&s.severity.band; country=s.jurisdiction||"—"; }catch(e){} }
+  const sevLabel=sev?{critical:t2("sev.critical"),high:t2("sev.high"),medium:t2("sev.medium"),low:t2("sev.low"),none:t2("sev.none")}[sev]:null;
+  b.hidden=false; b.className="class-banner"+(sev?" sev-"+sev:"");
+  b.innerHTML=`<div class="cb-tags">`+
+    (sevLabel?`<span class="cb-sev">${esc(t2("banner.sev"))}: ${esc(sevLabel)}</span>`:"")+
+    `<span>${esc(t2("banner.vertical"))}: <b>${esc(t.project.domain)}</b></span>`+
+    `<span>${esc(t2("banner.jurisdiction"))}: <b>${esc(country)}</b></span></div>`+
+    `<div class="cb-disc">${esc(t2("banner.disclaimer"))}</div>`;
 }
 
 function closeTab(i, ev) {
