@@ -597,6 +597,16 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .plan-winlbl { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .coa-flash { animation: coaFlash 1.2s ease; }
 @keyframes coaFlash { 0%,100%{ box-shadow: none; } 30%{ box-shadow: 0 0 0 2px var(--accent-2); } }
+/* G5 comments */
+.comments { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
+.comment { background: var(--bg-2); border: 1px solid var(--stroke); border-radius: var(--r-s); padding: 7px 9px; }
+.cmt-head { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 3px; }
+.cmt-author { font-size: 11px; font-weight: 600; color: var(--accent-2); }
+.cmt-when { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cmt-text { font-size: 12px; color: var(--text-2); line-height: 1.45; user-select: text; white-space: pre-wrap; }
+.comment-add { display: flex; gap: 6px; }
+.comment-add input { flex: 1; background: var(--bg-2); border: 1px solid var(--stroke); color: var(--text); border-radius: var(--r-s); padding: 6px 9px; font-size: 12px; outline: none; }
+.comment-add input:focus { border-color: var(--accent-2); }
 .time-scrub { position: absolute; bottom: 56px; left: 12px; right: 12px; z-index: 6; display: flex; align-items: center; gap: 12px; background: var(--panel-glass); backdrop-filter: blur(14px); border: 1px solid var(--stroke); border-radius: var(--r); padding: 8px 14px; }
 .time-scrub input[type=range] { flex: 1; accent-color: var(--accent); }
 .time-scrub .ts-label { font-family: var(--mono); font-size: 11px; color: var(--text-2); min-width: 150px; }

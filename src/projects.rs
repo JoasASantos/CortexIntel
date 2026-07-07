@@ -29,6 +29,21 @@ pub struct SavedConnector {
     pub added_at: u64,
 }
 
+/// G5 — an analyst comment attached to any object in the case (the situation,
+/// an entity, or a decision). Persisted with the project for need-to-know
+/// collaboration (live multiplayer is intentionally out of scope).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Comment {
+    pub id: String,
+    /// Object this comment is about: "situation", or an entity/decision id.
+    pub object_id: String,
+    /// "situation" | "entity" | "decision".
+    pub object_kind: String,
+    pub author: String,
+    pub text: String,
+    pub created_at: u64,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Project {
     pub id: String,
@@ -49,6 +64,8 @@ pub struct Project {
     /// Last consolidated analysis document (graph, risk, brief…).
     #[serde(default)]
     pub last_result: Option<serde_json::Value>,
+    #[serde(default)]
+    pub comments: Vec<Comment>,
 }
 
 /// Lightweight listing entry (no heavy last_result payload).
@@ -99,6 +116,7 @@ pub fn create(name: &str, domain: &str, owner: &str, description: &str, ai_instr
         }],
         connectors: Vec::new(),
         last_result: None,
+        comments: Vec::new(),
     };
     save(&p)?;
     Ok(p)
@@ -164,6 +182,33 @@ pub fn add_activity(id: &str, kind: &str, summary: &str, meta: serde_json::Value
     });
     p.updated_at = now();
     save(&p)
+}
+
+/// G5 — add an analyst comment on an object in the project. Returns the comment.
+pub fn add_comment(id: &str, object_id: &str, object_kind: &str, author: &str, text: &str) -> Result<Comment> {
+    let text = text.trim();
+    if text.is_empty() {
+        return Err(anyhow!("comment text is empty"));
+    }
+    let mut p = load(id)?;
+    let c = Comment {
+        id: format!("cmt-{}", uuid::Uuid::new_v4().simple()),
+        object_id: object_id.to_string(),
+        object_kind: object_kind.to_string(),
+        author: author.to_string(),
+        text: text.to_string(),
+        created_at: now(),
+    };
+    p.comments.push(c.clone());
+    p.updated_at = now();
+    save(&p)?;
+    Ok(c)
+}
+
+/// List comments for a project, optionally filtered to one object.
+pub fn list_comments(id: &str, object_id: Option<&str>) -> Result<Vec<Comment>> {
+    let p = load(id)?;
+    Ok(p.comments.into_iter().filter(|c| object_id.map_or(true, |o| c.object_id == o)).collect())
 }
 
 pub fn set_result(id: &str, result: serde_json::Value) -> Result<()> {

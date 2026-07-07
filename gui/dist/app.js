@@ -34,7 +34,7 @@ const I18N = {
     "ready.ready":"Ready for decision","ready.needs-review":"Needs review","ready.insufficient":"Insufficient data","ready.conflicting":"Conflicting evidence",
     "rd.label":"Decision readiness","btn.genIntel":"Generate intelligence","btn.openGraph":"Open graph","decision.matrix.sub":"impact · confidence · risk · effort",
     "canvas.graph":"Graph","canvas.map":"Map","map.none":"No geolocated entities in this view. Entities with latitude/longitude (or GPS/EXIF) plot here; the rest stay in the graph.","map.plotted":"{0} geolocated entities","map.trajectories":"{0} trajectories",
-    "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h",
+    "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h","cmt.title":"Comments","cmt.placeholder":"Add a comment…","cmt.post":"Post","cmt.empty":"No comments yet.",
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
@@ -64,7 +64,7 @@ const I18N = {
     "ready.ready":"Pronto para decisão","ready.needs-review":"Precisa de revisão","ready.insufficient":"Dados insuficientes","ready.conflicting":"Evidências conflitantes",
     "rd.label":"Prontidão para decisão","btn.genIntel":"Gerar inteligência","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confiança · risco · esforço",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias",
-    "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h",
+    "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h","cmt.title":"Comentários","cmt.placeholder":"Adicionar um comentário…","cmt.post":"Enviar","cmt.empty":"Nenhum comentário ainda.",
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
@@ -94,7 +94,7 @@ const I18N = {
     "ready.ready":"Listo para decidir","ready.needs-review":"Necesita revisión","ready.insufficient":"Datos insuficientes","ready.conflicting":"Evidencia contradictoria",
     "rd.label":"Preparación para decidir","btn.genIntel":"Generar inteligencia","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confianza · riesgo · esfuerzo",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias",
-    "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h",
+    "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h","cmt.title":"Comentarios","cmt.placeholder":"Añadir un comentario…","cmt.post":"Enviar","cmt.empty":"Aún no hay comentarios.",
   },
 };
 function detectLang(){ const s=localStorage.getItem("cortex_lang"); if(s&&I18N[s])return s; const n=(navigator.language||"en").slice(0,2).toLowerCase(); return I18N[n]?n:"en"; }
@@ -789,10 +789,32 @@ function selectNode(id) {
     r.addEventListener("click",()=>{ selectNode(other); if(cy){const el2=cy.$id(other); if(el2) cy.animate({center:{eles:el2},duration:300}); } }); rels.appendChild(r); });
   const src=$("#ctxSources"); src.innerHTML = n.sources.length?"":'<span class="chip">—</span>'; n.sources.forEach(s=>src.appendChild(el("span","chip",s)));
   renderCtxTransforms(n.kind);
+  renderComments(id, "entity");
   showView("graph");
   if (cy){ const e2=cy.$id(id); if(e2) cy.animate({center:{eles:e2},duration:300}); }
 }
 $("#ctxClose").addEventListener("click",()=>$("#context").hidden=true);
+
+// G5 — per-object comments (persisted per project). Attribution on decision
+// cards already comes from the backend; this adds analyst discussion per object.
+let _cmtObj=null;
+async function renderComments(objectId, objectKind){ const w=$("#ctxComments"); if(!w)return; const t=activeTab();
+  _cmtObj={id:objectId,kind:objectKind};
+  if(!t || MODE==="mock"){ w.innerHTML=`<div class="empty">${esc(t2("cmt.empty"))}</div>`; return; }
+  let list=[]; try{ list=await api(`/api/comments?project=${encodeURIComponent(t.project.id)}&object=${encodeURIComponent(objectId)}`); }catch(e){}
+  w.innerHTML="";
+  if(!list.length){ w.innerHTML=`<div class="empty">${esc(t2("cmt.empty"))}</div>`; return; }
+  list.sort((a,b)=>a.created_at-b.created_at).forEach(c=>{ const d=el("div","comment");
+    d.innerHTML=`<div class="cmt-head"><span class="cmt-author">${esc(c.author)}</span><span class="cmt-when">${new Date(c.created_at*1000).toISOString().slice(0,16).replace("T"," ")}</span></div><div class="cmt-text">${esc(c.text)}</div>`;
+    w.appendChild(d); });
+}
+async function postComment(){ const t=activeTab(); const inp=$("#ctxCommentInput"); if(!t||!_cmtObj||!inp)return; const text=inp.value.trim(); if(!text)return;
+  if(MODE==="mock"){ toast("Preview: comments need the local server","err"); return; }
+  try{ await api("/api/comments",{method:"POST",body:{project:t.project.id,object_id:_cmtObj.id,object_kind:_cmtObj.kind,text}}); inp.value=""; renderComments(_cmtObj.id,_cmtObj.kind); toast("Comment added","ok"); }
+  catch(e){ toast(e.message,"err"); }
+}
+$("#ctxCommentSend")&&$("#ctxCommentSend").addEventListener("click",postComment);
+$("#ctxCommentInput")&&$("#ctxCommentInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); postComment(); } });
 
 // Focus an entity from the dashboard: switch to graph, isolate its neighborhood,
 // select it and show its details.

@@ -362,6 +362,16 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/api/profile") => finish(stream, api::profile_source(&param(&req.query, "path").unwrap_or_default())),
         // G2 — aggregated situation object (severity + metadata) for a project.
         ("GET", "/api/situations/get") => finish(stream, api::situation_get(&param(&req.query, "id").unwrap_or_default())),
+        // G5 — per-object comments (collaboration, need-to-know).
+        ("GET", "/api/comments") => finish(stream, projects::list_comments(
+            &param(&req.query, "project").unwrap_or_default(),
+            param(&req.query, "object").as_deref(),
+        ).map(|c| serde_json::json!(c))),
+        ("POST", "/api/comments") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let g = |k: &str| b.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string();
+            finish(stream, projects::add_comment(&g("project"), &g("object_id"), &g("object_kind"), &user.email, &g("text")).map(|c| serde_json::json!(c)))
+        }
         // API keys (values never returned)
         ("GET", "/api/keys") => json_ok(stream, &keys::list_names()),
         ("POST", "/api/keys") => {
