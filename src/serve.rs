@@ -66,6 +66,7 @@ const V_THREE: &str = include_str!("../gui/dist/vendor/three.min.js");
 const V_ORBIT: &str = include_str!("../gui/dist/vendor/OrbitControls.js");
 const V_EARTH: &[u8] = include_bytes!("../gui/dist/vendor/earth-blue.jpg");
 const V_EARTH_TOPO: &[u8] = include_bytes!("../gui/dist/vendor/earth-topology.png");
+const V_COUNTRIES: &str = include_str!("../gui/dist/vendor/countries.min.json");
 
 pub fn serve(port: u16, open: bool) -> Result<()> {
     // GUI apps don't inherit the shell PATH — make the LLM CLIs discoverable.
@@ -193,6 +194,7 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/vendor/OrbitControls.js") => return respond(stream, 200, "application/javascript; charset=utf-8", V_ORBIT.as_bytes()),
         ("GET", "/vendor/earth-blue.jpg") => return respond(stream, 200, "image/jpeg", V_EARTH),
         ("GET", "/vendor/earth-topology.png") => return respond(stream, 200, "image/png", V_EARTH_TOPO),
+        ("GET", "/vendor/countries.min.json") => return respond(stream, 200, "application/json; charset=utf-8", V_COUNTRIES.as_bytes()),
         ("OPTIONS", _) => return respond(stream, 204, "text/plain", b""),
         _ => {}
     }

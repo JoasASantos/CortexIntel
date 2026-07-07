@@ -2127,27 +2127,52 @@ function initGlobe3D(){
   scene.add(new THREE.AmbientLight(0xbfd8e6,0.8));
   const dir=new THREE.DirectionalLight(0xffffff,0.65); dir.position.set(-1,0.5,1); scene.add(dir);
   const stars=(()=>{ const g=new THREE.BufferGeometry(),n=1400,a=new Float32Array(n*3); for(let i=0;i<n*3;i++)a[i]=(Math.random()-0.5)*1800; g.setAttribute("position",new THREE.BufferAttribute(a,3)); return new THREE.Points(g,new THREE.PointsMaterial({color:0x8fa8c0,size:1.3})); })(); scene.add(stars);
-  const labels=new THREE.Group(), markers=new THREE.Group(), arcs=new THREE.Group(); scene.add(labels); scene.add(markers); scene.add(arcs);
+  const labels=new THREE.Group(), markers=new THREE.Group(), arcs=new THREE.Group(), borders=new THREE.Group(), countryLabels=new THREE.Group();
+  scene.add(borders); scene.add(labels); scene.add(countryLabels); scene.add(markers); scene.add(arcs);
   const controls=new THREE.OrbitControls(camera,renderer.domElement);
-  controls.enableDamping=true; controls.dampingFactor=0.08; controls.rotateSpeed=0.5; controls.minDistance=140; controls.maxDistance=560; controls.enablePan=false; controls.autoRotate=true; controls.autoRotateSpeed=0.3;
+  // Deep zoom: get right down near the surface (R=100) to inspect a single country.
+  controls.enableDamping=true; controls.dampingFactor=0.08; controls.rotateSpeed=0.5; controls.minDistance=104; controls.maxDistance=700; controls.enablePan=false; controls.autoRotate=true; controls.autoRotateSpeed=0.3; controls.zoomSpeed=1.4;
   const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); let hit=[];
   renderer.domElement.addEventListener("click",e=>{ const r=renderer.domElement.getBoundingClientRect(); mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1; ray.setFromCamera(mouse,camera); const is=ray.intersectObjects(hit,true); if(is.length&&is[0].object.userData.id) selectNode(is[0].object.userData.id); });
   renderer.domElement.addEventListener("pointerdown",()=>{controls.autoRotate=false;});
   let running=false;
-  function loop(){ if(!running)return; controls.update(); renderer.render(scene,camera); requestAnimationFrame(loop); }
+  const camDir=new THREE.Vector3(), sp2=new THREE.Vector3();
+  // Per-frame: hide labels on the far side of the globe; reveal country names
+  // as you zoom in (declutter when far). Continent + entity labels stay.
+  function cullLabels(){
+    camDir.copy(camera.position).normalize(); const dist=camera.position.length();
+    const showCountries = dist < 300; // zoomed in enough to read country names
+    countryLabels.children.forEach(s=>{ sp2.copy(s.position).normalize(); const facing=sp2.dot(camDir); s.visible = showCountries && facing>0.15; });
+    [labels,markers].forEach(grp=>grp.children.forEach(s=>{ if(s.isSprite){ sp2.copy(s.position).normalize(); s.visible = sp2.dot(camDir)>0.02; } }));
+  }
+  function loop(){ if(!running)return; controls.update(); cullLabels(); renderer.render(scene,camera); requestAnimationFrame(loop); }
   function resize(){ const w=host.clientWidth||800,h=host.clientHeight||600; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h,false); }
   function llToVec(lat,lon,rad){ const phi=(90-lat)*Math.PI/180, th=(lon+180)*Math.PI/180; return new THREE.Vector3(-rad*Math.sin(phi)*Math.cos(th), rad*Math.cos(phi), rad*Math.sin(phi)*Math.sin(th)); }
-  // Text sprite for country/place labels.
-  function textSprite(txt,color){ const c=document.createElement("canvas"); const ctx=c.getContext("2d"); ctx.font="600 26px SF Mono, Menlo, monospace"; const w=ctx.measureText(txt).width; c.width=w+16; c.height=38; ctx.font="600 26px SF Mono, Menlo, monospace"; ctx.fillStyle=color||"rgba(220,235,245,0.9)"; ctx.textBaseline="middle"; ctx.fillText(txt,8,20); const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter; const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false})); sp.scale.set(c.width/38*7,7,1); return sp; }
+  function textSprite(txt,color,px){ px=px||26; const c=document.createElement("canvas"); const ctx=c.getContext("2d"); const f=`600 ${px}px SF Mono, Menlo, monospace`; ctx.font=f; const w=ctx.measureText(txt).width; c.width=w+16; c.height=px+12; ctx.font=f; ctx.fillStyle=color||"rgba(220,235,245,0.9)"; ctx.textBaseline="middle"; ctx.fillText(txt,8,c.height/2); const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter; const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false})); sp.scale.set(c.width/c.height*(px/26)*7,(px/26)*7,1); return sp; }
+  // Load country borders (vector lines) + a label at each country centroid.
+  function loadCountries(){
+    fetch("/vendor/countries.min.json").then(r=>r.json()).then(gj=>{
+      const seg=[]; // border line segments
+      gj.features.forEach(f=>{
+        const nm=f.properties.n; const polys=f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates;
+        let cx=0,cy=0,cn=0;
+        polys.forEach(poly=>poly.forEach(ring=>{ for(let i=0;i<ring.length;i++){ const a=ring[i], b=ring[(i+1)%ring.length]; const va=llToVec(a[1],a[0],R+0.4), vb=llToVec(b[1],b[0],R+0.4); seg.push(va.x,va.y,va.z,vb.x,vb.y,vb.z); cx+=a[0];cy+=a[1];cn++; } }));
+        if(nm&&cn){ const sp=textSprite(nm,"rgba(190,215,235,0.85)",22); sp.position.copy(llToVec(cy/cn,cx/cn,R+2)); sp.scale.multiplyScalar(0.6); sp.visible=false; countryLabels.add(sp); }
+      });
+      const bg=new THREE.BufferGeometry(); bg.setAttribute("position",new THREE.Float32BufferAttribute(seg,3));
+      borders.add(new THREE.LineSegments(bg,new THREE.LineBasicMaterial({color:0x6fd8ea,transparent:true,opacity:0.35})));
+    }).catch(()=>{});
+  }
+  loadCountries();
   _g3={THREE,scene,camera,renderer,earth,labels,markers,arcs,controls,R,llToVec,resize,textSprite,
     setHit(a){hit=a;}, start(){ running=true; resize(); loop(); }, stop(){ running=false; } };
   window.addEventListener("resize",()=>{ if(canvasMode==="map"&&_g3) _g3.resize(); });
   return _g3;
 }
-// Continent + major-country reference labels (offline, no dataset needed).
+// Continent reference labels (always shown when zoomed out); individual country
+// names come from the vendored GeoJSON and appear as you zoom in.
 const GEO_LABELS=[
-  ["North America",48,-100],["South America",-12,-58],["Europe",52,15],["Africa",4,20],["Asia",46,90],["Oceania",-25,134],["Antarctica",-78,20],
-  ["USA",39,-98],["Brazil",-10,-52],["UK",54,-2],["France",47,2],["Nigeria",9,8],["Russia",61,90],["China",35,104],["India",22,79],["Japan",36,138],["Australia",-25,134],["Canada",56,-106],["Mexico",23,-102],["South Africa",-29,24],["UAE",24,54],["Germany",51,10]
+  ["NORTH AMERICA",48,-100],["SOUTH AMERICA",-15,-60],["EUROPE",54,15],["AFRICA",2,20],["ASIA",48,95],["OCEANIA",-25,140],["ANTARCTICA",-80,20]
 ];
 let _g3LabelsAdded=false;
 function addGlobeGeoLabels(){ const g=_g3; if(!g||_g3LabelsAdded)return; _g3LabelsAdded=true; const THREE=g.THREE;
