@@ -189,9 +189,9 @@
             <div class="minimap-wrap" id="minimapWrap"><div class="minimap-title">OVERVIEW</div><canvas id="minimap"></canvas></div>
             <div class="legend" id="legend"></div>
             <div class="graph-empty" id="graphEmpty">
-              <div class="ge-inner"><div class="ge-icon">◕</div><h2>No graph yet</h2>
-                <p>Run an analysis, connect a source, or add entities manually (people, media, IPs…) to start building the graph.</p>
-                <div class="row-actions" style="justify-content:center"><button class="btn primary" id="btnRun2">▶ Run analysis</button><button class="btn ghost" id="btnAddEntity2">+ Add entity</button></div></div>
+              <div class="ge-inner"><div class="ge-icon">◕</div><h2 data-i18n="empty.title">No graph yet</h2>
+                <p data-i18n="empty.sub">Run an analysis, connect a source, or add entities manually (people, media, IPs…) to start building the graph.</p>
+                <div class="row-actions" style="justify-content:center"><button class="btn primary" id="btnRun2"><span>▶ </span><span data-i18n="btn.runAnalysis">Run analysis</span></button><button class="btn ghost" id="btnAddEntity2"><span>+ </span><span data-i18n="btn.addEntityFull">Add entity</span></button></div></div>
             </div>
             <!-- AI copilot dock -->
             <div class="ask-dock" id="askDock" hidden>
@@ -382,10 +382,12 @@
         <div class="ctx-section"><h4>Direct relations</h4><div class="rel-list" id="ctxRels"></div></div>
         <div class="ctx-section"><h4>Sources</h4><div class="chips" id="ctxSources"></div></div>
         <div class="ctx-actions">
-          <button class="btn ghost" data-act="expand">✦ Expand (AI)</button>
-          <button class="btn ghost" data-act="isolate">Isolate</button>
-          <button class="btn ghost" data-act="neighbors">Neighbors</button>
-          <button class="btn ghost" data-act="alert">Create alert</button>
+          <button class="btn ghost" data-act="edit" data-i18n="ctx.edit">Edit</button>
+          <button class="btn ghost" data-act="connect" data-i18n="ctx.connect">Connect</button>
+          <button class="btn ghost" data-act="expand"><span>✦ </span><span data-i18n="ctx.expand">Expand (AI)</span></button>
+          <button class="btn ghost" data-act="isolate" data-i18n="ctx.isolate">Isolate</button>
+          <button class="btn ghost" data-act="neighbors" data-i18n="ctx.neighbors">Neighbors</button>
+          <button class="btn ghost" data-act="alert" data-i18n="ctx.alert">Create alert</button>
         </div>
         <div class="ctx-section"><h4>Transforms</h4><div class="rel-list" id="ctxTransforms"><div class="empty">—</div></div></div>
         <div class="ctx-section"><h4 data-i18n="cmt.title">Comments</h4>

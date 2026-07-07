@@ -34,7 +34,7 @@ const I18N = {
     "ready.ready":"Ready for decision","ready.needs-review":"Needs review","ready.insufficient":"Insufficient data","ready.conflicting":"Conflicting evidence",
     "rd.label":"Decision readiness","btn.genIntel":"Generate intelligence","btn.openGraph":"Open graph","decision.matrix.sub":"impact · confidence · risk · effort",
     "canvas.graph":"Graph","canvas.map":"Map","map.none":"No geolocated entities in this view. Entities with latitude/longitude (or GPS/EXIF) plot here; the rest stay in the graph.","map.plotted":"{0} geolocated entities","map.trajectories":"{0} trajectories",
-    "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h","cmt.title":"Comments","cmt.placeholder":"Add a comment…","cmt.post":"Post","cmt.empty":"No comments yet.","banner.disclaimer":"Decision-support — not a definitive ruling. Handle under applicable data-protection law.","banner.jurisdiction":"Jurisdiction","banner.vertical":"Vertical","banner.sev":"Severity",
+    "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h","cmt.title":"Comments","cmt.placeholder":"Add a comment…","cmt.post":"Post","cmt.empty":"No comments yet.","banner.disclaimer":"Decision-support — not a definitive ruling. Handle under applicable data-protection law.","banner.jurisdiction":"Jurisdiction","banner.vertical":"Vertical","banner.sev":"Severity", "ctx.expand":"Expand (AI)","ctx.edit":"Edit","ctx.connect":"Connect","ctx.isolate":"Isolate","ctx.neighbors":"Neighbors","ctx.alert":"Create alert","empty.title":"No graph yet","empty.sub":"Run an analysis, connect a source, or add entities manually (people, media, IPs…) to start building the graph.","hyp.supporting":"Supporting evidence","hyp.missing":"Missing evidence","hyp.next":"Next","hyp.lead":"lead","hyp.conf":"conf","hyp.none":"No competing hypotheses — add data or generate intelligence.","hyp.take":"Take this action","hyp.rankNone":"Run an analysis to rank next actions.","conf.low":"low","conf.medium":"medium","conf.high":"high","nba.uncertainty":"uncertainty","nba.effort":"effort","nba.priority":"priority","nba.impact":"impact","nba.confidence":"confidence","nba.riskWrong":"risk-if-wrong","nba.route":"route","nba.why":"Why","nba.residual":"Residual uncertainty ~{0} — this is decision support, not certainty.","nba.readyYes":"Data supports acting now.","nba.readyNo":"Consider resolving gaps first (see Data Quality).",
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
@@ -64,7 +64,7 @@ const I18N = {
     "ready.ready":"Pronto para decisão","ready.needs-review":"Precisa de revisão","ready.insufficient":"Dados insuficientes","ready.conflicting":"Evidências conflitantes",
     "rd.label":"Prontidão para decisão","btn.genIntel":"Gerar inteligência","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confiança · risco · esforço",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias",
-    "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h","cmt.title":"Comentários","cmt.placeholder":"Adicionar um comentário…","cmt.post":"Enviar","cmt.empty":"Nenhum comentário ainda.","banner.disclaimer":"Apoio à decisão — não é um veredito definitivo. Trate conforme a lei de proteção de dados aplicável.","banner.jurisdiction":"Jurisdição","banner.vertical":"Vertical","banner.sev":"Severidade",
+    "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h","cmt.title":"Comentários","cmt.placeholder":"Adicionar um comentário…","cmt.post":"Enviar","cmt.empty":"Nenhum comentário ainda.","banner.disclaimer":"Apoio à decisão — não é um veredito definitivo. Trate conforme a lei de proteção de dados aplicável.","banner.jurisdiction":"Jurisdição","banner.vertical":"Vertical","banner.sev":"Severidade", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Isolar","ctx.neighbors":"Vizinhos","ctx.alert":"Criar alerta","empty.title":"Nenhum grafo ainda","empty.sub":"Execute uma análise, conecte uma fonte ou adicione entidades manualmente (pessoas, mídia, IPs…) para começar a construir o grafo.","hyp.supporting":"Evidências de apoio","hyp.missing":"Evidências faltantes","hyp.next":"Próximo","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sem hipóteses concorrentes — adicione dados ou gere inteligência.","hyp.take":"Executar esta ação","hyp.rankNone":"Execute uma análise para ranquear as próximas ações.","conf.low":"baixa","conf.medium":"média","conf.high":"alta","nba.uncertainty":"incerteza","nba.effort":"esforço","nba.priority":"prioridade","nba.impact":"impacto","nba.confidence":"confiança","nba.riskWrong":"risco-se-errado","nba.route":"rota","nba.why":"Por quê","nba.residual":"Incerteza residual ~{0} — isto é apoio à decisão, não certeza.","nba.readyYes":"Os dados sustentam agir agora.","nba.readyNo":"Considere resolver as lacunas primeiro (ver Qualidade dos dados).",
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
@@ -94,7 +94,7 @@ const I18N = {
     "ready.ready":"Listo para decidir","ready.needs-review":"Necesita revisión","ready.insufficient":"Datos insuficientes","ready.conflicting":"Evidencia contradictoria",
     "rd.label":"Preparación para decidir","btn.genIntel":"Generar inteligencia","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confianza · riesgo · esfuerzo",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias",
-    "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h","cmt.title":"Comentarios","cmt.placeholder":"Añadir un comentario…","cmt.post":"Enviar","cmt.empty":"Aún no hay comentarios.","banner.disclaimer":"Apoyo a la decisión — no es un veredicto definitivo. Trátese conforme a la ley de protección de datos aplicable.","banner.jurisdiction":"Jurisdicción","banner.vertical":"Vertical","banner.sev":"Severidad",
+    "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h","cmt.title":"Comentarios","cmt.placeholder":"Añadir un comentario…","cmt.post":"Enviar","cmt.empty":"Aún no hay comentarios.","banner.disclaimer":"Apoyo a la decisión — no es un veredicto definitivo. Trátese conforme a la ley de protección de datos aplicable.","banner.jurisdiction":"Jurisdicción","banner.vertical":"Vertical","banner.sev":"Severidad", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Aislar","ctx.neighbors":"Vecinos","ctx.alert":"Crear alerta","empty.title":"Aún no hay grafo","empty.sub":"Ejecuta un análisis, conecta una fuente o añade entidades manualmente (personas, medios, IPs…) para empezar a construir el grafo.","hyp.supporting":"Evidencia de apoyo","hyp.missing":"Evidencia faltante","hyp.next":"Siguiente","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sin hipótesis en competencia — añade datos o genera inteligencia.","hyp.take":"Ejecutar esta acción","hyp.rankNone":"Ejecuta un análisis para clasificar las próximas acciones.","conf.low":"baja","conf.medium":"media","conf.high":"alta","nba.uncertainty":"incertidumbre","nba.effort":"esfuerzo","nba.priority":"prioridad","nba.impact":"impacto","nba.confidence":"confianza","nba.riskWrong":"riesgo-si-erróneo","nba.route":"ruta","nba.why":"Por qué","nba.residual":"Incertidumbre residual ~{0} — esto es apoyo a la decisión, no certeza.","nba.readyYes":"Los datos respaldan actuar ahora.","nba.readyNo":"Considera resolver las brechas primero (ver Calidad de datos).",
   },
 };
 function detectLang(){ const s=localStorage.getItem("cortex_lang"); if(s&&I18N[s])return s; const n=(navigator.language||"en").slice(0,2).toLowerCase(); return I18N[n]?n:"en"; }
@@ -693,8 +693,9 @@ function collapseNodeCluster(id){ const t=activeTab(); if(!t)return; const mode=
 function renderGraph() {
   const t = activeTab();
   const container = $("#cy");
-  $("#graphEmpty").hidden = !!(t && t.graph.nodes.length);
-  if (!t || !t.graph.nodes.length) { if (cy) cy.elements().remove(); $("#graphStats").textContent="0 nodes · 0 edges"; return; }
+  // Never show the "no graph" overlay while the Map lens owns the canvas.
+  $("#graphEmpty").hidden = canvasMode==="map" || !!(t && t.graph.nodes.length);
+  if (!t || !t.graph.nodes.length) { if (cy) cy.elements().remove(); if(canvasMode!=="map") $("#graphStats").textContent="0 nodes · 0 edges"; return; }
   initCy();
   const model = computeRenderModel(t);
   const g = { nodes: model.nodes, edges: model.edges };
@@ -860,7 +861,9 @@ $$(".ctx-actions button").forEach(b=>b.addEventListener("click",()=>{
   const id = cy && cy.$(":selected").length ? cy.$(":selected")[0].id() : null;
   const n = id?nodeData(id):null; if(!n) return;
   const act=b.dataset.act;
-  if(act==="isolate") isolate(id);
+  if(act==="edit") editEntityModal(id);
+  else if(act==="connect"){ startLink(id); }
+  else if(act==="isolate") isolate(id);
   else if(act==="neighbors") { if(cy) cy.fit(cy.$id(id).closedNeighborhood(),80); }
   else if(act==="alert"){ pushNotif("alert",`Alert on ${n.label}`); toast("Alert created"); }
   else if(act==="expand"){ askAbout(`Expand the investigation around "${n.label}" (${n.kind}). Propose linked entities and next leads.`); }
@@ -1899,35 +1902,41 @@ function computeClusters(g){ const deg=graphDegrees(g); const byId={}; g.nodes.f
     return { id:h.id, hub:h, size:nb.length, dominant:dom?dom[0]:"mixed", band:bandOf(maxRisk) }; });
 }
 // ---- competing hypotheses engine (structural + AI refinement) ----
-function structuralHypotheses(g,m){ const H=[]; const deg=m.deg;
-  // H1: shared-infrastructure cluster (accounts/persons sharing an IP/domain/device/wallet)
+function structuralHypotheses(g,m){ const H=[]; const deg=m.deg; const pt=LANG==="pt", es=LANG==="es";
+  const kl=k=>({person:pt?"pessoa":es?"persona":"person",account:pt?"conta":es?"cuenta":"account",ip:"IP",domain:pt?"domínio":es?"dominio":"domain",device:pt?"dispositivo":es?"dispositivo":"device",wallet:pt?"carteira":es?"billetera":"wallet",group:pt?"grupo":es?"grupo":"group"}[k]||k);
+  // H1: shared-infrastructure cluster
   const hubs=g.nodes.filter(n=>["ip","domain","device","wallet","group"].includes(n.kind)).map(n=>({n,d:deg[n.id]||0})).filter(x=>x.d>=3).sort((a,b)=>b.d-a.d);
   if(hubs.length){ const h=hubs[0]; const lk=Math.min(0.9,0.4+h.d*0.05);
-    H.push({title:`Coordinated activity via shared ${h.n.kind} "${h.n.label}"`, likelihood:lk, confidence:h.d>=6?"medium":"low",
-      evidence:[`${h.d} entities connect to ${h.n.label}`,"Shared infrastructure is a correlation signal"], missing:["Timestamps to confirm co-occurrence","Ownership/attribution of the hub"],
-      next:"Isolate this cluster and expand its members", act:()=>focusEntity(h.n.id,true)}); }
+    H.push({title: pt?`Atividade coordenada via ${kl(h.n.kind)} compartilhado "${h.n.label}"`:es?`Actividad coordinada vía ${kl(h.n.kind)} compartido "${h.n.label}"`:`Coordinated activity via shared ${h.n.kind} "${h.n.label}"`, likelihood:lk, confidence:h.d>=6?"medium":"low",
+      evidence: pt?[`${h.d} entidades conectam-se a ${h.n.label}`,"Infraestrutura compartilhada é um sinal de correlação"]:es?[`${h.d} entidades se conectan a ${h.n.label}`,"La infraestructura compartida es una señal de correlación"]:[`${h.d} entities connect to ${h.n.label}`,"Shared infrastructure is a correlation signal"],
+      missing: pt?["Timestamps para confirmar coocorrência","Propriedade/atribuição do hub"]:es?["Marcas de tiempo para confirmar coocurrencia","Propiedad/atribución del hub"]:["Timestamps to confirm co-occurrence","Ownership/attribution of the hub"],
+      next: pt?"Isolar este cluster e expandir seus membros":es?"Aislar este clúster y expandir sus miembros":"Isolate this cluster and expand its members", act:()=>focusEntity(h.n.id,true)}); }
   // H2: duplicate/identity collision
-  if(m.duplicates){ H.push({title:`Duplicate or conflated identities (${m.duplicates} candidates)`, likelihood:Math.min(0.85,0.3+m.duplicates*0.03), confidence:"medium",
-    evidence:[`${m.dupGroups.length} label collisions across ${m.duplicates} entities`],missing:["Unique identifiers (doc, phone, hash) to merge/split"],
-    next:"Review duplicates in Entity Registry", act:()=>{showView("entities");entityFilter="dupes";renderEntities();}}); }
+  if(m.duplicates){ H.push({title: pt?`Identidades duplicadas ou confundidas (${m.duplicates} candidatas)`:es?`Identidades duplicadas o confundidas (${m.duplicates} candidatas)`:`Duplicate or conflated identities (${m.duplicates} candidates)`, likelihood:Math.min(0.85,0.3+m.duplicates*0.03), confidence:"medium",
+    evidence: pt?[`${m.dupGroups.length} colisões de rótulo em ${m.duplicates} entidades`]:es?[`${m.dupGroups.length} colisiones de etiqueta en ${m.duplicates} entidades`]:[`${m.dupGroups.length} label collisions across ${m.duplicates} entities`],
+    missing: pt?["Identificadores únicos (doc, telefone, hash) para unir/separar"]:es?["Identificadores únicos (doc, teléfono, hash) para unir/separar"]:["Unique identifiers (doc, phone, hash) to merge/split"],
+    next: pt?"Revisar duplicatas no Registro de Entidades":es?"Revisar duplicados en el Registro de Entidades":"Review duplicates in Entity Registry", act:()=>{showView("entities");entityFilter="dupes";renderEntities();}}); }
   // H3: risk concentration in few hubs
   const topDeg=g.nodes.map(n=>deg[n.id]||0).sort((a,b)=>b-a); const totDeg=topDeg.reduce((s,x)=>s+x,0)||1; const top5=topDeg.slice(0,5).reduce((s,x)=>s+x,0);
-  if(g.nodes.length>20 && top5/totDeg>0.35){ H.push({title:"Risk/connectivity concentrated in a few hubs", likelihood:0.6, confidence:"medium",
-    evidence:[`Top 5 nodes hold ${Math.round(top5/totDeg*100)}% of connections`],missing:["Whether hubs are legitimate aggregators or true coordination"],
-    next:"Inspect top hubs before drawing conclusions", act:()=>{showView("graph");$("#graphCluster")&&($("#graphCluster").value="kind");setClusterMode("kind");}}); }
-  // H4: insufficient data (always a competing hypothesis when quality/coverage low)
-  if(m.avgQual<0.55||m.coverage<0.6||m.sourceDiversity<2){ H.push({title:"Insufficient/low-quality data — patterns may be artifacts", likelihood:0.5+ (0.55-Math.min(0.55,m.avgQual)), confidence:"low",
-    evidence:[`avg quality ${pct(m.avgQual)}, coverage ${pct(m.coverage)}, ${m.sourceDiversity} source(s)`],missing:["Additional sources","Metadata/timestamps for isolated entities"],
-    next:"Enrich data before acting on inferences", act:()=>{showView("entities");entityFilter="missing";renderEntities();}}); }
+  if(g.nodes.length>20 && top5/totDeg>0.35){ const pctv=Math.round(top5/totDeg*100); H.push({title: pt?"Risco/conectividade concentrado em poucos hubs":es?"Riesgo/conectividad concentrado en pocos hubs":"Risk/connectivity concentrated in a few hubs", likelihood:0.6, confidence:"medium",
+    evidence: pt?[`Os 5 principais nós detêm ${pctv}% das conexões`]:es?[`Los 5 nodos principales tienen ${pctv}% de las conexiones`]:[`Top 5 nodes hold ${pctv}% of connections`],
+    missing: pt?["Se os hubs são agregadores legítimos ou coordenação real"]:es?["Si los hubs son agregadores legítimos o coordinación real"]:["Whether hubs are legitimate aggregators or true coordination"],
+    next: pt?"Inspecionar os principais hubs antes de concluir":es?"Inspeccionar los hubs principales antes de concluir":"Inspect top hubs before drawing conclusions", act:()=>{showView("graph");$("#graphCluster")&&($("#graphCluster").value="kind");setClusterMode("kind");}}); }
+  // H4: insufficient data
+  if(m.avgQual<0.55||m.coverage<0.6||m.sourceDiversity<2){ H.push({title: pt?"Dados insuficientes/de baixa qualidade — padrões podem ser artefatos":es?"Datos insuficientes/de baja calidad — los patrones pueden ser artefactos":"Insufficient/low-quality data — patterns may be artifacts", likelihood:0.5+ (0.55-Math.min(0.55,m.avgQual)), confidence:"low",
+    evidence: pt?[`qualidade média ${pct(m.avgQual)}, cobertura ${pct(m.coverage)}, ${m.sourceDiversity} fonte(s)`]:es?[`calidad media ${pct(m.avgQual)}, cobertura ${pct(m.coverage)}, ${m.sourceDiversity} fuente(s)`]:[`avg quality ${pct(m.avgQual)}, coverage ${pct(m.coverage)}, ${m.sourceDiversity} source(s)`],
+    missing: pt?["Fontes adicionais","Metadados/timestamps para entidades isoladas"]:es?["Fuentes adicionales","Metadatos/marcas de tiempo para entidades aisladas"]:["Additional sources","Metadata/timestamps for isolated entities"],
+    next: pt?"Enriquecer os dados antes de agir sobre inferências":es?"Enriquecer los datos antes de actuar sobre inferencias":"Enrich data before acting on inferences", act:()=>{showView("entities");entityFilter="missing";renderEntities();}}); }
   return H;
 }
-function decisionMatrix(m,g,H){ const opts=[]; const total=m.total||1;
+function decisionMatrix(m,g,H){ const opts=[]; const total=m.total||1; const pt=LANG==="pt", es=LANG==="es";
   const norm=(v,max)=>Math.max(0,Math.min(1,v/max));
-  if(m.highRisk) opts.push({action:`Escalate ${m.highRisk} high-risk entities for review`, impact:0.9, conf:m.avgConf, riskWrong:0.35, effort:0.3, route:"Graph", go:()=>isolateCritical()});
-  if(m.duplicates) opts.push({action:`Resolve ${m.duplicates} likely duplicates`, impact:0.55, conf:0.7, riskWrong:0.2, effort:0.45, route:"Entities", go:()=>{showView("entities");entityFilter="dupes";renderEntities();}});
-  if(m.missingSource+m.missingMeta) opts.push({action:`Enrich ${m.missingSource+m.missingMeta} entities missing evidence`, impact:0.5, conf:0.8, riskWrong:0.1, effort:0.6, route:"Entities", go:()=>{showView("entities");entityFilter="missing";renderEntities();}});
-  const lead=H[0]; if(lead&&lead.act) opts.push({action:`Act on lead hypothesis: ${lead.title}`, impact:0.8, conf:lead.likelihood, riskWrong:1-lead.likelihood, effort:0.4, route:"Graph", go:lead.act});
-  opts.push({action:"Gather more data before deciding", impact:0.3, conf:0.9, riskWrong:0.05, effort:0.5, route:"Sources", go:()=>{showView("settings");openSettingsTab("datasources");}});
+  const rGraph=pt?"Grafo":es?"Grafo":"Graph", rEnt=pt?"Entidades":es?"Entidades":"Entities", rSrc=pt?"Fontes":es?"Fuentes":"Sources";
+  if(m.highRisk) opts.push({action: pt?`Escalar ${m.highRisk} entidades de alto risco para revisão`:es?`Escalar ${m.highRisk} entidades de alto riesgo para revisión`:`Escalate ${m.highRisk} high-risk entities for review`, impact:0.9, conf:m.avgConf, riskWrong:0.35, effort:0.3, route:rGraph, go:()=>isolateCritical()});
+  if(m.duplicates) opts.push({action: pt?`Resolver ${m.duplicates} prováveis duplicatas`:es?`Resolver ${m.duplicates} probables duplicados`:`Resolve ${m.duplicates} likely duplicates`, impact:0.55, conf:0.7, riskWrong:0.2, effort:0.45, route:rEnt, go:()=>{showView("entities");entityFilter="dupes";renderEntities();}});
+  if(m.missingSource+m.missingMeta) opts.push({action: pt?`Enriquecer ${m.missingSource+m.missingMeta} entidades sem evidência`:es?`Enriquecer ${m.missingSource+m.missingMeta} entidades sin evidencia`:`Enrich ${m.missingSource+m.missingMeta} entities missing evidence`, impact:0.5, conf:0.8, riskWrong:0.1, effort:0.6, route:rEnt, go:()=>{showView("entities");entityFilter="missing";renderEntities();}});
+  const lead=H[0]; if(lead&&lead.act) opts.push({action: (pt?"Agir sobre a hipótese principal: ":es?"Actuar sobre la hipótesis principal: ":"Act on lead hypothesis: ")+lead.title, impact:0.8, conf:lead.likelihood, riskWrong:1-lead.likelihood, effort:0.4, route:rGraph, go:lead.act});
+  opts.push({action: pt?"Coletar mais dados antes de decidir":es?"Recopilar más datos antes de decidir":"Gather more data before deciding", impact:0.3, conf:0.9, riskWrong:0.05, effort:0.5, route:rSrc, go:()=>{showView("settings");openSettingsTab("datasources");}});
   // weighted score: reward impact*confidence, penalize risk-if-wrong and effort
   opts.forEach(o=>{ o.score=(0.45*o.impact + 0.30*o.conf - 0.20*o.riskWrong - 0.05*o.effort); });
   opts.sort((a,b)=>b.score-a.score); return opts;
@@ -1939,14 +1948,15 @@ function renderHypotheses(t,g,m){ const w=$("#intelHypotheses"); if(!w)return;
   ai.forEach(h=>{ if(typeof h==="string"){ H.push({title:h,likelihood:0.5,confidence:t.intel.confidence||"low",evidence:[],missing:[],next:""}); }
     else if(h&&h.title){ H.push({title:h.title,likelihood:h.likelihood||h.score||0.5,confidence:h.confidence||"low",evidence:h.evidence||[],missing:h.missing_evidence||h.missing||[],next:h.next_action||h.next||""}); } });
   H.sort((a,b)=>b.likelihood-a.likelihood);
-  if(!H.length){ w.innerHTML='<div class="empty">No competing hypotheses — add data or generate intelligence.</div>'; return; }
+  if(!H.length){ w.innerHTML=`<div class="empty">${esc(t2("hyp.none"))}</div>`; return; }
   w.innerHTML="";
+  const confL=c=>t2("conf."+c)||c;
   H.slice(0,6).forEach((h,i)=>{ const d=el("div","hyp-card"+(i===0?" lead":"")); const ev=(h.evidence||[]).slice(0,4), ms=(h.missing||[]).slice(0,3);
-    d.innerHTML=`<div class="hyp-top"><div class="hyp-title"><span class="rank">H${i+1}</span>${esc(h.title)}${i===0?' <span class="tag ok">lead</span>':''}</div>
-      <div class="hyp-scores"><span class="likelihood"><span class="lk-track"><span style="width:${Math.round(h.likelihood*100)}%"></span></span><span class="lk-n">${pct(h.likelihood)}</span></span><span class="chip">conf ${esc(h.confidence)}</span></div></div>
-      <div class="hyp-body"><div class="hyp-col"><h5>Supporting evidence</h5><ul>${ev.length?ev.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>—</li>"}</ul></div>
-      <div class="hyp-col"><h5>Missing evidence</h5><ul class="missing">${ms.length?ms.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>—</li>"}</ul></div></div>
-      ${h.next?`<div class="hyp-foot"><span class="hyp-next">Next: <b>${esc(h.next)}</b></span></div>`:""}`;
+    d.innerHTML=`<div class="hyp-top"><div class="hyp-title"><span class="rank">H${i+1}</span>${esc(h.title)}${i===0?` <span class="tag ok">${esc(t2("hyp.lead"))}</span>`:''}</div>
+      <div class="hyp-scores"><span class="likelihood"><span class="lk-track"><span style="width:${Math.round(h.likelihood*100)}%"></span></span><span class="lk-n">${pct(h.likelihood)}</span></span><span class="chip">${esc(t2("hyp.conf"))} ${esc(confL(h.confidence))}</span></div></div>
+      <div class="hyp-body"><div class="hyp-col"><h5>${esc(t2("hyp.supporting"))}</h5><ul>${ev.length?ev.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>—</li>"}</ul></div>
+      <div class="hyp-col"><h5>${esc(t2("hyp.missing"))}</h5><ul class="missing">${ms.length?ms.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>—</li>"}</ul></div></div>
+      ${h.next?`<div class="hyp-foot"><span class="hyp-next">${esc(t2("hyp.next"))}: <b>${esc(h.next)}</b></span></div>`:""}`;
     if(h.act){ d.style.cursor="pointer"; d.addEventListener("click",e=>{ if(e.target.tagName!=="A")h.act(); }); }
     w.appendChild(d); });
   t._hyp=H;
@@ -1964,19 +1974,19 @@ function renderDecisionMatrix(t,g,m){ const tb=$("#intelDecision tbody"); if(!tb
     const backNba=(activeTab()&&activeTab().graph.meta&&activeTab().graph.meta.nba)||[];
     if(backNba.length){ nba.innerHTML="";
       const top=backNba[0]; nba.innerHTML=`<div class="nba-title">${esc(top.action)}</div>
-        <div class="nba-meta"><span class="nba-tag">uncertainty ↓ ${pct(top.uncertainty_reduction)}</span><span class="nba-tag">effort ${pct(top.effort)}</span><span class="nba-tag">priority ${pct(top.priority)}</span><span class="nba-tag">→ ${esc(top.target)}</span></div>
-        <div class="nba-residual">Why: ${esc(top.why)}</div>`;
+        <div class="nba-meta"><span class="nba-tag">${esc(t2("nba.uncertainty"))} ↓ ${pct(top.uncertainty_reduction)}</span><span class="nba-tag">${esc(t2("nba.effort"))} ${pct(top.effort)}</span><span class="nba-tag">${esc(t2("nba.priority"))} ${pct(top.priority)}</span><span class="nba-tag">→ ${esc(top.target)}</span></div>
+        <div class="nba-residual">${esc(t2("nba.why"))}: ${esc(top.why)}</div>`;
       const goTo=a=>{ if(a.entity_ids&&a.entity_ids.length){ focusEntity(a.entity_ids[0],true); } else if(a.target==="entities"){ showView("entities"); renderEntities&&renderEntities(); } else if(a.target==="sources"){ showView("settings"); openSettingsTab&&openSettingsTab("datasources"); } else { showView("graph"); } };
-      const btn=el("button","btn primary"); btn.style.marginTop="10px"; btn.textContent="Take this action"; btn.addEventListener("click",()=>goTo(top)); nba.appendChild(btn);
+      const btn=el("button","btn primary"); btn.style.marginTop="10px"; btn.textContent=t2("hyp.take"); btn.addEventListener("click",()=>goTo(top)); nba.appendChild(btn);
       if(backNba.length>1){ const more=el("div"); more.style.marginTop="12px";
         backNba.slice(1,5).forEach((a,i)=>{ const r=el("div","li"); r.style.cursor="pointer"; r.innerHTML=`<span class="label">${i+2}. ${esc(a.action)}</span><span class="chip">↓${pct(a.uncertainty_reduction)}</span>`; r.addEventListener("click",()=>goTo(a)); more.appendChild(r); });
         nba.appendChild(more); }
     }
-    else if(!opts.length){ nba.innerHTML='<div class="empty">Run an analysis to rank next actions.</div>'; }
+    else if(!opts.length){ nba.innerHTML=`<div class="empty">${esc(t2("hyp.rankNone"))}</div>`; }
     else { const b=opts[0]; const residual=(1-b.conf); nba.innerHTML=`<div class="nba-title">${esc(b.action)}</div>
-      <div class="nba-meta"><span class="nba-tag">impact ${pct(b.impact)}</span><span class="nba-tag">confidence ${pct(b.conf)}</span><span class="nba-tag">risk-if-wrong ${pct(b.riskWrong)}</span><span class="nba-tag">route ${esc(b.route)}</span></div>
-      <div class="nba-residual">Residual uncertainty ~${pct(residual)} — this is decision support, not certainty. ${m.readiness==="ready"?"Data supports acting now.":"Consider resolving gaps first (see Data Quality)."}</div>
-      <button class="btn primary" id="nbaGo" style="margin-top:10px">Take this action</button>`;
+      <div class="nba-meta"><span class="nba-tag">${esc(t2("nba.impact"))} ${pct(b.impact)}</span><span class="nba-tag">${esc(t2("nba.confidence"))} ${pct(b.conf)}</span><span class="nba-tag">${esc(t2("nba.riskWrong"))} ${pct(b.riskWrong)}</span><span class="nba-tag">${esc(t2("nba.route"))} ${esc(b.route)}</span></div>
+      <div class="nba-residual">${esc(t2("nba.residual",pct(residual)))} ${m.readiness==="ready"?esc(t2("nba.readyYes")):esc(t2("nba.readyNo"))}</div>
+      <button class="btn primary" id="nbaGo" style="margin-top:10px">${esc(t2("hyp.take"))}</button>`;
       $("#nbaGo")&&$("#nbaGo").addEventListener("click",b.go); } }
 }
 
@@ -2084,50 +2094,76 @@ function geoOf(n){ const a=n.attributes||{}; const get=(...ks)=>{ for(const k of
   // "lat,lon" packed in one field (e.g. EXIF label "12.3,-45.6")
   if(lat==null){ for(const k of Object.keys(a)){ const m=String(a[k]).match(/^\s*(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)\s*$/); if(m){ lat=parseFloat(m[1]); lon=parseFloat(m[2]); break; } } }
   if(lat==null||lon==null||Math.abs(lat)>90||Math.abs(lon)>180) return null; return {lat,lon}; }
+// Graph chrome that must be hidden when the Map lens takes over the canvas, so
+// the two views never bleed into each other.
+const GRAPH_CHROME=["#minimapWrap","#graphModes","#graphZoom","#graphFilters","#legend","#graphEmpty"];
 function setCanvasMode(mode){ canvasMode=mode;
   $$("#canvasSwitch .cmode").forEach(b=>b.classList.toggle("active",b.dataset.canvas===mode));
   const isMap=mode==="map";
-  $("#cy").style.display=isMap?"none":""; $("#mapCanvas").hidden=!isMap; $("#minimapWrap")&&($("#minimapWrap").style.display=isMap?"none":"");
-  $("#graphModes")&&($("#graphModes").style.display=isMap?"none":""); $("#graphZoom")&&($("#graphZoom").style.display=isMap?"none":"");
-  if(isMap) renderMap(); else { requestAnimationFrame(()=>{ if(cy){cy.resize();cy.fit(cy.elements(":visible"),50);} }); }
+  $("#cy").style.display=isMap?"none":"";
+  $("#mapCanvas").hidden=!isMap;
+  GRAPH_CHROME.forEach(sel=>{ const e=$(sel); if(e) e.style.display=isMap?"none":""; });
+  if(isMap){ renderMap(); } else { $("#mapEmpty")&&($("#mapEmpty").hidden=true); requestAnimationFrame(()=>{ if(cy){cy.resize();cy.fit(cy.elements(":visible"),50);} }); }
 }
 let _mapState=null;
+let _globe={lon0:0,lat0:20,user:false};
 function renderMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=$("#mapEmpty"); if(!cv||!t) return;
-  const wrap=cv.parentElement; const W=wrap.clientWidth, H=wrap.clientHeight; const dpr=Math.min(2,window.devicePixelRatio||1);
+  const wrap=cv.parentElement; const W=wrap.clientWidth||900, H=wrap.clientHeight||600; const dpr=Math.min(2,window.devicePixelRatio||1);
   cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px";
   const ctx=cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
   // Collect geolocated nodes (cap for very large graphs — served-slice rule).
   let pts=t.graph.nodes.map(n=>{ const g=geoOf(n); return g?{n,...g}:null; }).filter(Boolean);
   const capped = pts.length>2000; if(capped){ pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,2000); }
-  if(empty){ empty.hidden=pts.length>0; if(!pts.length){ empty.innerHTML=`<div class="ge-inner"><div class="ge-icon">🗺</div><p>${esc(t2("map.none"))}</p></div>`; } }
-  // Equirectangular projection with padding.
-  const pad=44; const proj=(lat,lon)=>({ x:pad+(lon+180)/360*(W-2*pad), y:pad+(90-lat)/180*(H-2*pad) });
-  // graticule
-  ctx.strokeStyle="rgba(148,163,184,0.12)"; ctx.fillStyle="rgba(148,163,184,0.45)"; ctx.lineWidth=1; ctx.font="10px SF Mono, Menlo, monospace";
-  for(let lon=-180;lon<=180;lon+=30){ const p=proj(0,lon); ctx.beginPath(); ctx.moveTo(p.x,pad); ctx.lineTo(p.x,H-pad); ctx.stroke(); ctx.fillText(lon+"°",p.x+2,H-pad+12); }
-  for(let lat=-90;lat<=90;lat+=30){ const p=proj(lat,0); ctx.beginPath(); ctx.moveTo(pad,p.y); ctx.lineTo(W-pad,p.y); ctx.stroke(); ctx.fillText(lat+"°",4,p.y-2); }
-  ctx.strokeStyle="rgba(87,215,232,0.25)"; const eq=proj(0,0); ctx.beginPath(); ctx.moveTo(pad,eq.y); ctx.lineTo(W-pad,eq.y); ctx.stroke();
-  // trajectories: group temporally-ordered points sharing a trajectory key.
+  if(empty){ empty.hidden=pts.length>0; if(!pts.length){ empty.innerHTML=`<div class="ge-inner"><div class="ge-icon">🌐</div><p>${esc(t2("map.none"))}</p></div>`; } }
+  // Auto-centre the globe on the data centroid until the user rotates it.
+  if(!_globe.user && pts.length){ const la=pts.reduce((s,p)=>s+p.lat,0)/pts.length, lo=pts.reduce((s,p)=>s+p.lon,0)/pts.length; _globe.lat0=la; _globe.lon0=lo; }
+  const RAD=Math.PI/180; const R=Math.max(60,Math.min(W,H)/2-46); const cx=W/2, cy=H/2;
+  const la0=_globe.lat0*RAD, lo0=_globe.lon0*RAD;
+  const proj=(latDeg,lonDeg)=>{ const la=latDeg*RAD, lo=lonDeg*RAD, dlo=lo-lo0;
+    const cosc=Math.sin(la0)*Math.sin(la)+Math.cos(la0)*Math.cos(la)*Math.cos(dlo);
+    return { x:cx+R*Math.cos(la)*Math.sin(dlo), y:cy-R*(Math.cos(la0)*Math.sin(la)-Math.sin(la0)*Math.cos(la)*Math.cos(dlo)), vis:cosc>=-0.02 }; };
+  // Globe disk (ocean) + rim.
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,7);
+  const grad=ctx.createRadialGradient(cx-R*0.3,cy-R*0.3,R*0.2,cx,cy,R);
+  grad.addColorStop(0,"#0e2836"); grad.addColorStop(1,"#081019"); ctx.fillStyle=grad; ctx.fill();
+  ctx.lineWidth=1.5; ctx.strokeStyle="rgba(87,215,232,0.35)"; ctx.stroke();
+  // Graticule (only the near hemisphere).
+  ctx.strokeStyle="rgba(148,163,184,0.14)"; ctx.lineWidth=1;
+  const arc=(fn)=>{ ctx.beginPath(); let started=false; for(let s=-90;s<=90;s+=3){ const p=fn(s); if(p.vis){ if(started)ctx.lineTo(p.x,p.y); else {ctx.moveTo(p.x,p.y);started=true;} } else started=false; } ctx.stroke(); };
+  for(let lon=-180;lon<180;lon+=30) arc(s=>proj(s,lon));
+  for(let lat=-60;lat<=60;lat+=30){ ctx.beginPath(); let st=false; for(let s=-180;s<=180;s+=3){ const p=proj(lat,s); if(p.vis){ if(st)ctx.lineTo(p.x,p.y); else{ctx.moveTo(p.x,p.y);st=true;} } else st=false; } ctx.stroke(); }
+  // Trajectories: group temporally-ordered points sharing a trajectory key.
   const groups={}; pts.forEach(p=>{ const key=(p.n.attributes&&(p.n.attributes.trajectory||p.n.attributes.track||p.n.attributes.vessel||p.n.attributes.subject))||null; if(key){ (groups[key]=groups[key]||[]).push(p); } });
   let trajCount=0;
   Object.values(groups).forEach(list=>{ if(list.length<2)return; trajCount++;
     list.sort((a,b)=>(parseTs(a.n)||0)-(parseTs(b.n)||0));
-    ctx.strokeStyle="rgba(87,215,232,0.6)"; ctx.lineWidth=1.6; ctx.beginPath();
-    list.forEach((p,i)=>{ const xy=proj(p.lat,p.lon); i?ctx.lineTo(xy.x,xy.y):ctx.moveTo(xy.x,xy.y); }); ctx.stroke(); });
-  // points (same badge colours as the graph)
+    ctx.strokeStyle="rgba(87,215,232,0.65)"; ctx.lineWidth=1.8; ctx.beginPath(); let st=false;
+    list.forEach(p=>{ const xy=proj(p.lat,p.lon); if(xy.vis){ if(st)ctx.lineTo(xy.x,xy.y); else{ctx.moveTo(xy.x,xy.y);st=true;} } else st=false; }); ctx.stroke(); });
+  // Points on the visible hemisphere (same badge colours as the graph).
   const screenPts=[];
-  pts.forEach(p=>{ const xy=proj(p.lat,p.lon); const r=5+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
-    const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+4,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.25)":"rgba(251,113,133,0.22)"); ctx.fill(); }
-    ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.5)"; ctx.stroke(); });
+  pts.forEach(p=>{ const xy=proj(p.lat,p.lon); if(!xy.vis) return; const r=4+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
+    const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+4,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.28)":"rgba(251,113,133,0.24)"); ctx.fill(); }
+    ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.stroke(); });
   _mapState={screenPts};
-  // header note
   const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${trajCount?` · ${t2("map.trajectories",trajCount)}`:""}${capped?" · (top 2000)":""}`;
 }
-// Click a plotted point → open its dossier (same panel as the graph).
-$("#mapCanvas")&&$("#mapCanvas").addEventListener("click",e=>{ if(!_mapState)return; const rect=e.target.getBoundingClientRect(); const x=e.clientX-rect.left, y=e.clientY-rect.top;
-  let best=null,bd=1e9; _mapState.screenPts.forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} });
-  if(best){ selectNode(best.n.id); } });
+// Drag to rotate the globe.
+(function(){ const cv=$("#mapCanvas"); if(!cv)return; let drag=null;
+  cv.addEventListener("mousedown",e=>{ drag={x:e.clientX,y:e.clientY,moved:false}; });
+  window.addEventListener("mousemove",e=>{ if(!drag)return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true;
+    _globe.user=true; _globe.lon0-=dx*0.4; _globe.lat0=Math.max(-89,Math.min(89,_globe.lat0+dy*0.4)); drag.x=e.clientX; drag.y=e.clientY; renderMap(); });
+  window.addEventListener("mouseup",e=>{ if(drag&&!drag.moved){ // treat as click → open nearest point
+      const rect=cv.getBoundingClientRect(); const x=e.clientX-rect.left, y=e.clientY-rect.top; let best=null,bd=1e9;
+      (_mapState?_mapState.screenPts:[]).forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} });
+      if(best) selectNode(best.n.id); }
+    drag=null; });
+})();
 $$("#canvasSwitch .cmode").forEach(b=>b.addEventListener("click",()=>setCanvasMode(b.dataset.canvas)));
+// Responsiveness: re-render the active canvas when the window resizes.
+let _rsz=null;
+window.addEventListener("resize",()=>{ clearTimeout(_rsz); _rsz=setTimeout(()=>{
+  if(currentView==="graph"){ if(canvasMode==="map") renderMap(); else if(cy){ cy.resize(); cy.fit(cy.elements(":visible"),50); } }
+},150); });
 
 // Pre-defined analysis flows (one-click prompts that steer the assessment).
 const FLOW_COMMON=[
