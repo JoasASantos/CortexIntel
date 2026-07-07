@@ -2097,13 +2097,86 @@ function geoOf(n){ const a=n.attributes||{}; const get=(...ks)=>{ for(const k of
 // Graph chrome that must be hidden when the Map lens takes over the canvas, so
 // the two views never bleed into each other.
 const GRAPH_CHROME=["#minimapWrap","#graphModes","#graphZoom","#graphFilters","#legend","#graphEmpty"];
+const HAS_WEBGL = (()=>{ try{ return !!(window.THREE && document.createElement("canvas").getContext("webgl")); }catch(e){ return false; } })();
 function setCanvasMode(mode){ canvasMode=mode;
   $$("#canvasSwitch .cmode").forEach(b=>b.classList.toggle("active",b.dataset.canvas===mode));
   const isMap=mode==="map";
   $("#cy").style.display=isMap?"none":"";
-  $("#mapCanvas").hidden=!isMap;
+  $("#globe3d") && ($("#globe3d").hidden = !(isMap && HAS_WEBGL));
+  $("#mapCanvas").hidden = !(isMap && !HAS_WEBGL);
   GRAPH_CHROME.forEach(sel=>{ const e=$(sel); if(e) e.style.display=isMap?"none":""; });
-  if(isMap){ renderMap(); } else { $("#mapEmpty")&&($("#mapEmpty").hidden=true); requestAnimationFrame(()=>{ if(cy){cy.resize();cy.fit(cy.elements(":visible"),50);} }); }
+  if(isMap){ if(HAS_WEBGL) renderGlobe3D(); else renderMap(); }
+  else { $("#mapEmpty")&&($("#mapEmpty").hidden=true); if(_g3) _g3.stop(); requestAnimationFrame(()=>{ if(cy){cy.resize();cy.fit(cy.elements(":visible"),50);} }); }
+}
+
+// ---- Robust WebGL 3D globe (Three.js), offline-vendored ----
+let _g3=null;
+function initGlobe3D(){
+  if(_g3) return _g3;
+  const host=$("#globe3d"); if(!host||!window.THREE) return null;
+  const THREE=window.THREE;
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(45,1,0.1,2000); camera.position.z=320;
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+  host.appendChild(renderer.domElement);
+  const R=100, loader=new THREE.TextureLoader();
+  const mat=new THREE.MeshPhongMaterial({ map:loader.load("/vendor/earth-blue.jpg"), bumpMap:loader.load("/vendor/earth-topology.png"), bumpScale:1.2, specular:new THREE.Color(0x223344), shininess:8 });
+  const earth=new THREE.Mesh(new THREE.SphereGeometry(R,64,64),mat); scene.add(earth);
+  const atm=new THREE.Mesh(new THREE.SphereGeometry(R*1.06,64,64), new THREE.MeshBasicMaterial({color:0x3aa6c8,transparent:true,opacity:0.12,side:THREE.BackSide})); scene.add(atm);
+  scene.add(new THREE.AmbientLight(0xbfd8e6,0.8));
+  const dir=new THREE.DirectionalLight(0xffffff,0.65); dir.position.set(-1,0.5,1); scene.add(dir);
+  const stars=(()=>{ const g=new THREE.BufferGeometry(),n=1400,a=new Float32Array(n*3); for(let i=0;i<n*3;i++)a[i]=(Math.random()-0.5)*1800; g.setAttribute("position",new THREE.BufferAttribute(a,3)); return new THREE.Points(g,new THREE.PointsMaterial({color:0x8fa8c0,size:1.3})); })(); scene.add(stars);
+  const labels=new THREE.Group(), markers=new THREE.Group(), arcs=new THREE.Group(); scene.add(labels); scene.add(markers); scene.add(arcs);
+  const controls=new THREE.OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.dampingFactor=0.08; controls.rotateSpeed=0.5; controls.minDistance=140; controls.maxDistance=560; controls.enablePan=false; controls.autoRotate=true; controls.autoRotateSpeed=0.3;
+  const ray=new THREE.Raycaster(), mouse=new THREE.Vector2(); let hit=[];
+  renderer.domElement.addEventListener("click",e=>{ const r=renderer.domElement.getBoundingClientRect(); mouse.x=((e.clientX-r.left)/r.width)*2-1; mouse.y=-((e.clientY-r.top)/r.height)*2+1; ray.setFromCamera(mouse,camera); const is=ray.intersectObjects(hit,true); if(is.length&&is[0].object.userData.id) selectNode(is[0].object.userData.id); });
+  renderer.domElement.addEventListener("pointerdown",()=>{controls.autoRotate=false;});
+  let running=false;
+  function loop(){ if(!running)return; controls.update(); renderer.render(scene,camera); requestAnimationFrame(loop); }
+  function resize(){ const w=host.clientWidth||800,h=host.clientHeight||600; camera.aspect=w/h; camera.updateProjectionMatrix(); renderer.setSize(w,h,false); }
+  function llToVec(lat,lon,rad){ const phi=(90-lat)*Math.PI/180, th=(lon+180)*Math.PI/180; return new THREE.Vector3(-rad*Math.sin(phi)*Math.cos(th), rad*Math.cos(phi), rad*Math.sin(phi)*Math.sin(th)); }
+  // Text sprite for country/place labels.
+  function textSprite(txt,color){ const c=document.createElement("canvas"); const ctx=c.getContext("2d"); ctx.font="600 26px SF Mono, Menlo, monospace"; const w=ctx.measureText(txt).width; c.width=w+16; c.height=38; ctx.font="600 26px SF Mono, Menlo, monospace"; ctx.fillStyle=color||"rgba(220,235,245,0.9)"; ctx.textBaseline="middle"; ctx.fillText(txt,8,20); const tex=new THREE.CanvasTexture(c); tex.minFilter=THREE.LinearFilter; const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false})); sp.scale.set(c.width/38*7,7,1); return sp; }
+  _g3={THREE,scene,camera,renderer,earth,labels,markers,arcs,controls,R,llToVec,resize,textSprite,
+    setHit(a){hit=a;}, start(){ running=true; resize(); loop(); }, stop(){ running=false; } };
+  window.addEventListener("resize",()=>{ if(canvasMode==="map"&&_g3) _g3.resize(); });
+  return _g3;
+}
+// Continent + major-country reference labels (offline, no dataset needed).
+const GEO_LABELS=[
+  ["North America",48,-100],["South America",-12,-58],["Europe",52,15],["Africa",4,20],["Asia",46,90],["Oceania",-25,134],["Antarctica",-78,20],
+  ["USA",39,-98],["Brazil",-10,-52],["UK",54,-2],["France",47,2],["Nigeria",9,8],["Russia",61,90],["China",35,104],["India",22,79],["Japan",36,138],["Australia",-25,134],["Canada",56,-106],["Mexico",23,-102],["South Africa",-29,24],["UAE",24,54],["Germany",51,10]
+];
+let _g3LabelsAdded=false;
+function addGlobeGeoLabels(){ const g=_g3; if(!g||_g3LabelsAdded)return; _g3LabelsAdded=true; const THREE=g.THREE;
+  GEO_LABELS.forEach(([name,lat,lon],i)=>{ const cont=i<7; const sp=g.textSprite(name, cont?"rgba(120,200,220,0.95)":"rgba(200,215,230,0.75)"); sp.position.copy(g.llToVec(lat,lon,g.R*1.02)); if(!cont)sp.scale.multiplyScalar(0.8); g.labels.add(sp); }); }
+function renderGlobe3D(){
+  const g=initGlobe3D(); if(!g){ renderMap(); return; } const t=activeTab(); if(!t) return; const THREE=g.THREE;
+  addGlobeGeoLabels();
+  let pts=t.graph.nodes.map(n=>{ const geo=geoOf(n); return geo?{n,...geo}:null; }).filter(Boolean);
+  const capped=pts.length>2000; if(capped) pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,2000);
+  const empty=$("#mapEmpty"); if(empty){ empty.hidden=true; } // globe always shows; empty state not needed over WebGL
+  while(g.markers.children.length) g.markers.remove(g.markers.children[0]);
+  while(g.arcs.children.length) g.arcs.remove(g.arcs.children[0]);
+  const hit=[];
+  pts.forEach(p=>{ const band=p.n.band||bandOf(p.n.risk); const rad=g.R+1.5; const size=1.6+Math.sqrt(Math.max(0,p.n.risk||0))*3.4;
+    const m=new THREE.Mesh(new THREE.SphereGeometry(size,16,16), new THREE.MeshBasicMaterial({color:new THREE.Color(kColor(p.n.kind))}));
+    m.position.copy(g.llToVec(p.lat,p.lon,rad)); m.userData.id=p.n.id; g.markers.add(m); hit.push(m);
+    if(band==="critical"||band==="high"){ const halo=new THREE.Mesh(new THREE.SphereGeometry(size*1.9,16,16), new THREE.MeshBasicMaterial({color:band==="critical"?0xef4444:0xfb7185,transparent:true,opacity:0.3})); halo.position.copy(m.position); g.markers.add(halo); }
+    // label the entity
+    const lab=g.textSprite(p.n.label,"rgba(255,255,255,0.92)"); lab.position.copy(g.llToVec(p.lat,p.lon,g.R+8)); lab.scale.multiplyScalar(0.7); g.markers.add(lab);
+  });
+  const groups={}; pts.forEach(p=>{ const key=p.n.attributes&&(p.n.attributes.trajectory||p.n.attributes.track||p.n.attributes.vessel||p.n.attributes.subject); if(key){(groups[key]=groups[key]||[]).push(p);} });
+  let trajCount=0;
+  Object.values(groups).forEach(list=>{ if(list.length<2)return; trajCount++; list.sort((a,b)=>(parseTs(a.n)||0)-(parseTs(b.n)||0));
+    for(let i=0;i<list.length-1;i++){ const a=g.llToVec(list[i].lat,list[i].lon,g.R), b=g.llToVec(list[i+1].lat,list[i+1].lon,g.R);
+      const mid=a.clone().add(b).multiplyScalar(0.5).setLength(g.R*1.25); const curve=new THREE.QuadraticBezierCurve3(a,mid,b);
+      const geo=new THREE.BufferGeometry().setFromPoints(curve.getPoints(48));
+      g.arcs.add(new THREE.Line(geo,new THREE.LineBasicMaterial({color:0x57d7e8,transparent:true,opacity:0.85}))); } });
+  g.setHit(hit); g.start();
+  const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${trajCount?` · ${t2("map.trajectories",trajCount)}`:""}${capped?" · (top 2000)":""}`;
 }
 let _mapState=null;
 let _globe={lon0:0,lat0:20,user:false};

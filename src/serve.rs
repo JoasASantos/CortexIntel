@@ -61,6 +61,11 @@ const V_CYTOSCAPE: &str = include_str!("../gui/dist/vendor/cytoscape.min.js");
 const V_LAYOUT_BASE: &str = include_str!("../gui/dist/vendor/layout-base.js");
 const V_COSE_BASE: &str = include_str!("../gui/dist/vendor/cose-base.js");
 const V_FCOSE: &str = include_str!("../gui/dist/vendor/cytoscape-fcose.js");
+// 3D globe (Three.js) — vendored for the offline desktop WebGL map lens.
+const V_THREE: &str = include_str!("../gui/dist/vendor/three.min.js");
+const V_ORBIT: &str = include_str!("../gui/dist/vendor/OrbitControls.js");
+const V_EARTH: &[u8] = include_bytes!("../gui/dist/vendor/earth-blue.jpg");
+const V_EARTH_TOPO: &[u8] = include_bytes!("../gui/dist/vendor/earth-topology.png");
 
 pub fn serve(port: u16, open: bool) -> Result<()> {
     // GUI apps don't inherit the shell PATH — make the LLM CLIs discoverable.
@@ -184,6 +189,10 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/vendor/layout-base.js") => return respond(stream, 200, "application/javascript; charset=utf-8", V_LAYOUT_BASE.as_bytes()),
         ("GET", "/vendor/cose-base.js") => return respond(stream, 200, "application/javascript; charset=utf-8", V_COSE_BASE.as_bytes()),
         ("GET", "/vendor/cytoscape-fcose.js") => return respond(stream, 200, "application/javascript; charset=utf-8", V_FCOSE.as_bytes()),
+        ("GET", "/vendor/three.min.js") => return respond(stream, 200, "application/javascript; charset=utf-8", V_THREE.as_bytes()),
+        ("GET", "/vendor/OrbitControls.js") => return respond(stream, 200, "application/javascript; charset=utf-8", V_ORBIT.as_bytes()),
+        ("GET", "/vendor/earth-blue.jpg") => return respond(stream, 200, "image/jpeg", V_EARTH),
+        ("GET", "/vendor/earth-topology.png") => return respond(stream, 200, "image/png", V_EARTH_TOPO),
         ("OPTIONS", _) => return respond(stream, 204, "text/plain", b""),
         _ => {}
     }

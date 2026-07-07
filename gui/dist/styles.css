@@ -576,6 +576,9 @@ svg.ic { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.7; fil
 .cmode:hover { color: var(--text); }
 .cmode.active { background: var(--accent-2); color: #04121a; }
 #mapCanvas { position: absolute; inset: 0; background: radial-gradient(1100px 640px at 62% -8%, rgba(51,194,221,0.04), transparent 55%), #070A0F; z-index: 1; }
+#globe3d { position: absolute; inset: 0; z-index: 1; background: radial-gradient(1200px 800px at 50% 40%, #0a1622, #05080d 70%); cursor: grab; }
+#globe3d:active { cursor: grabbing; }
+#globe3d canvas { display: block; width: 100% !important; height: 100% !important; }
 .map-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted); z-index: 2; pointer-events: none; padding: 0 40px; }
 .map-empty .ge-icon { font-size: 34px; margin-bottom: 8px; }
 .map-empty p { max-width: 460px; line-height: 1.5; }
