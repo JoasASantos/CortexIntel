@@ -135,6 +135,9 @@ pub mod api {
         pub max_records: Option<usize>,
         #[serde(default, alias = "projectId")]
         pub project_id: Option<String>,
+        /// UI language for generated intelligence ("en" | "pt" | "es").
+        #[serde(default)]
+        pub lang: Option<String>,
     }
 
     fn default_domain() -> String { "generic".into() }
@@ -169,6 +172,7 @@ pub mod api {
             // Default cap protects the GUI from huge feeds (e.g. 100k-row CSVs).
             max_records: Some(params.max_records.unwrap_or(4000)),
             offline,
+            lang: match params.lang.as_deref() { Some("pt") => "pt", Some("es") => "es", _ => "en" }.to_string(),
             ..Default::default()
         };
         if offline {
@@ -455,6 +459,8 @@ pub mod api {
         pub project_id: Option<String>,
         #[serde(default, alias = "maxRecords")]
         pub max_records: Option<usize>,
+        #[serde(default)]
+        pub lang: Option<String>,
     }
 
     pub fn connector_run(p: ConnectorRunParams) -> Result<serde_json::Value> {
@@ -468,6 +474,7 @@ pub mod api {
             offline: None,
             max_records: p.max_records,
             project_id: p.project_id,
+            lang: p.lang,
         })
     }
 

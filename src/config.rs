@@ -327,6 +327,8 @@ pub struct RunConfig {
     /// Do not call any real LLM; used for CI / smoke tests.
     pub offline: bool,
     pub verbose: bool,
+    /// UI language for generated intelligence text ("en" | "pt" | "es").
+    pub lang: String,
 }
 
 impl Default for RunConfig {
@@ -344,6 +346,7 @@ impl Default for RunConfig {
             max_records: None,
             offline: false,
             verbose: false,
+            lang: "en".into(),
         }
     }
 }

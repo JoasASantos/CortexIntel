@@ -495,7 +495,7 @@ function newProjectModal() {
       try {
         const p = await api("/api/projects",{method:"POST",body:{name,domain:$("#npDomain").value,description:$("#npDesc").value,ai_instructions:$("#npAI").value}});
         closeModal(); await loadProjects(); await openProject(p.id); pushNotif("project",`Project "${p.name}" created`);
-        if(npUploadPath){ const tb=activeTab(); if(tb){ setSync("busy","running"); try{ const result=await runJob("run",{inputs:[npUploadPath],domain:p.domain,provider:state.provider,maxRecords:4000,projectId:p.id}); tb.result=result; tb.graph=consolidatedToGraph(result); tb.project=await api(`/api/projects/get?id=${encodeURIComponent(p.id)}`).catch(()=>tb.project); setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy();if(cy)cy.fit(cy.elements(),50);},700);}catch(e){setSync("err","failed");toast(e.message,"err");} } }
+        if(npUploadPath){ const tb=activeTab(); if(tb){ setSync("busy","running"); try{ const result=await runJob("run",{inputs:[npUploadPath],domain:p.domain,provider:state.provider,maxRecords:4000,projectId:p.id,lang:LANG}); tb.result=result; tb.graph=consolidatedToGraph(result); tb.project=await api(`/api/projects/get?id=${encodeURIComponent(p.id)}`).catch(()=>tb.project); setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy();if(cy)cy.fit(cy.elements(),50);},700);}catch(e){setSync("err","failed");toast(e.message,"err");} } }
       } catch(e){ toast(e.message,"err"); }
     }}
   ]);
@@ -1184,7 +1184,7 @@ async function doRun(){
   const t=activeTab(); if(!t){ toast("Open a project first","err"); return; }
   const params={ inputs:$("#rInputs").value.split(/\s+/).filter(Boolean), domain:$("#rDomain").value,
     dataType:$("#rType").value||null, provider:$("#rProvider").value, maxRecords:parseInt($("#rMax").value)||4000,
-    offline:$("#rProvider").value==="mock", projectId:t.project.id };
+    offline:$("#rProvider").value==="mock", projectId:t.project.id, lang:LANG };
   state.provider=params.provider; $("#providerPill").textContent="provider: "+state.provider;
   closeModal();
   if(MODE!=="mock" && !params.inputs.length){ toast("Provide an input path","err"); return; }
@@ -1450,7 +1450,7 @@ async function connectorAction(c,mode){
   if(c.kind==="csv"||c.kind==="json"){ // file connectors run the pipeline directly
     if(mode==="test"){ note.textContent="File connector: click Import & run."; return; }
     closeModal();
-    const params={inputs:[cfg.path],domain:t?t.project.domain:"generic",provider:state.provider,maxRecords:4000,projectId:t?t.project.id:null};
+    const params={inputs:[cfg.path],domain:t?t.project.domain:"generic",provider:state.provider,maxRecords:4000,projectId:t?t.project.id:null,lang:LANG};
     setSync("busy","running");
     try{ const result=await runJob("run",params); t.result=result; t.graph=consolidatedToGraph(result); t.project=await api(`/api/projects/get?id=${encodeURIComponent(t.project.id)}`).catch(()=>t.project); setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy();if(cy)cy.fit(cy.elements(),50);},700); pushNotif("import",`Imported ${cfg.path}`); toast("Imported & processed","ok"); }
     catch(e){ setSync("err","failed"); toast(e.message,"err"); }
@@ -1459,7 +1459,7 @@ async function connectorAction(c,mode){
   try {
     if(mode==="test"){ const r=await api("/api/connectors/test",{method:"POST",body:{kind:c.kind,config:cfg}}); note.textContent="✓ "+(r.status||"ok"); if(t) await api("/api/projects",{}).catch(()=>{}); return; }
     closeModal(); setSync("busy","fetching");
-    const result=await api("/api/connectors/run",{method:"POST",body:{kind:c.kind,config:cfg,domain:t?t.project.domain:"generic",provider:state.provider,projectId:t?t.project.id:null}});
+    const result=await api("/api/connectors/run",{method:"POST",body:{kind:c.kind,config:cfg,domain:t?t.project.domain:"generic",provider:state.provider,projectId:t?t.project.id:null,lang:LANG}});
     t.result=result; t.graph=consolidatedToGraph(result); t.project=await api(`/api/projects/get?id=${encodeURIComponent(t.project.id)}`).catch(()=>t.project);
     setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy();if(cy)cy.fit(cy.elements(),50);},700);
     pushNotif("connect",`Connected ${c.name}`); toast("Connected & processed","ok");

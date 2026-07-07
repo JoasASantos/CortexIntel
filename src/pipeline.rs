@@ -309,8 +309,8 @@ pub fn run(
     );
 
     // Information → intelligence: deterministic assessment + next-best-actions.
-    let assessment = crate::assessment::assess(&graph, &risk_report, config.domain);
-    let next_actions = crate::assessment::next_best_actions(&graph, &risk_report, config.domain);
+    let assessment = crate::assessment::assess(&graph, &risk_report, config.domain, &config.lang);
+    let next_actions = crate::assessment::next_best_actions(&graph, &risk_report, config.domain, &config.lang);
 
     let finished_at = Utc::now();
     let output = RunOutput {
