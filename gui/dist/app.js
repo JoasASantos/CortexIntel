@@ -194,6 +194,10 @@ const communityColor = c => COMMUNITY_PALETTE[(parseInt(c,10)||0) % COMMUNITY_PA
 const GRAPH_BG = "#070A0F", NODE_FILL = "#151D27";
 // Node sizing: bounded so nothing becomes a giant blob.
 const NODE_MIN=22, NODE_MAX=44, META_MIN=40, META_MAX=88;
+// Uniform node size in normal/graph mode — risk is shown by the ring colour, not
+// size, so every disc (and its fixed-px glyph) reads at one consistent size.
+// (Network mode still sizes by betweenness; meta clusters by count.)
+const NODE_UNIFORM=32;
 const nodeSize = risk => NODE_MIN + Math.sqrt(Math.max(0,Math.min(1,risk||0)))*(NODE_MAX-NODE_MIN);
 // Cluster size scales with log(count) between META_MIN and META_MAX.
 const metaSize = count => Math.min(META_MAX, META_MIN + Math.log2((count||2))*7);
@@ -543,7 +547,7 @@ function initCy() {
       // (kc); risk = the ring colour/width (hc) via the [halo] rule. No coloured
       // underlay square — risk lives on the ring so the canvas stays clean.
       { selector:"node", style:{
-        "background-color":DISC_FILL, "background-image":"data(icon)", "background-width":"52%", "background-height":"52%", "background-fit":"none", "background-clip":"none",
+        "background-color":DISC_FILL, "background-image":"data(icon)", "background-width":"18px", "background-height":"18px", "background-fit":"none", "background-clip":"none",
         "width":"data(size)", "height":"data(size)", "shape":"ellipse",
         "label":"data(label)", "font-size":"9px", "font-weight":600, "font-family":"SF Mono, Menlo, monospace", "color":"#E6EDF7",
         "text-wrap":"wrap", "text-max-width":"88px", "text-valign":"bottom", "text-margin-y":5, "min-zoomed-font-size":8,
@@ -579,7 +583,7 @@ function initCy() {
       { selector:"edge.pathhl", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "width":3, "opacity":1, "label":"data(type)", "z-index":60 }},
       // ---- meta cluster nodes: two-line label ----
       { selector:"node.metanode", style:{ "shape":"round-hexagon", "background-color":"#12202B", "border-color":"data(kc)", "border-width":2.5,
-        "background-image":"data(icon)", "background-width":"40%", "background-height":"40%",
+        "background-image":"data(icon)", "background-width":"24px", "background-height":"24px",
         "label":"data(label)", "text-wrap":"wrap", "font-size":"11px", "color":"#E6EDF7", "text-valign":"bottom", "text-margin-y":6,
         "text-outline-color":"#070A0F", "text-outline-width":2 }},
       // show a global "zoomed-in" edge label only when very close
@@ -741,7 +745,7 @@ function renderGraph() {
       return;
     }
     els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band),
-      size: nodeSize(n.risk), bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+      size: NODE_UNIFORM, bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
   });
   g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, elabel:e.label||"", w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:(e.hypothesis?"hyp ":"")+(e.predicted?"predicted ":"")+(e.manual?"manual":"") }); });
   cy.elements().remove(); cy.add(els);
@@ -2063,7 +2067,7 @@ async function runTransformOnSelected(t){ const id=cy&&cy.$(":selected").length?
 }
 // Build a cytoscape element for one graph node (shared by render + append).
 function graphNodeEl(n){ const band=n.band||bandOf(n.risk); const hot=band==="critical"||band==="high";
-  return { data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band), size:24+(n.risk||0)*26, bw:hot?3:1.5, halo:hot?1:undefined }, classes:n.hypothesis?"hyp":"" }; }
+  return { data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band), size:NODE_UNIFORM, bw:hot?3:1.5, halo:hot?1:undefined }, classes:n.hypothesis?"hyp":"" }; }
 // Incrementally add nodes/edges near an anchor WITHOUT re-laying-out the whole
 // graph — new results appear next to the seed and settle with a small local layout.
 function appendToCy(newNodes, newEdges, anchorId){ if(!cy){ renderGraph(); return; }
