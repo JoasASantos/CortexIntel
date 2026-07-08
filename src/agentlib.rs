@@ -222,191 +222,41 @@ fn seed_starters(dir: &std::path::Path) {
 /// Bundled starter agents — a small, real set spanning generic + per-vertical.
 /// The library is meant to grow to thousands by dropping more `.md` files here.
 const STARTERS: &[(&str, &str)] = &[
-    // ---- Generalist agents (domains: ["*"]) — robust, work on any case ----
-    ("executive-brief.md", r#"---
-name: Executive Brief
-description: One-paragraph decision-ready assessment of the whole case, plus the single next action.
-domains: ["*"]
-category: Overview
-tags: [summary, decision]
-auto: true
-reflects: answer
----
-Act as the lead analyst. In one short paragraph, give the decision-maker the
-picture: what is going on, how confident you are, and why it matters. Then state
-the ONE next action that most moves the decision. No jargon.
-"#),
-    ("hidden-links.md", r#"---
-name: Hidden Links Finder
-description: Propose relationships that are likely but not directly present in the data.
-domains: ["*"]
-category: Network
-tags: [network, inference]
-reflects: graph
-view: network
----
-Examine the graph for entities that are probably connected but have no direct
-edge (shared neighbours, matching attributes, timing). Propose those links as
-relationships with a confidence and a one-line justification. Never assert a link
-without evidence in the graph.
-"#),
-    ("key-players.md", r#"---
-name: Key Players & Clusters
-description: Identify the brokers/ringleaders and the tight clusters holding the network together.
-domains: ["*"]
-category: Network
-tags: [network, centrality]
-reflects: focus
-view: network
----
-Identify the key players: who bridges otherwise separate parts of the network
-(brokers), who is most central, and which tight clusters exist. Explain who holds
-the network together and what removing each key node would do.
-"#),
-    ("intel-gaps.md", r#"---
-name: Intelligence Gaps
-description: What's missing to decide, and the single collection step that most cuts uncertainty.
-domains: ["*"]
-category: Decision
-tags: [collection, next-best-action]
-reflects: answer
----
-List the critical unknowns that block a confident decision. Then recommend the
-single collection or verification step that would most reduce uncertainty, and
-say why.
-"#),
-    ("anomalies.md", r#"---
-name: Anomaly Reviewer
-description: Surface anything out of pattern and explain why it matters.
-domains: ["*"]
-category: Quality
-tags: [anomaly, review]
-reflects: focus
----
-Point out entities or relationships that are out of pattern relative to the rest
-of the case (unusual connectivity, timing, attributes). For each, explain whether
-it looks like a genuine signal, a data-quality artifact, or a benign outlier.
-"#),
-    ("identity-resolution.md", r#"---
-name: Identity Resolution Review
-description: Find aliases/accounts that are probably the same person and explain the signals.
-domains: ["*"]
-category: Identity
-tags: [identity, dedup]
-triggers: [person, account, device, victim, suspect]
-reflects: graph
----
-Review the case for entities that are probably the same real-world identity across
-aliases, accounts, devices or contacts. For each candidate merge, list the signals
-that justify it and a confidence. Flag ambiguous cases for human review rather than
-merging blindly.
-"#),
-    // ---- Child protection ----
-    ("victim-identification.md", r#"---
-name: Victim Identification Support
-description: Correlate victim indicators and flag matches against known references. Human-review only.
-domains: [child-protection]
-category: Victim ID
-tags: [victim, identification]
-triggers: [victim, media, person]
-auto: true
-reflects: answer
----
-Support victim identification. Correlate the victim indicators in the case,
-highlight any match against integrated reference sources, and note what would
-confirm an identification. This is decision-support requiring human confirmation;
-never expose or reproduce sensitive media — reference it by hash/id only.
-"#),
-    ("takedown-priority.md", r#"---
-name: Takedown Priority
-description: Rank distribution/infrastructure nodes by takedown priority.
-domains: [child-protection, cybersecurity]
-category: Disruption
-tags: [takedown, infrastructure]
-triggers: [domain, url, ip, account]
-reflects: focus
-view: network
----
-Rank the distribution and infrastructure nodes (domains, URLs, hosting, accounts)
-by takedown priority: reach, centrality, and how much disruption removing each
-would cause. Give the top targets and the reasoning.
-"#),
-    // ---- Finance / fraud / AML / KYC (niche with categories) ----
-    ("money-flow.md", r#"---
-name: Money-Flow Tracer
-description: Trace funds across accounts/wallets; surface mule structures and exposure.
-domains: [fraud, finance, kyc]
-category: Financial Crime
-tags: [financial-crime, network]
-triggers: [wallet, payment, account]
-inputs: [min_amount:number:Minimum amount to trace]
-auto: true
-reflects: graph
-view: network
----
-Trace money movement in the graph{{min_amount}}: chains of payments/transfers,
-accounts or wallets that likely share a controller (mule structures), and total
-exposure. Propose the missing links between counterparties, with confidence.
-"#),
-    ("aml-layering.md", r#"---
-name: AML Layering Detector
-description: Detect layering/structuring patterns across transactions in a time window.
-domains: [fraud, finance]
-category: AML
-tags: [aml, laundering, temporal]
-triggers: [payment, wallet, account]
-inputs: [window_days:number:Look-back window (days), threshold:number:Structuring threshold]
-reflects: graph
-view: timeline
----
-Look for layering and structuring: many small transfers splitting a larger sum,
-rapid movement across accounts, or amounts just under a reporting threshold
-({{threshold}}) within the last {{window_days}} days. Flag the chains and the
-accounts that anchor them.
-"#),
-    ("kyc-plausibility.md", r#"---
-name: KYC Plausibility Check
-description: Assess whether a person's connected records form a plausible, consistent identity.
-domains: [kyc, finance]
-category: KYC
-tags: [kyc, identity]
-triggers: [person, account, location]
-reflects: answer
----
-Assess identity plausibility (country-aware, respecting LGPD/GDPR): do the
-person's connected accounts, devices, locations and documents form a consistent
-picture, or are there contradictions that suggest synthetic/stolen identity?
-Decision-support only.
-"#),
-    // ---- Cybersecurity ----
-    ("ttp-map.md", r#"---
-name: Infrastructure & TTP Map
-description: Map actors, infrastructure and TTPs; suggest hunting leads and containment.
-domains: [cybersecurity]
-category: Threat Intel
-tags: [threat-intel, ttp]
-triggers: [ip, domain, url, malware, incident]
-auto: true
-reflects: graph
-view: network
----
-Map the actors, infrastructure (IPs, domains, hosts) and techniques present in the
-case. Cluster shared infrastructure, suggest hunting leads to expand coverage, and
-recommend containment steps. Propose likely infrastructure links with confidence.
-"#),
-    // ---- Logistics ----
-    ("logistics-bottleneck.md", r#"---
-name: Bottleneck & Single-Point-of-Failure
-description: Find chokepoints and dependencies whose failure would disrupt the operation.
-domains: [logistics]
-category: Operations
-tags: [resilience, network]
-triggers: [location, device, incident, organization]
-reflects: focus
-view: network
----
-Model the operation as a network and find bottlenecks and single points of failure:
-nodes that many routes depend on, and whose disruption would cascade. Recommend
-resilient alternatives.
-"#),
-];
+    ("executive-brief.md", include_str!("../agents/executive-brief.md")),
+    ("hidden-links.md", include_str!("../agents/hidden-links.md")),
+    ("key-players.md", include_str!("../agents/key-players.md")),
+    ("intel-gaps.md", include_str!("../agents/intel-gaps.md")),
+    ("anomalies.md", include_str!("../agents/anomalies.md")),
+    ("identity-resolution.md", include_str!("../agents/identity-resolution.md")),
+    ("timeline-reconstruction.md", include_str!("../agents/timeline-reconstruction.md")),
+    ("entity-deep-dive.md", include_str!("../agents/entity-deep-dive.md")),
+    ("contradiction-check.md", include_str!("../agents/contradiction-check.md")),
+    ("data-quality-audit.md", include_str!("../agents/data-quality-audit.md")),
+    ("narrative-report.md", include_str!("../agents/narrative-report.md")),
+    ("victim-identification.md", include_str!("../agents/victim-identification.md")),
+    ("takedown-priority.md", include_str!("../agents/takedown-priority.md")),
+    ("grooming-escalation.md", include_str!("../agents/grooming-escalation.md")),
+    ("csam-hash-triage.md", include_str!("../agents/csam-hash-triage.md")),
+    ("ttp-map.md", include_str!("../agents/ttp-map.md")),
+    ("ioc-enrichment.md", include_str!("../agents/ioc-enrichment.md")),
+    ("lateral-movement.md", include_str!("../agents/lateral-movement.md")),
+    ("c2-detection.md", include_str!("../agents/c2-detection.md")),
+    ("money-flow.md", include_str!("../agents/money-flow.md")),
+    ("aml-layering.md", include_str!("../agents/aml-layering.md")),
+    ("kyc-plausibility.md", include_str!("../agents/kyc-plausibility.md")),
+    ("mule-network.md", include_str!("../agents/mule-network.md")),
+    ("sanctions-screening.md", include_str!("../agents/sanctions-screening.md")),
+    ("chargeback-ring.md", include_str!("../agents/chargeback-ring.md")),
+    ("logistics-bottleneck.md", include_str!("../agents/logistics-bottleneck.md")),
+    ("route-disruption.md", include_str!("../agents/route-disruption.md")),
+    ("supplier-dependency.md", include_str!("../agents/supplier-dependency.md")),
+    ("adverse-event-cluster.md", include_str!("../agents/adverse-event-cluster.md")),
+    ("outbreak-linkage.md", include_str!("../agents/outbreak-linkage.md")),
+    ("churn-risk.md", include_str!("../agents/churn-risk.md")),
+    ("segment-discovery.md", include_str!("../agents/segment-discovery.md")),
+    ("simbox-detection.md", include_str!("../agents/simbox-detection.md")),
+    ("critical-asset-mapping.md", include_str!("../agents/critical-asset-mapping.md")),
+    ("claims-fraud-ring.md", include_str!("../agents/claims-fraud-ring.md")),
+    ("procurement-collusion.md", include_str!("../agents/procurement-collusion.md")),
+    ("comms-threads.md", include_str!("../agents/comms-threads.md")),
+    ("coa-analysis.md", include_str!("../agents/coa-analysis.md")),];
