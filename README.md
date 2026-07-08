@@ -27,8 +27,12 @@ Mirrors the operator flow from the brief:
 Secure ingestion
    → Normalization & deduplication
    → Entities (person, account, device, IP, URL, file, case, location, …)
+   → Potentiate (derive attributes + hub entities; reference-source matching)
    → Graph correlation
+   → Identity resolution
+   → Network science (broker, communities) → Anomaly detection
    → Risk prioritization
+   → Link prediction (infer likely-but-absent edges)
    → Investigation, victim protection & evidence
    → Audit, retention & legal disposal
 ```
@@ -38,8 +42,15 @@ Secure ingestion
 | Ingestion | CSV / JSON / NDJSON readers, MCP fetch-plan | — |
 | Classification | declared type / heuristics | `*.classifier` |
 | Extraction & dedup | field-map + indicator scanners (IP/URL/email/hash/wallet/domain) | `*.extractor` |
+| Potentiate (enrich) | normalize + derive attributes (registrable domain, IP scope, activity hour); materialize hub entities | — |
+| Reference matching | file-hash **exact** + **perceptual** near-duplicate (Hamming) match vs integrated feeds | — |
 | Correlation | shared-hub linking (`same_ip_as`, `same_device_as`, …) | `*.correlator` |
-| Risk | transparent feature scorer (DATA.md risk features) | `*.risk` |
+| Identity resolution | probabilistic same-entity merge (reversible, explainable) | — |
+| Network science | betweenness (broker), PageRank, communities (label propagation) + modularity | — |
+| Anomaly | peer-relative outliers (robust median+MAD z-score) + off-hours rule | — |
+| Risk | transparent feature scorer + brokerage + anomaly signals | `*.risk` |
+| Link prediction | infer likely-but-absent edges (common neighbours + Adamic-Adar) | — |
+| Assessment | natural-language judgments (reference hits, broker, communities, anomalies, predictions) | — |
 | Investigation | prioritized entity/relationship brief input | `*.investigator` |
 | Audit | append-only JSONL log + retention/disposal policy | `*.auditor` |
 
@@ -116,6 +127,55 @@ Providers (`--provider`): `auto` (Claude → Codex fallback), `claude`, `codex`,
   { "server": "claude_ai_Google_Drive", "tool": "search_files",
     "arguments": {"query": "case intake export"}, "records_path": "files" }
   ```
+
+## Reference sources (known-hash matching)
+
+Match file hashes against integrated feeds (known-malware sets, known-CSAM hash
+lists à la Project VIC / PhotoDNA, watchlists). A hash is a one-way fingerprint,
+so matching never requires holding the file itself. Point `CORTEX_REFS` at a JSON
+file or a directory of them:
+
+```json
+{ "source": "Known-CSAM (example)", "category": "known_csam_reference",
+  "severity": "critical", "kind": "hash", "values": ["<sha256>", "<md5>", "…"] }
+```
+
+- `kind: "hash"` — **exact** file-hash match (identical bytes).
+- `kind: "perceptual"` — **near-duplicate** match by Hamming distance over
+  perceptual hashes (catches recompressed/altered images).
+
+A match tags the entity, raises its risk, and surfaces an assessment line with
+**mandatory human confirmation** (a match is decision-support, never a verdict).
+
+## Calibration & tuning
+
+Thresholds are data-dependent — the right cut depends on your volume and
+distribution. Run a calibration pass to measure the real spread and get
+recommendations, then apply them via env vars (no rebuild):
+
+```bash
+# 1) measure + recommend on your data
+CORTEX_CALIBRATE=1 CORTEX_REFS=/path/refs \
+  cortex run -i /your/data --domain <vertical> --offline -o /tmp/cal
+
+# 2) apply the recommended cuts
+CORTEX_ANOMALY_Z=3.0 CORTEX_LINK_MIN_SHARED=2 CORTEX_PHASH_MAXDIST=8 \
+  cortex run -i /your/data --domain <vertical> --offline -o /out
+```
+
+| Env var | Default | Controls |
+|---------|---------|----------|
+| `CORTEX_ANOMALY_Z` | `3.5` | Robust-z threshold for peer-relative anomaly flags (lower = more sensitive) |
+| `CORTEX_LINK_MIN_SHARED` | `2` | Minimum shared neighbours to predict a likely-but-absent link |
+| `CORTEX_LINK_TOPK` | `12` | Max predicted links kept per run |
+| `CORTEX_PHASH_MAXDIST` | `10` | Max Hamming distance (bits) for a perceptual near-duplicate match |
+| `CORTEX_REFS` | — | Reference-source JSON file or directory |
+| `CORTEX_CALIBRATE` | — | `1` → print a threshold-calibration report after the run |
+| `CORTEX_NO_ENRICH` | — | `1` → skip the potentiate/enrich stage (A/B + escape hatch) |
+
+Anomaly detection is **precision-first** (conservative): it stays quiet on evenly
+distributed data and only fires on genuine outliers. Re-calibrate whenever the
+data volume or shape changes materially.
 
 ## AI guardrails (enforced in every agent prompt)
 
