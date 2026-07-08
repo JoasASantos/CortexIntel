@@ -208,6 +208,36 @@ pub fn get(id: &str) -> Option<Agent> {
     load_all().into_iter().find(|a| a.id == id)
 }
 
+/// Sanitize an id into a safe filename stem (no path traversal).
+fn safe_id(id: &str) -> String {
+    id.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '-' })
+        .collect::<String>().trim_matches('-').to_lowercase()
+}
+
+/// Create or overwrite an agent markdown file. `content` is the full markdown
+/// (frontmatter + body). Returns the parsed agent, or an error if it won't parse.
+pub fn save(id: &str, content: &str) -> Result<Agent, String> {
+    let id = safe_id(id);
+    if id.is_empty() {
+        return Err("invalid agent id".into());
+    }
+    let parsed = parse_agent(&id, content).ok_or("markdown must have frontmatter (--- … ---) and a body")?;
+    let dir = agents_dir();
+    // ensure the library exists / is seeded before writing a custom agent
+    if !dir.exists() { let _ = std::fs::create_dir_all(&dir); }
+    std::fs::write(dir.join(format!("{id}.md")), content).map_err(|e| e.to_string())?;
+    Ok(parsed)
+}
+
+/// Delete a custom agent file by id. No-op for the bundled starters if they were
+/// re-seeded (they can be overridden by saving over them).
+pub fn delete(id: &str) -> Result<(), String> {
+    let id = safe_id(id);
+    let p = agents_dir().join(format!("{id}.md"));
+    if p.exists() { std::fs::remove_file(&p).map_err(|e| e.to_string())?; }
+    Ok(())
+}
+
 /// Write the starter agents to disk on first use.
 fn seed_starters(dir: &std::path::Path) {
     let _ = std::fs::create_dir_all(dir);
@@ -259,4 +289,12 @@ const STARTERS: &[(&str, &str)] = &[
     ("claims-fraud-ring.md", include_str!("../agents/claims-fraud-ring.md")),
     ("procurement-collusion.md", include_str!("../agents/procurement-collusion.md")),
     ("comms-threads.md", include_str!("../agents/comms-threads.md")),
-    ("coa-analysis.md", include_str!("../agents/coa-analysis.md")),];
+    ("coa-analysis.md", include_str!("../agents/coa-analysis.md")),
+    ("follow-the-money.md", include_str!("../agents/follow-the-money.md")),
+    ("conflict-of-interest.md", include_str!("../agents/conflict-of-interest.md")),
+    ("source-corroboration.md", include_str!("../agents/source-corroboration.md")),
+    ("background-dossier.md", include_str!("../agents/background-dossier.md")),
+    ("document-linkage.md", include_str!("../agents/document-linkage.md")),
+    ("public-interest-timeline.md", include_str!("../agents/public-interest-timeline.md")),
+    ("influence-network.md", include_str!("../agents/influence-network.md")),
+];

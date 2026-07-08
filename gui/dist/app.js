@@ -8,7 +8,7 @@
 const I18N = {
   en: {
     "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
-    "nav.agents":"Agents","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents",
+    "nav.agents":"Agents","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted",
     "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
     "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store",
     "set.keys":"API Keys","set.plugins":"Classifier Plugins","set.project":"Project","set.users":"Users & Access","set.security":"Security","set.language":"Language",
@@ -39,7 +39,7 @@ const I18N = {
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
-    "nav.agents":"Agentes","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes",
+    "nav.agents":"Agentes","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído",
     "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
     "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms",
     "set.keys":"Chaves de API","set.plugins":"Plugins de Classificação","set.project":"Projeto","set.users":"Usuários & Acesso","set.security":"Segurança","set.language":"Idioma",
@@ -70,7 +70,7 @@ const I18N = {
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
-    "nav.agents":"Agentes","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes",
+    "nav.agents":"Agentes","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado",
     "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
     "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms",
     "set.keys":"Claves de API","set.plugins":"Plugins de Clasificación","set.project":"Proyecto","set.users":"Usuarios y Acceso","set.security":"Seguridad","set.language":"Idioma",
@@ -993,9 +993,50 @@ function agentRow(a,recommended){
   const cat=a.category?` <span class="conf muted">· ${esc(a.category)}</span>`:"";
   const form=(a.inputs&&a.inputs.length)?' <span class="conf muted">· form</span>':"";
   left.innerHTML=`<div>${badge}<span class="label">${esc(a.name)}</span>${cat}${form}</div><div class="muted" style="font-size:11px;margin-top:2px">${esc(a.description||"")}</div>`;
-  const btn=el("button","btn primary"); btn.style.cssText="padding:4px 12px;flex:0 0 auto"; btn.textContent=t2("agents.run");
+  const actions=el("div"); actions.style.cssText="display:flex;gap:6px;flex:0 0 auto;align-items:center";
+  const edit=el("button","btn ghost"); edit.style.cssText="padding:4px 8px"; edit.textContent="✎"; edit.title=t2("agents.edit");
+  edit.addEventListener("click",e=>{ e.stopPropagation(); openAgentEditor(a.id); });
+  const del=el("button","btn ghost"); del.style.cssText="padding:4px 8px"; del.textContent="🗑"; del.title=t2("agents.delete");
+  del.addEventListener("click",async e=>{ e.stopPropagation(); if(!confirm(`${t2("agents.delete")}: ${a.name}?`))return; try{ await api("/api/agents/delete",{method:"POST",body:{id:a.id}}); toast(t2("agents.deleted"),"ok"); renderAgents(); }catch(err){ toast(err.message,"err"); } });
+  const btn=el("button","btn primary"); btn.style.cssText="padding:4px 12px"; btn.textContent=t2("agents.run");
   btn.addEventListener("click",()=>runAgentById(a.id));
-  row.appendChild(left); row.appendChild(btn); return row;
+  actions.appendChild(edit); actions.appendChild(del); actions.appendChild(btn);
+  row.appendChild(left); row.appendChild(actions); return row;
+}
+// Rebuild an agent's markdown (frontmatter + body) for the editor.
+function agentToMarkdown(a){
+  const fm=["---",`name: ${a.name||""}`,`description: ${a.description||""}`,`domains: [${(a.domains||["*"]).join(", ")}]`,`category: ${a.category||""}`];
+  if(a.tags&&a.tags.length) fm.push(`tags: [${a.tags.join(", ")}]`);
+  if(a.triggers&&a.triggers.length) fm.push(`triggers: [${a.triggers.join(", ")}]`);
+  if(a.inputs&&a.inputs.length) fm.push(`inputs: [${a.inputs.map(i=>`${i.name}:${i.kind}:${i.label}${i.options&&i.options.length?":"+i.options.join("|"):""}`).join(", ")}]`);
+  if(a.view) fm.push(`view: ${a.view}`);
+  if(a.auto) fm.push("auto: true");
+  fm.push(`reflects: ${a.reflects||"answer"}`,"---","");
+  return fm.join("\n")+(a.body||"");
+}
+const AGENT_TEMPLATE=`---
+name: My Agent
+description: What this agent does, in one line.
+domains: ["*"]
+category: Custom
+tags: [custom]
+triggers: []
+reflects: answer
+---
+Describe the task the agent performs over the current graph. Use {{field}} to
+reference an input value (declare fields in "inputs:", e.g. inputs: [target:text:Target]).
+`;
+async function openAgentEditor(id){
+  let md=AGENT_TEMPLATE, curId="";
+  if(id){ try{ const a=await api("/api/agents/get?id="+encodeURIComponent(id)); md=agentToMarkdown(a); curId=a.id; }catch(e){} }
+  openModal(id?`${t2("agents.edit")} · ${curId}`:t2("agents.new"),
+    `<div class="field">ID (file name)<input id="agId" placeholder="my-agent" value="${esc(curId)}" ${id?"readonly":""}/></div>
+     <div class="field">Markdown<textarea id="agMd" rows="16" style="font-family:SF Mono,Menlo,monospace;font-size:12px">${esc(md)}</textarea></div>`,
+    [{label:"Cancel",cls:"ghost",act:closeModal},
+     {label:t2("agents.save"),cls:"primary",act:async()=>{ const aid=(curId||$("#agId").value||"").trim(); const content=$("#agMd").value;
+        if(!aid){ toast("ID required","err"); return; }
+        try{ await api("/api/agents/save",{method:"POST",body:{id:aid,content}}); closeModal(); toast(t2("agents.saved"),"ok"); renderAgents(); }
+        catch(e){ toast("Save failed: "+e.message,"err"); } }}]);
 }
 async function runAgentById(id){
   const t=activeTab(); if(!t){ toast("Open a project first","err"); return; }
@@ -1027,6 +1068,11 @@ async function dispatchAgent(agent,vals){
     else { try{ applyFocus(res.focus); }catch(e){} }
     if(agent.view){ if(agent.view==="map"){ try{ setCanvasMode("map"); }catch(e){} } else { try{ setGraphMode(agent.view); }catch(e){} } }
     showAgentResult(agent,res);
+    // Persist the agent run on the project (survives reload).
+    if(MODE!=="mock"&&t.project&&t.project.id){
+      const summary=(res.answer||"").slice(0,240);
+      api("/api/projects/activity",{method:"POST",body:{id:t.project.id,kind:"agent",summary:`${agent.name}: ${summary}`,meta:{agent:agent.id,reflects:agent.reflects,key_points:res.key_points||[]}}}).catch(()=>{});
+    }
     pushNotif("ai",`Agent "${agent.name}" ran`);
   }catch(e){ setSync("err","failed"); toast("Agent failed: "+e.message,"err"); }
 }
@@ -1875,7 +1921,7 @@ $("#paletteBackdrop").addEventListener("click",e=>{ if(e.target===$("#paletteBac
 
 // nav hooks that need lazy render
 $$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="entities")renderEntities(); if(li.dataset.view==="agents")renderAgents(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
-{ const s=$("#agentSearch"); if(s){ let _d; s.addEventListener("input",()=>{ clearTimeout(_d); _d=setTimeout(renderAgents,250); }); } const ab=$("#btnAgentAuto"); if(ab) ab.addEventListener("click",autoRunAgents); }
+{ const s=$("#agentSearch"); if(s){ let _d; s.addEventListener("input",()=>{ clearTimeout(_d); _d=setTimeout(renderAgents,250); }); } const ab=$("#btnAgentAuto"); if(ab) ab.addEventListener("click",autoRunAgents); const an=$("#btnAgentNew"); if(an) an.addEventListener("click",()=>openAgentEditor(null)); }
 $("#profileBtn").addEventListener("click",()=>{showView("settings");openSettingsTab("account");});
 
 // ---------- settings tabs ----------
