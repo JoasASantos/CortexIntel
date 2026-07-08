@@ -518,7 +518,7 @@ function consolidatedToGraph(c) {
   Object.values(c.entities||{}).forEach(a=>{ if(Array.isArray(a)) nodes=nodes.concat(a); });
   nodes = nodes.map(n=>({ id:n.id, kind:n.kind, label:n.label, risk:n.risk_score||0, band:n.risk_band||bandOf(n.risk_score||0),
     attributes:n.attributes||{}, tags:n.tags||[], sources:n.sources||[], sensitive:!!n.sensitive }));
-  const edges=(c.relationships||[]).map(r=>({source:r.source_id,target:r.target_id,type:r.rel_type,conf:r.confidence||0.5}));
+  const edges=(c.relationships||[]).map(r=>({source:r.source_id,target:r.target_id,type:r.rel_type,conf:r.confidence||0.5,predicted:r.rel_type==="predicted_link"}));
   return {nodes, edges, meta:{risk:c.ai_assessments,investigation:c.investigation,governance:c.governance,audit:c.audit_events||[],assessment:c.assessment||[],nba:c.next_best_actions||[]}};
 }
 
@@ -566,6 +566,9 @@ function initCy() {
       { selector:"edge.dim", style:{ "opacity":0.05 }},
       { selector:".faded", style:{ "opacity":0.1 }},
       { selector:".hyp", style:{ "line-style":"dashed", "line-color":"#8B7CFF", "border-color":"#8B7CFF", "border-style":"dashed" }},
+      // Predicted (inferred, not observed) links: dashed amber so they never read
+      // as fact. Label makes the "predicted" nature explicit on hover/zoom.
+      { selector:"edge.predicted", style:{ "line-style":"dashed", "line-color":"#F59E0B", "target-arrow-color":"#F59E0B", "target-arrow-shape":"triangle", "opacity":0.7, "label":"predicted", "font-size":"7px", "color":"#F59E0B", "text-background-color":"#070A0F", "text-background-opacity":0.7 }},
       { selector:".fresh", style:{ "underlay-color":"#34D399", "underlay-padding":10, "underlay-opacity":0.55 }},
       { selector:"node.pathhl", style:{ "border-width":3, "border-color":"#57D7E8", "underlay-color":"#57D7E8", "underlay-padding":8, "underlay-opacity":0.5, "opacity":1, "z-index":60 }},
       { selector:"edge.pathhl", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "width":3, "opacity":1, "label":"data(type)", "z-index":60 }},
@@ -734,7 +737,7 @@ function renderGraph() {
     els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band),
       size: nodeSize(n.risk), bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
   });
-  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:e.hypothesis?"hyp":"" }); });
+  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:(e.hypothesis?"hyp ":"")+(e.predicted?"predicted":"") }); });
   cy.elements().remove(); cy.add(els);
   // If the graph container isn't visible yet (0×0), layout would be degenerate;
   // defer it to when the Graph view is shown (see showView).

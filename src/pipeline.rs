@@ -402,6 +402,25 @@ pub fn run(
     );
 
     // Information → intelligence: deterministic assessment + next-best-actions.
+    // Link prediction: infer likely-but-absent edges (topological, deterministic).
+    // Added as `predicted_link` (marked predicted) so they're distinct from fact.
+    let predictions = crate::linkpred::predict(&graph, 12);
+    if !predictions.is_empty() {
+        crate::linkpred::add_to_graph(&mut graph, &predictions);
+        audit.record(
+            Utc::now(),
+            "link_prediction",
+            "inference",
+            &format!("{} likely-but-absent links inferred", predictions.len()),
+            "relationship inference",
+            false,
+            false,
+            None,
+            None,
+        );
+        println!("      +{} predicted link(s) (inferred, not observed)", predictions.len().to_string().green());
+    }
+
     let assessment = crate::assessment::assess(&graph, &risk_report, config.domain, &config.lang);
     let next_actions = crate::assessment::next_best_actions(&graph, &risk_report, config.domain, &config.lang);
 

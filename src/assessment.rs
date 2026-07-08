@@ -309,6 +309,32 @@ pub fn assess(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain, lang: &str)
         out.push(Assessment { statement, confidence: (0.45 + tscore * 0.4).min(0.85), evidence: anoms.iter().take(4).map(|(e, _, r)| format!("{} — {}", e.label, r)).collect(), evidence_ids: anoms.iter().take(6).map(|(e, _, _)| e.id.clone()).collect(), action, basis: "inferred".into(), attributed_to: deterministic_engine() });
     }
 
+    // 8) Predicted links — likely-but-absent edges inferred from shared structure.
+    let preds: Vec<&crate::ontology::Relationship> = g.relationships.iter().filter(|r| r.rel_type == "predicted_link").collect();
+    if !preds.is_empty() {
+        let mut top = preds.clone();
+        top.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
+        let strongest = top[0];
+        let la = g.entities.get(&strongest.source_id).map(|e| e.label.clone()).unwrap_or_default();
+        let lb = g.entities.get(&strongest.target_id).map(|e| e.label.clone()).unwrap_or_default();
+        let shared = strongest.attributes.get("shared_neighbors").cloned().unwrap_or_default();
+        let (statement, action) = match lang {
+            "pt" => (
+                format!("{} vínculo(s) provável(is) mas AUSENTE(S) foram inferidos por estrutura compartilhada. O mais forte: \"{}\" ↔ \"{}\" ({} vizinhos em comum) — provavelmente conectados, sem aresta direta no dado.", preds.len(), la, lb, shared),
+                "Verifique esses pares: podem ser uma aresta que faltou coletar ou um vínculo oculto a confirmar.".to_string(),
+            ),
+            "es" => (
+                format!("{} vínculo(s) probable(s) pero AUSENTE(S) fueron inferidos por estructura compartida. El más fuerte: \"{}\" ↔ \"{}\" ({} vecinos en común) — probablemente conectados, sin arista directa en el dato.", preds.len(), la, lb, shared),
+                "Verifica esos pares: pueden ser una arista no recolectada o un vínculo oculto a confirmar.".to_string(),
+            ),
+            _ => (
+                format!("{} likely-but-ABSENT link(s) inferred from shared structure. Strongest: \"{}\" ↔ \"{}\" ({} shared neighbours) — probably connected, with no direct edge in the data.", preds.len(), la, lb, shared),
+                "Verify these pairs: they may be an edge you didn't collect, or a hidden relationship to confirm.".to_string(),
+            ),
+        };
+        out.push(Assessment { statement, confidence: (strongest.confidence * 0.8).clamp(0.3, 0.7), evidence: top.iter().take(4).map(|r| format!("{} ↔ {}", g.entities.get(&r.source_id).map(|e| e.label.as_str()).unwrap_or("?"), g.entities.get(&r.target_id).map(|e| e.label.as_str()).unwrap_or("?"))).collect(), evidence_ids: vec![strongest.source_id.clone(), strongest.target_id.clone()], action, basis: "inferred".into(), attributed_to: deterministic_engine() });
+    }
+
     out.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
     out
 }

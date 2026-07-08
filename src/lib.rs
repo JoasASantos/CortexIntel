@@ -14,6 +14,7 @@ pub mod correlation;
 pub mod enrich;
 pub mod extract;
 pub mod keys;
+pub mod linkpred;
 pub mod llm;
 pub mod netsci;
 pub mod ontology;
