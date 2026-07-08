@@ -28,6 +28,7 @@ pub mod prompts;
 pub mod references;
 pub mod report;
 pub mod reportpdf;
+pub mod reward;
 pub mod resolve;
 pub mod risk;
 pub mod serve;

@@ -288,6 +288,16 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
                 Err(e) => json_err(stream, &e),
             }
         }
+        // Reward engine: record analyst feedback (confirm/reject) on a dimension.
+        ("POST", "/api/feedback") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let key = b.get("key").and_then(|v| v.as_str()).unwrap_or("");
+            let signal = b.get("signal").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+            let weight = b.get("weight").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+            crate::reward::record(key, signal, weight);
+            json_ok(stream, &serde_json::json!({"ok": true}))
+        }
+        ("GET", "/api/feedback") => json_ok(stream, &crate::reward::adjustments()),
         ("POST", "/api/agents/delete") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             match crate::agentlib::delete(b.get("id").and_then(|v| v.as_str()).unwrap_or("")) {

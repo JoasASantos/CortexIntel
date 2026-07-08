@@ -89,6 +89,8 @@ pub fn score_graph(graph: &KnowledgeGraph, domain: Domain, extra_signals: &[(Str
     }
     let degree = graph.degree_centrality();
     let max_deg = degree.values().copied().max().unwrap_or(1).max(1) as f32;
+    // Reward engine: bounded per-key adjustments learned from analyst feedback.
+    let reward_adj = crate::reward::adjustments();
 
     let mut assessments = Vec::new();
     for (id, e) in &graph.entities {
@@ -140,6 +142,13 @@ pub fn score_graph(graph: &KnowledgeGraph, domain: Domain, extra_signals: &[(Str
             }
         }
 
+        // Reward: nudge by what the analyst has confirmed/rejected for this kind/tags.
+        let radj = crate::reward::entity_adjustment(&reward_adj, e.kind.as_str(), &e.tags);
+        if radj.abs() > 1e-4 {
+            score += radj;
+            factors.push(format!("feedback:{radj:+.2}"));
+        }
+
         let score = score.clamp(0.0, 1.0);
         let band = RiskBand::from_score(score);
         let requires_review = e.sensitive || band >= RiskBand::High;
@@ -164,6 +173,34 @@ pub fn score_graph(graph: &KnowledgeGraph, domain: Domain, extra_signals: &[(Str
             ),
             source: "heuristic".into(),
         });
+    }
+
+    // Risk propagation: a fraction of a node's risk flows to its neighbours (one
+    // damped hop). Proximity to a high-risk entity raises attention — a standard
+    // graph-diffusion signal layered on top of the per-node score.
+    {
+        use std::collections::HashMap;
+        let idx: HashMap<&str, usize> = assessments.iter().enumerate().map(|(i, a)| (a.entity_id.as_str(), i)).collect();
+        let base: Vec<f32> = assessments.iter().map(|a| a.risk_score).collect();
+        let mut nbr_max = vec![0f32; assessments.len()];
+        for r in &graph.relationships {
+            if let (Some(&si), Some(&ti)) = (idx.get(r.source_id.as_str()), idx.get(r.target_id.as_str())) {
+                nbr_max[si] = nbr_max[si].max(base[ti]);
+                nbr_max[ti] = nbr_max[ti].max(base[si]);
+            }
+        }
+        for (i, a) in assessments.iter_mut().enumerate() {
+            let flow = nbr_max[i] * 0.18;
+            if flow > 0.02 && a.risk_score < 1.0 {
+                let ns = (a.risk_score + flow).min(1.0);
+                if ns > a.risk_score + 0.02 {
+                    a.risk_score = ns;
+                    a.risk_band = RiskBand::from_score(ns).as_str().to_string();
+                    a.top_factors.push(format!("propagated:{flow:.2}"));
+                    if a.risk_band == "critical" || a.risk_band == "high" { a.requires_human_review = true; }
+                }
+            }
+        }
     }
 
     assessments.sort_by(|a, b| b.risk_score.partial_cmp(&a.risk_score).unwrap());
