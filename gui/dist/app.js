@@ -968,7 +968,7 @@ function showView(name){ currentView=name; $$(".view").forEach(v=>v.hidden=true)
     // empty corner of the graph (looks blank). A trailing settle() re-fits after
     // the layout has committed.
     const settle=()=>{ initCy(); if(!cy) return;
-      if(canvasMode==="map"){ renderMap(); return; }
+      if(canvasMode==="map"){ renderWorldMap(); return; }
       cy.resize();
       const t=activeTab();
       if(t && t._needsRelayout && cy.nodes().length){ t._needsRelayout=false; runLayout(t._perf); }
@@ -2305,10 +2305,14 @@ function setCanvasMode(mode){ canvasMode=mode;
   $$("#canvasSwitch .cmode").forEach(b=>b.classList.toggle("active",b.dataset.canvas===mode));
   const isMap=mode==="map";
   $("#cy").style.display=isMap?"none":"";
-  $("#globe3d") && ($("#globe3d").hidden = !(isMap && HAS_WEBGL));
-  $("#mapCanvas").hidden = !(isMap && !HAS_WEBGL);
+  // Flat choropleth world map (reference style): a clear geographic canvas filled
+  // by the project's geolocated data. The 3D globe stays available but the flat
+  // map is the default lens.
+  $("#globe3d") && ($("#globe3d").hidden = true);
+  $("#mapCanvas").hidden = !isMap;
   GRAPH_CHROME.forEach(sel=>{ const e=$(sel); if(e) e.style.display=isMap?"none":""; });
-  if(isMap){ if(HAS_WEBGL) renderGlobe3D(); else renderMap(); }
+  const ml=$("#mapLayers"); if(ml) ml.hidden=!isMap;
+  if(isMap){ if(_g3) _g3.stop(); renderWorldMap(); }
   else { $("#mapEmpty")&&($("#mapEmpty").hidden=true); if(_g3) _g3.stop(); requestAnimationFrame(()=>{ if(cy){cy.resize();cy.fit(cy.elements(":visible"),50);} }); }
 }
 
@@ -2381,7 +2385,7 @@ let _g3LabelsAdded=false;
 function addGlobeGeoLabels(){ const g=_g3; if(!g||_g3LabelsAdded)return; _g3LabelsAdded=true; const THREE=g.THREE;
   GEO_LABELS.forEach(([name,lat,lon],i)=>{ const cont=i<7; const sp=g.textSprite(name, cont?"rgba(120,200,220,0.95)":"rgba(200,215,230,0.75)"); sp.position.copy(g.llToVec(lat,lon,g.R*1.02)); if(!cont)sp.scale.multiplyScalar(0.8); g.labels.add(sp); }); }
 function renderGlobe3D(){
-  const g=initGlobe3D(); if(!g){ renderMap(); return; } const t=activeTab(); if(!t) return; const THREE=g.THREE;
+  const g=initGlobe3D(); if(!g){ renderWorldMap(); return; } const t=activeTab(); if(!t) return; const THREE=g.THREE;
   addGlobeGeoLabels();
   let pts=t.graph.nodes.map(n=>{ const geo=geoOf(n); return geo?{n,...geo}:null; }).filter(Boolean);
   const capped=pts.length>2000; if(capped) pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,2000);
@@ -2407,63 +2411,86 @@ function renderGlobe3D(){
   const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${trajCount?` · ${t2("map.trajectories",trajCount)}`:""}${capped?" · (top 2000)":""}`;
 }
 let _mapState=null;
-let _globe={lon0:0,lat0:20,user:false};
-function renderMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=$("#mapEmpty"); if(!cv||!t) return;
+let _worldGeo=null;                       // cached world GeoJSON
+let _mapView={scale:1, ox:0, oy:0, init:false};
+let _mapLayers=null;                       // Set of enabled entity kinds (null = all)
+let _mapChoropleth=true;                   // severity fill on/off
+function loadWorld(cb){ if(_worldGeo){ cb(_worldGeo); return; } fetch("/vendor/countries.min.json").then(r=>r.json()).then(g=>{ _worldGeo=g; cb(g); }).catch(()=>cb(null)); }
+function hexA(hex,a){ const h=(hex||"#888").replace("#",""); return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`; }
+function pointInRing(lon,lat,ring){ let inside=false; for(let i=0,j=ring.length-1;i<ring.length;j=i++){ const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1]; if(((yi>lat)!==(yj>lat)) && (lon<(xj-xi)*(lat-yi)/((yj-yi)||1e-9)+xi)) inside=!inside; } return inside; }
+function pointInFeature(lon,lat,f){ const polys=f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates; for(const poly of polys){ if(pointInRing(lon,lat,poly[0])){ let hole=false; for(let k=1;k<poly.length;k++){ if(pointInRing(lon,lat,poly[k])){ hole=true; break; } } if(!hole) return true; } } return false; }
+
+// Flat equirectangular world map. Comes "clear" and is filled geographically by
+// the project's geolocated data: countries shade by aggregated severity
+// (choropleth), entities plot as markers, edges draw as connections, and layers
+// (by entity kind — CCTV, air base, unit… per project) toggle on/off. Pan + zoom.
+function renderWorldMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=$("#mapEmpty"); if(!cv||!t) return;
   const wrap=cv.parentElement; const W=wrap.clientWidth||900, H=wrap.clientHeight||600; const dpr=Math.min(2,window.devicePixelRatio||1);
-  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px";
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px"; cv.hidden=false;
   const ctx=cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
-  // Collect geolocated nodes (cap for very large graphs — served-slice rule).
+  const baseW=W, baseH=W/2;                 // 2:1 equirectangular
+  if(!_mapView.init){ const s=Math.max(1,H/baseH); _mapView={scale:s, ox:0, oy:(H-baseH*s)/2, init:true}; }
+  const sc=_mapView.scale;
+  const proj=(lon,lat)=>({ x:((lon+180)/360*baseW)*sc+_mapView.ox, y:((90-lat)/180*baseH)*sc+_mapView.oy });
+  ctx.fillStyle="#0a0e14"; ctx.fillRect(0,0,W,H);                 // ocean
   let pts=t.graph.nodes.map(n=>{ const g=geoOf(n); return g?{n,...g}:null; }).filter(Boolean);
-  const capped = pts.length>2000; if(capped){ pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,2000); }
-  if(empty){ empty.hidden=pts.length>0; if(!pts.length){ empty.innerHTML=`<div class="ge-inner"><div class="ge-icon">🌐</div><p>${esc(t2("map.none"))}</p></div>`; } }
-  // Auto-centre the globe on the data centroid until the user rotates it.
-  if(!_globe.user && pts.length){ const la=pts.reduce((s,p)=>s+p.lat,0)/pts.length, lo=pts.reduce((s,p)=>s+p.lon,0)/pts.length; _globe.lat0=la; _globe.lon0=lo; }
-  const RAD=Math.PI/180; const R=Math.max(60,Math.min(W,H)/2-46); const cx=W/2, cy=H/2;
-  const la0=_globe.lat0*RAD, lo0=_globe.lon0*RAD;
-  const proj=(latDeg,lonDeg)=>{ const la=latDeg*RAD, lo=lonDeg*RAD, dlo=lo-lo0;
-    const cosc=Math.sin(la0)*Math.sin(la)+Math.cos(la0)*Math.cos(la)*Math.cos(dlo);
-    return { x:cx+R*Math.cos(la)*Math.sin(dlo), y:cy-R*(Math.cos(la0)*Math.sin(la)-Math.sin(la0)*Math.cos(la)*Math.cos(dlo)), vis:cosc>=-0.02 }; };
-  // Globe disk (ocean) + rim.
-  ctx.beginPath(); ctx.arc(cx,cy,R,0,7);
-  const grad=ctx.createRadialGradient(cx-R*0.3,cy-R*0.3,R*0.2,cx,cy,R);
-  grad.addColorStop(0,"#0e2836"); grad.addColorStop(1,"#081019"); ctx.fillStyle=grad; ctx.fill();
-  ctx.lineWidth=1.5; ctx.strokeStyle="rgba(87,215,232,0.35)"; ctx.stroke();
-  // Graticule (only the near hemisphere).
-  ctx.strokeStyle="rgba(148,163,184,0.14)"; ctx.lineWidth=1;
-  const arc=(fn)=>{ ctx.beginPath(); let started=false; for(let s=-90;s<=90;s+=3){ const p=fn(s); if(p.vis){ if(started)ctx.lineTo(p.x,p.y); else {ctx.moveTo(p.x,p.y);started=true;} } else started=false; } ctx.stroke(); };
-  for(let lon=-180;lon<180;lon+=30) arc(s=>proj(s,lon));
-  for(let lat=-60;lat<=60;lat+=30){ ctx.beginPath(); let st=false; for(let s=-180;s<=180;s+=3){ const p=proj(lat,s); if(p.vis){ if(st)ctx.lineTo(p.x,p.y); else{ctx.moveTo(p.x,p.y);st=true;} } else st=false; } ctx.stroke(); }
-  // Trajectories: group temporally-ordered points sharing a trajectory key.
-  const groups={}; pts.forEach(p=>{ const key=(p.n.attributes&&(p.n.attributes.trajectory||p.n.attributes.track||p.n.attributes.vessel||p.n.attributes.subject))||null; if(key){ (groups[key]=groups[key]||[]).push(p); } });
-  let trajCount=0;
-  Object.values(groups).forEach(list=>{ if(list.length<2)return; trajCount++;
-    list.sort((a,b)=>(parseTs(a.n)||0)-(parseTs(b.n)||0));
-    ctx.strokeStyle="rgba(87,215,232,0.65)"; ctx.lineWidth=1.8; ctx.beginPath(); let st=false;
-    list.forEach(p=>{ const xy=proj(p.lat,p.lon); if(xy.vis){ if(st)ctx.lineTo(xy.x,xy.y); else{ctx.moveTo(xy.x,xy.y);st=true;} } else st=false; }); ctx.stroke(); });
-  // Points on the visible hemisphere (same badge colours as the graph).
-  const screenPts=[];
-  pts.forEach(p=>{ const xy=proj(p.lat,p.lon); if(!xy.vis) return; const r=4+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
-    const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+4,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.28)":"rgba(251,113,133,0.24)"); ctx.fill(); }
-    ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.stroke(); });
-  _mapState={screenPts};
-  const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${trajCount?` · ${t2("map.trajectories",trajCount)}`:""}${capped?" · (top 2000)":""}`;
+  if(_mapLayers) pts=pts.filter(p=>_mapLayers.has(p.n.kind));
+  const capped=pts.length>3000; if(capped) pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,3000);
+  loadWorld(gj=>{
+    // Choropleth: max entity risk per country (assign each point to a country).
+    const sevByFeat=new Map();
+    if(_mapChoropleth && pts.length && gj){ pts.forEach(p=>{ for(let i=0;i<gj.features.length;i++){ if(pointInFeature(p.lon,p.lat,gj.features[i])){ sevByFeat.set(i,Math.max(sevByFeat.get(i)||0,p.n.risk||0)); break; } } }); }
+    if(gj){ gj.features.forEach((f,idx)=>{ const polys=f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates;
+      ctx.beginPath();
+      polys.forEach(poly=>poly.forEach(ring=>{ ring.forEach((c,i)=>{ const p=proj(c[0],c[1]); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); }); ctx.closePath(); }));
+      const sev=sevByFeat.get(idx); ctx.fillStyle=sev!=null?hexA(bandColor(bandOf(sev)),0.5):"rgba(28,38,54,0.75)"; ctx.fill();
+      ctx.lineWidth=0.5; ctx.strokeStyle="rgba(120,140,160,0.22)"; ctx.stroke();
+    }); }
+    // Connections between geolocated entities that share an edge.
+    const byId={}; pts.forEach(p=>byId[p.n.id]=p);
+    ctx.setLineDash([5,4]); ctx.lineWidth=1.2; ctx.strokeStyle="rgba(245,158,11,0.55)";
+    (t.graph.edges||[]).forEach(e=>{ const a=byId[e.source],b=byId[e.target]; if(a&&b){ const pa=proj(a.lon,a.lat),pb=proj(b.lon,b.lat); ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke(); } });
+    ctx.setLineDash([]);
+    // Markers.
+    const screenPts=[];
+    pts.forEach(p=>{ const xy=proj(p.lon,p.lat); const r=4+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
+      const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+5,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.30)":"rgba(251,113,133,0.24)"); ctx.fill(); }
+      ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.7)"; ctx.stroke(); });
+    _mapState={screenPts};
+    if(empty) empty.hidden = !!gj || pts.length>0;
+    const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${capped?" · (top 3000)":""}`;
+    renderMapLayerLegend(t);
+  });
 }
-// Drag to rotate the globe.
+// Layer panel: toggle the severity choropleth + each entity kind present on the
+// map (this is where CCTV / air-base / unit layers live — generic, per project).
+function renderMapLayerLegend(t){ const wrap=$(".graph-wrap"); if(!wrap)return; let box=$("#mapLayers");
+  if(!box){ box=el("div"); box.id="mapLayers"; box.style.cssText="position:absolute;top:64px;right:14px;z-index:6;background:rgba(10,16,24,0.86);border:1px solid rgba(120,140,160,0.25);border-radius:10px;padding:10px 12px;font-size:11px;color:#cdd8e6;max-height:60%;overflow:auto;backdrop-filter:blur(6px)"; wrap.appendChild(box); }
+  box.hidden = canvasMode!=="map";
+  const kinds=[...new Set(t.graph.nodes.map(n=>geoOf(n)?n.kind:null).filter(Boolean))].sort();
+  if(_mapLayers==null) _mapLayers=new Set(kinds);
+  const row=(inner)=>`<label style="display:flex;align-items:center;gap:7px;margin:4px 0;cursor:pointer">${inner}</label>`;
+  box.innerHTML=`<div style="font-weight:600;letter-spacing:0.5px;color:#8fa8c0;margin-bottom:6px">LAYERS</div>`+
+    row(`<input type="checkbox" ${_mapChoropleth?"checked":""} data-cho><span style="width:9px;height:9px;border-radius:2px;background:#ef4444;display:inline-block"></span> Severity choropleth`)+
+    (kinds.length?`<div style="height:1px;background:rgba(120,140,160,0.2);margin:6px 0"></div>`:"")+
+    kinds.map(k=>row(`<input type="checkbox" ${_mapLayers.has(k)?"checked":""} data-kind="${esc(k)}"><span style="width:9px;height:9px;border-radius:50%;background:${kColor(k)};display:inline-block"></span> ${esc(k)}`)).join("")||
+    (kinds.length?"":`<div style="color:#889;font-size:10px">No geolocated entities yet.</div>`);
+  const cho=box.querySelector("[data-cho]"); if(cho) cho.addEventListener("change",e=>{ _mapChoropleth=e.target.checked; renderWorldMap(); });
+  box.querySelectorAll("[data-kind]").forEach(cb=>cb.addEventListener("change",e=>{ const k=e.target.dataset.kind; if(e.target.checked)_mapLayers.add(k); else _mapLayers.delete(k); renderWorldMap(); }));
+}
+// Pan (drag), zoom (wheel around cursor), click-to-select on the flat map.
 (function(){ const cv=$("#mapCanvas"); if(!cv)return; let drag=null;
-  cv.addEventListener("mousedown",e=>{ drag={x:e.clientX,y:e.clientY,moved:false}; });
-  window.addEventListener("mousemove",e=>{ if(!drag)return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true;
-    _globe.user=true; _globe.lon0-=dx*0.4; _globe.lat0=Math.max(-89,Math.min(89,_globe.lat0+dy*0.4)); drag.x=e.clientX; drag.y=e.clientY; renderMap(); });
-  window.addEventListener("mouseup",e=>{ if(drag&&!drag.moved){ // treat as click → open nearest point
-      const rect=cv.getBoundingClientRect(); const x=e.clientX-rect.left, y=e.clientY-rect.top; let best=null,bd=1e9;
-      (_mapState?_mapState.screenPts:[]).forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} });
-      if(best) selectNode(best.n.id); }
-    drag=null; });
+  cv.addEventListener("mousedown",e=>{ drag={x:e.clientX,y:e.clientY,ox:_mapView.ox,oy:_mapView.oy,moved:false}; });
+  window.addEventListener("mousemove",e=>{ if(!drag)return; const dx=e.clientX-drag.x,dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true; _mapView.ox=drag.ox+dx; _mapView.oy=drag.oy+dy; if(canvasMode==="map") renderWorldMap(); });
+  window.addEventListener("mouseup",e=>{ if(drag&&!drag.moved&&canvasMode==="map"){ const rect=cv.getBoundingClientRect(); const x=e.clientX-rect.left,y=e.clientY-rect.top; let best=null,bd=1e9; (_mapState?_mapState.screenPts:[]).forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} }); if(best) selectNode(best.n.id); } drag=null; });
+  cv.addEventListener("wheel",e=>{ if(canvasMode!=="map")return; e.preventDefault(); const rect=cv.getBoundingClientRect(); const mx=e.clientX-rect.left,my=e.clientY-rect.top; const f=e.deltaY<0?1.15:1/1.15; const ns=Math.max(0.6,Math.min(14,_mapView.scale*f));
+    _mapView.ox=mx-(mx-_mapView.ox)*(ns/_mapView.scale); _mapView.oy=my-(my-_mapView.oy)*(ns/_mapView.scale); _mapView.scale=ns; renderWorldMap(); },{passive:false});
 })();
 $$("#canvasSwitch .cmode").forEach(b=>b.addEventListener("click",()=>setCanvasMode(b.dataset.canvas)));
 // Responsiveness: re-render the active canvas when the window resizes.
 let _rsz=null;
 window.addEventListener("resize",()=>{ clearTimeout(_rsz); _rsz=setTimeout(()=>{
-  if(currentView==="graph"){ if(canvasMode==="map") renderMap(); else if(cy){ cy.resize(); cy.fit(cy.elements(":visible"),50); } }
+  if(currentView==="graph"){ if(canvasMode==="map") renderWorldMap(); else if(cy){ cy.resize(); cy.fit(cy.elements(":visible"),50); } }
 },150); });
 
 // Pre-defined analysis flows (one-click prompts that steer the assessment).
