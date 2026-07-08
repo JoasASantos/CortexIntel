@@ -8,6 +8,7 @@
 const I18N = {
   en: {
     "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
+    "nav.agents":"Agents","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents",
     "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
     "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store",
     "set.keys":"API Keys","set.plugins":"Classifier Plugins","set.project":"Project","set.users":"Users & Access","set.security":"Security","set.language":"Language",
@@ -38,6 +39,7 @@ const I18N = {
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
+    "nav.agents":"Agentes","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes",
     "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
     "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms",
     "set.keys":"Chaves de API","set.plugins":"Plugins de Classificação","set.project":"Projeto","set.users":"Usuários & Acesso","set.security":"Segurança","set.language":"Idioma",
@@ -68,6 +70,7 @@ const I18N = {
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
+    "nav.agents":"Agentes","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes",
     "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
     "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms",
     "set.keys":"Claves de API","set.plugins":"Plugins de Clasificación","set.project":"Proyecto","set.users":"Usuarios y Acceso","set.security":"Seguridad","set.language":"Idioma",
@@ -949,6 +952,103 @@ $$(".nav li").forEach(li=>li.addEventListener("click",()=>showView(li.dataset.vi
 
 function renderAll(){ renderGraph(); renderDashboard(); renderEntities(); renderReport(); renderTimeline(); renderAlerts(); renderSavedConnectors(); renderIntelligence(); }
 
+// ============ Agents browser (markdown-defined agent library) ============
+// Lists ready-made agents grouped by niche → category, plus a "recommended for
+// this data" strip driven by what the graph actually contains. Running an agent
+// dispatches its prompt (with project specs) over the current graph and reflects
+// the result: merges proposed entities/links, applies focus, switches the view.
+async function renderAgents(){
+  const t=activeTab(); const domain=t?t.project.domain:"generic";
+  const reco=$("#agentReco"), list=$("#agentList"), meta=$("#agentMeta"); if(!reco||!list) return;
+  const q=($("#agentSearch")&&$("#agentSearch").value||"").trim();
+  const kinds=t?[...new Set(t.graph.nodes.map(n=>n.kind))]:[];
+  // Recommended by data
+  try{
+    if(t && kinds.length){
+      const rec=await api(`/api/agents/recommend?domain=${encodeURIComponent(domain)}&kinds=${encodeURIComponent(kinds.join(","))}`);
+      reco.innerHTML=""; rec.slice(0,6).forEach(a=>reco.appendChild(agentRow(a,true)));
+      if(!rec.length) reco.innerHTML=`<div class="empty">${esc(t2("agents.none"))}</div>`;
+      const pill=$("#agentRecoPill"); if(pill) pill.textContent=`${kinds.length} data types`;
+    } else { reco.innerHTML=`<div class="empty">${esc(t2("agents.none"))}</div>`; }
+  }catch(e){ reco.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
+  // Full library grouped by niche → category
+  try{
+    const lib=await api(`/api/agents/library?domain=${encodeURIComponent(domain)}&q=${encodeURIComponent(q)}`);
+    if(meta) meta.textContent=`${lib.length} ${t2("agents.all").toLowerCase()}`;
+    const groups={}; lib.forEach(a=>{ const niche=(a.domains&&a.domains[0]&&a.domains[0]!=="*")?a.domains[0]:"generic"; (groups[niche]=groups[niche]||[]).push(a); });
+    list.innerHTML="";
+    Object.keys(groups).sort().forEach(niche=>{
+      const card=el("div","card"); const head=el("div","card-head"); head.innerHTML=`<h3>${esc(niche)}</h3><span class="conf-pill">${groups[niche].length}</span>`; card.appendChild(head);
+      const wrap=el("div","list");
+      groups[niche].sort((a,b)=>(a.category||"").localeCompare(b.category||"")||a.name.localeCompare(b.name)).forEach(a=>wrap.appendChild(agentRow(a,false)));
+      card.appendChild(wrap); list.appendChild(card);
+    });
+    if(!lib.length) list.innerHTML=`<div class="empty">No agents match "${esc(q)}".</div>`;
+  }catch(e){ list.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
+}
+function agentRow(a,recommended){
+  const row=el("div","li");
+  const left=el("div","l");
+  const badge=recommended&&a.score?`<span class="chip">★ ${Math.round(a.score)}</span> `:"";
+  const cat=a.category?` <span class="conf muted">· ${esc(a.category)}</span>`:"";
+  const form=(a.inputs&&a.inputs.length)?' <span class="conf muted">· form</span>':"";
+  left.innerHTML=`<div>${badge}<span class="label">${esc(a.name)}</span>${cat}${form}</div><div class="muted" style="font-size:11px;margin-top:2px">${esc(a.description||"")}</div>`;
+  const btn=el("button","btn primary"); btn.style.cssText="padding:4px 12px;flex:0 0 auto"; btn.textContent=t2("agents.run");
+  btn.addEventListener("click",()=>runAgentById(a.id));
+  row.appendChild(left); row.appendChild(btn); return row;
+}
+async function runAgentById(id){
+  const t=activeTab(); if(!t){ toast("Open a project first","err"); return; }
+  let agent; try{ agent=await api("/api/agents/get?id="+encodeURIComponent(id)); }catch(e){ toast("Agent load failed: "+e.message,"err"); return; }
+  if(agent.inputs&&agent.inputs.length){ openAgentForm(agent); } else { dispatchAgent(agent,{}); }
+}
+function openAgentForm(agent){
+  const fields=(agent.inputs||[]).map(inp=>{
+    if(inp.kind==="select"){ return `<div class="field">${esc(inp.label)}<select id="af_${esc(inp.name)}" class="select">${(inp.options||[]).map(o=>`<option>${esc(o)}</option>`).join("")}</select></div>`; }
+    return `<div class="field">${esc(inp.label)}<input id="af_${esc(inp.name)}" type="${inp.kind==="number"?"number":"text"}" /></div>`;
+  }).join("");
+  openModal(agent.name,`<p class="muted">${esc(agent.description)}</p>${fields}`,[
+    {label:"Cancel",cls:"ghost",act:closeModal},
+    {label:t2("agents.form.run"),cls:"primary",act:()=>{ const v={}; (agent.inputs||[]).forEach(inp=>{ const e=$("#af_"+inp.name); v[inp.name]=e?e.value:""; }); closeModal(); dispatchAgent(agent,v); }}
+  ]);
+}
+async function dispatchAgent(agent,vals){
+  const t=activeTab(); if(!t) return;
+  let body=agent.body||"";
+  Object.entries(vals||{}).forEach(([k,val])=>{ body=body.split("{{"+k+"}}").join(val||""); });
+  body=body.replace(/\{\{[^}]+\}\}/g,""); // strip any unfilled placeholders
+  setSync("busy","running"); toast(`✦ ${agent.name}…`);
+  try{
+    const graph={nodes:t.graph.nodes,edges:t.graph.edges};
+    const res=await runJob("ask",{question:body,domain:t.project.domain,provider:state.provider,graph,aiInstructions:t.project.ai_instructions||""});
+    setSync("ok","complete");
+    const hasAdds=(res.entities&&res.entities.length)||(res.relationships&&res.relationships.length);
+    if(agent.reflects==="graph"&&hasAdds){ mergeProposals(res); }
+    else { try{ applyFocus(res.focus); }catch(e){} }
+    if(agent.view){ if(agent.view==="map"){ try{ setCanvasMode("map"); }catch(e){} } else { try{ setGraphMode(agent.view); }catch(e){} } }
+    showAgentResult(agent,res);
+    pushNotif("ai",`Agent "${agent.name}" ran`);
+  }catch(e){ setSync("err","failed"); toast("Agent failed: "+e.message,"err"); }
+}
+function showAgentResult(agent,res){
+  openAsk(); const log=$("#askLog"); if(!log) return;
+  log.appendChild(el("div","ask-msg u",`▶ ${agent.name}`));
+  const a=el("div","ask-msg a");
+  let h=`<div>${esc(res.answer||"(done)")}</div>`;
+  if(res.key_points&&res.key_points.length) h+='<ul class="pts">'+res.key_points.map(p=>`<li>${esc(p)}</li>`).join("")+'</ul>';
+  if(res.recommended_actions&&res.recommended_actions.length) h+='<ul class="pts">'+res.recommended_actions.map(p=>`<li>▸ ${esc(p)}</li>`).join("")+'</ul>';
+  a.innerHTML=h; log.appendChild(a); log.scrollTop=log.scrollHeight;
+}
+// Run the agents flagged auto (capped) — fired on upload/run completion.
+async function autoRunAgents(){
+  const t=activeTab(); if(!t) return;
+  try{
+    const lib=await api(`/api/agents/library?domain=${encodeURIComponent(t.project.domain)}`);
+    const autos=lib.filter(a=>a.auto).slice(0,3);
+    for(const a of autos){ const full=await api("/api/agents/get?id="+encodeURIComponent(a.id)).catch(()=>null); if(full) await dispatchAgent(full,{}); }
+  }catch(e){}
+}
+
 // ===== decision-oriented metrics engine (shared by Dashboard + Entities + Intelligence) =====
 function entResolution(n, deg){ let s=0.4; s+=Math.min(0.25,(n.sources?n.sources.length:0)*0.12);
   const attrs=Object.keys(n.attributes||{}).length; s+=Math.min(0.2,attrs*0.04);
@@ -1223,6 +1323,7 @@ async function doRun(){
     t.project = await api(`/api/projects/get?id=${encodeURIComponent(t.project.id)}`).catch(()=>t.project);
     setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy(); if(cy)cy.fit(cy.elements(),50);},700);
     pushNotif("run",`Analysis complete: ${t.graph.nodes.length} entities`);
+    autoRunAgents(); // fire the auto-flagged agents on upload/run completion
     toast(`Done — ${t.graph.nodes.length} entities, ${t.graph.edges.length} relationships`,"ok");
   } catch(e){ setSync("err","failed"); toast("Run failed: "+e.message,"err"); }
 }
@@ -1773,7 +1874,8 @@ $("#paletteInput").addEventListener("keydown",e=>{ const items=$("#paletteList")
 $("#paletteBackdrop").addEventListener("click",e=>{ if(e.target===$("#paletteBackdrop")) closePalette(); });
 
 // nav hooks that need lazy render
-$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="entities")renderEntities(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
+$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="entities")renderEntities(); if(li.dataset.view==="agents")renderAgents(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
+{ const s=$("#agentSearch"); if(s){ let _d; s.addEventListener("input",()=>{ clearTimeout(_d); _d=setTimeout(renderAgents,250); }); } const ab=$("#btnAgentAuto"); if(ab) ab.addEventListener("click",autoRunAgents); }
 $("#profileBtn").addEventListener("click",()=>{showView("settings");openSettingsTab("account");});
 
 // ---------- settings tabs ----------
