@@ -260,6 +260,23 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/api/domains") => json_ok(stream, &api::list_domains()),
         ("GET", "/api/data_types") => json_ok(stream, &api::list_data_types()),
         ("GET", "/api/agents") => json_ok(stream, &api::list_agents(&param(&req.query, "domain").unwrap_or_else(|| "generic".into()))),
+        // Agent library (markdown-defined, ready-made, thousands-scalable).
+        ("GET", "/api/agents/library") => json_ok(stream, &crate::agentlib::library(
+            &param(&req.query, "domain").unwrap_or_else(|| "generic".into()),
+            &param(&req.query, "q").unwrap_or_default(),
+        )),
+        // Recommend agents for the current data (kinds = comma-separated entity kinds/tags).
+        ("GET", "/api/agents/recommend") => {
+            let kinds: Vec<String> = param(&req.query, "kinds").unwrap_or_default()
+                .split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+            json_ok(stream, &crate::agentlib::recommend(
+                &param(&req.query, "domain").unwrap_or_else(|| "generic".into()), &kinds, 20))
+        }
+        // Fetch one agent (with its prompt body) to dispatch.
+        ("GET", "/api/agents/get") => match param(&req.query, "id").and_then(|id| crate::agentlib::get(&id)) {
+            Some(a) => json_ok(stream, &a),
+            None => respond(stream, 404, "application/json; charset=utf-8", br#"{"error":"agent not found"}"#),
+        },
         ("GET", "/api/doctor") => json_ok(stream, &api::doctor()),
         ("GET", "/api/graph") => match param(&req.query, "dir") {
             Some(dir) => finish(stream, api::load_graph(&dir)),

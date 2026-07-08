@@ -2,6 +2,7 @@
 //! desktop GUI drive the same code. See `api` for the high-level entry points
 //! the GUI calls over Tauri commands.
 
+pub mod agentlib;
 pub mod agents;
 pub mod anomaly;
 pub mod assessment;
