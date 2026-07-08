@@ -15,6 +15,7 @@ pub mod connectors;
 pub mod correlation;
 pub mod enrich;
 pub mod extract;
+pub mod geoint;
 pub mod keys;
 pub mod linkpred;
 pub mod llm;

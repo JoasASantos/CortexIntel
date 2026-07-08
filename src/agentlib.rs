@@ -297,4 +297,11 @@ const STARTERS: &[(&str, &str)] = &[
     ("document-linkage.md", include_str!("../agents/document-linkage.md")),
     ("public-interest-timeline.md", include_str!("../agents/public-interest-timeline.md")),
     ("influence-network.md", include_str!("../agents/influence-network.md")),
+    // GEOINT (v0.0.2) — geospatial intelligence discipline pack.
+    ("geo-colocation.md", include_str!("../agents/geo-colocation.md")),
+    ("geo-movement.md", include_str!("../agents/geo-movement.md")),
+    ("geo-aoo.md", include_str!("../agents/geo-aoo.md")),
+    ("geo-layer-triage.md", include_str!("../agents/geo-layer-triage.md")),
+    ("geo-geofence.md", include_str!("../agents/geo-geofence.md")),
+    ("geo-pattern-of-life.md", include_str!("../agents/geo-pattern-of-life.md")),
 ];
