@@ -96,12 +96,13 @@ pub fn test(kind: &str, cfg: &Value) -> Result<String> {
             }
             Ok("mongoexport available".into())
         }
-        "jira" | "powerbi" | "looker" | "webhook" => {
+        "jira" | "powerbi" | "looker" | "webhook" | "http" | "rest" | "elastic" => {
             if !have_help("curl") {
                 return Err(anyhow!("`curl` not found on PATH"));
             }
             let ep = s(cfg, "endpoint").ok_or_else(|| anyhow!("missing 'endpoint' URL"))?;
-            Ok(format!("ready to call {ep}"))
+            let auth = if s(cfg, "jwt").is_some() { " (JWT)" } else if s(cfg, "token").is_some() { " (token)" } else if s(cfg, "api_key").is_some() { " (API key)" } else { "" };
+            Ok(format!("ready to call {} {ep}{auth}", s(cfg, "method").unwrap_or("GET")))
         }
         other => Err(anyhow!("unknown connector kind '{other}'")),
     }
@@ -194,24 +195,46 @@ pub fn fetch(kind: &str, cfg: &Value) -> Result<PathBuf> {
             }
             Ok(path)
         }
-        "jira" | "powerbi" | "looker" | "webhook" => http_fetch(cfg),
+        "jira" | "powerbi" | "looker" | "webhook" | "http" | "rest" | "elastic" => http_fetch(cfg),
         other => Err(anyhow!("unknown connector kind '{other}'")),
     }
 }
 
-/// Generic authenticated HTTP GET via `curl`, saving the JSON body to a temp file.
-/// The pipeline's JSON source finds the record array within the response.
+/// Generic authenticated HTTP fetch via `curl` — the custom-integration workhorse.
+/// Supports method (GET/POST/…), custom headers, a request body, and several auth
+/// modes (JWT, bearer token, basic, API key). Saves the response body to a temp
+/// JSON file; the pipeline's JSON source finds the record array (use `records_path`
+/// in the .mcp/source config for nested arrays like Elasticsearch `hits.hits`).
+///
+/// Config keys: endpoint (required), method, headers {obj}, body (string|json),
+/// jwt | token [+ user for basic] | api_key [+ api_key_header].
 fn http_fetch(cfg: &Value) -> Result<PathBuf> {
     let ep = s(cfg, "endpoint").ok_or_else(|| anyhow!("connector needs an 'endpoint' URL"))?;
     let path = tmp("json");
     let mut cmd = Command::new("curl");
     cmd.args(["-sS", "--fail-with-body", "--max-time", "120", "-o", path.to_str().unwrap()]);
-    // Auth: bearer token, or basic user:token (Jira Cloud uses email:api_token).
-    if let Some(tok) = s(cfg, "token") {
-        if let Some(user) = s(cfg, "user") {
-            cmd.args(["-u", &format!("{user}:{tok}")]);
-        } else {
-            cmd.args(["-H", &format!("Authorization: Bearer {tok}")]);
+    let method = s(cfg, "method").unwrap_or("GET").to_uppercase();
+    cmd.args(["-X", &method]);
+    // Auth (precedence: JWT → bearer/basic token → API key).
+    if let Some(j) = s(cfg, "jwt") {
+        cmd.args(["-H", &format!("Authorization: Bearer {j}")]);
+    } else if let Some(tok) = s(cfg, "token") {
+        if let Some(user) = s(cfg, "user") { cmd.args(["-u", &format!("{user}:{tok}")]); }
+        else { cmd.args(["-H", &format!("Authorization: Bearer {tok}")]); }
+    }
+    if let Some(ak) = s(cfg, "api_key") {
+        let hn = s(cfg, "api_key_header").unwrap_or("X-API-Key");
+        cmd.args(["-H", &format!("{hn}: {ak}")]);
+    }
+    // Arbitrary custom headers.
+    if let Some(hs) = cfg.get("headers").and_then(|v| v.as_object()) {
+        for (k, v) in hs { if let Some(vv) = v.as_str() { cmd.args(["-H", &format!("{k}: {vv}")]); } }
+    }
+    // Request body for non-GET methods (webhook/POST integrations, ES queries…).
+    if method != "GET" {
+        if let Some(b) = cfg.get("body") {
+            let body = if b.is_string() { b.as_str().unwrap().to_string() } else { b.to_string() };
+            cmd.args(["-H", "Content-Type: application/json", "--data-binary", &body]);
         }
     }
     cmd.args(["-H", "Accept: application/json"]);
