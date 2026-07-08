@@ -20,7 +20,7 @@ const I18N = {
     "sit.domain":"Vertical","sit.owner":"Owner","sit.jurisdiction":"Jurisdiction","sit.created":"Created","sit.updated":"Updated","sit.entities":"entities","sit.relationships":"relationships","sit.critical":"critical","sit.alerts":"alerts",
     "auth.signin":"Sign in","auth.register":"Create account",
     "gmode.overview":"Overview","gmode.risk":"Risk","gmode.neighborhood":"Neighborhood","gmode.timeline":"Timeline","gmode.full":"Full","gmode.network":"Network","gmode.network.hint":"colour = community · size = broker (betweenness) · the largest node is the network's articulation point",
-    "gtool.entity":"Entity","gtool.fit":"Fit","gtool.path":"Path","gtool.reset":"Reset","gtool.ask":"Ask",
+    "gtool.entity":"Entity","gtool.fit":"Fit","gtool.path":"Path","gtool.connect":"Connect","gtool.reset":"Reset","gtool.ask":"Ask","edge.label.q":"Edge label (optional)","edge.pickSource":"Connect: click the source node (Esc to cancel)","edge.pickTarget":"Connect: click the target node (Esc to cancel)","edge.editTitle":"Edit connection","edge.delete":"Delete connection",
     "gf.all":"All","gf.crit":"Critical + High","gf.suspicious":"Suspicious/Malicious","gf.sensitive":"Sensitive",
     "view.entities":"Entity Registry","view.entities.sub":"Validate, resolve, enrich and prioritize the entities that feed your intelligence.",
     "view.intelligence":"Intelligence","view.intelligence.sub":"Decision-ready product synthesized from the current investigation.",
@@ -51,7 +51,7 @@ const I18N = {
     "sit.domain":"Vertical","sit.owner":"Responsável","sit.jurisdiction":"Jurisdição","sit.created":"Criado","sit.updated":"Atualizado","sit.entities":"entidades","sit.relationships":"relações","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Entrar","auth.register":"Criar conta",
     "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Linha do tempo","gmode.full":"Completo","gmode.network":"Rede","gmode.network.hint":"cor = comunidade · tamanho = broker (intermediação) · o maior nó é o ponto de articulação da rede",
-    "gtool.entity":"Entidade","gtool.fit":"Ajustar","gtool.path":"Caminho","gtool.reset":"Redefinir","gtool.ask":"Perguntar",
+    "gtool.entity":"Entidade","gtool.fit":"Ajustar","gtool.path":"Caminho","gtool.connect":"Conectar","gtool.reset":"Redefinir","gtool.ask":"Perguntar","edge.label.q":"Rótulo da conexão (opcional)","edge.pickSource":"Conectar: clique no nó de origem (Esc para cancelar)","edge.pickTarget":"Conectar: clique no nó de destino (Esc para cancelar)","edge.editTitle":"Editar conexão","edge.delete":"Excluir conexão",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Suspeito/Malicioso","gf.sensitive":"Sensível",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valide, resolva, enriqueça e priorize as entidades que alimentam sua inteligência.",
     "view.intelligence":"Inteligência","view.intelligence.sub":"Produto pronto para decisão, sintetizado da investigação atual.",
@@ -82,7 +82,7 @@ const I18N = {
     "sit.domain":"Vertical","sit.owner":"Responsable","sit.jurisdiction":"Jurisdicción","sit.created":"Creado","sit.updated":"Actualizado","sit.entities":"entidades","sit.relationships":"relaciones","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Iniciar sesión","auth.register":"Crear cuenta",
     "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Línea de tiempo","gmode.full":"Completo","gmode.network":"Red","gmode.network.hint":"color = comunidad · tamaño = broker (intermediación) · el nodo más grande es el punto de articulación de la red",
-    "gtool.entity":"Entidad","gtool.fit":"Ajustar","gtool.path":"Ruta","gtool.reset":"Restablecer","gtool.ask":"Preguntar",
+    "gtool.entity":"Entidad","gtool.fit":"Ajustar","gtool.path":"Ruta","gtool.connect":"Conectar","gtool.reset":"Restablecer","gtool.ask":"Preguntar","edge.label.q":"Etiqueta de la conexión (opcional)","edge.pickSource":"Conectar: haz clic en el nodo de origen (Esc para cancelar)","edge.pickTarget":"Conectar: haz clic en el nodo de destino (Esc para cancelar)","edge.editTitle":"Editar conexión","edge.delete":"Eliminar conexión",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Sospechoso/Malicioso","gf.sensitive":"Sensible",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valida, resuelve, enriquece y prioriza las entidades que alimentan tu inteligencia.",
     "view.intelligence":"Inteligencia","view.intelligence.sub":"Producto listo para decidir, sintetizado de la investigación actual.",
@@ -572,6 +572,8 @@ function initCy() {
       // Predicted (inferred, not observed) links: dashed amber so they never read
       // as fact. Label makes the "predicted" nature explicit on hover/zoom.
       { selector:"edge.predicted", style:{ "line-style":"dashed", "line-color":"#F59E0B", "target-arrow-color":"#F59E0B", "target-arrow-shape":"triangle", "opacity":0.7, "label":"predicted", "font-size":"7px", "color":"#F59E0B", "text-background-color":"#070A0F", "text-background-opacity":0.7 }},
+      // Analyst-drawn connections: solid cyan arrow with the label always shown.
+      { selector:"edge.manual", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "target-arrow-shape":"triangle", "arrow-scale":0.9, "width":2, "opacity":1, "label":"data(elabel)", "font-size":"9px", "font-weight":600, "color":"#CDE9F0", "text-background-color":"#070A0F", "text-background-opacity":0.75, "text-background-padding":2, "text-rotation":"autorotate", "min-zoomed-font-size":7, "z-index":45 }},
       { selector:".fresh", style:{ "underlay-color":"#34D399", "underlay-padding":10, "underlay-opacity":0.55 }},
       { selector:"node.pathhl", style:{ "border-width":3, "border-color":"#57D7E8", "underlay-color":"#57D7E8", "underlay-padding":8, "underlay-opacity":0.5, "opacity":1, "z-index":60 }},
       { selector:"edge.pathhl", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "width":3, "opacity":1, "label":"data(type)", "z-index":60 }},
@@ -584,7 +586,8 @@ function initCy() {
       { selector:"core", style:{} },
     ],
   });
-  cy.on("tap","node", ev=>{ const id=ev.target.id(); if(linkMode){ finishLink(id); return; } if(pathSource){ finishPath(id); return; } selectNode(id); });
+  cy.on("tap","node", ev=>{ const id=ev.target.id(); if(linkMode){ finishLink(id); return; } if(connectArm){ startLink(id); return; } if(pathSource){ finishPath(id); return; } selectNode(id); });
+  cy.on("tap","edge", ev=>{ const d=ev.target.data(); if(d&&d.source&&d.target) editEdgeLabel(d.source,d.target); });
   cy.on("dbltap","node", ev=>{ const id=ev.target.id(); const t=activeTab(); if(!t)return; if(t._metas&&t._metas[id]) expandCluster(id); else if((t.clusterMode||"none")!=="none") collapseNodeCluster(id); });
   cy.on("tap", ev=>{ if(ev.target===cy){ clearFocus(); cy.$(":selected").unselect(); $("#context").hidden=true; } });
   cy.on("cxttap","node", ev=>{ const e=ev.originalEvent; if(linkMode) finishLink(ev.target.id()); else openCtxMenu(e.clientX,e.clientY,ev.target.id()); });
@@ -740,7 +743,7 @@ function renderGraph() {
     els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band),
       size: nodeSize(n.risk), bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
   });
-  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:(e.hypothesis?"hyp ":"")+(e.predicted?"predicted":"") }); });
+  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, elabel:e.label||"", w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:(e.hypothesis?"hyp ":"")+(e.predicted?"predicted ":"")+(e.manual?"manual":"") }); });
   cy.elements().remove(); cy.add(els);
   // If the graph container isn't visible yet (0×0), layout would be degenerate;
   // defer it to when the Graph view is shown (see showView).
@@ -923,9 +926,34 @@ async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   if(match.length){ const s=el("div","mi sep"); m.appendChild(s); match.slice(0,8).forEach(t=>add("run",`Run: ${t.name}`,()=>{ cy.$(":selected").unselect(); cy.$id(id).select(); runTransformOnSelected(t); })); }
   m.style.left=Math.min(x,window.innerWidth-230)+"px"; m.style.top=Math.min(y,window.innerHeight-40-m.childElementCount*34)+"px"; m.hidden=false;
 }
-function startLink(id){ linkMode=id; let b=$("#linkmodeBanner"); if(!b){ b=el("div","linkmode"); b.id="linkmodeBanner"; b.textContent="Link mode: click a target node (Esc to cancel)"; $(".graph-wrap").appendChild(b);} b.hidden=false; }
-function finishLink(targetId){ if(!linkMode) return; const s=linkMode, t=activeTab(); linkMode=null; const bn=$("#linkmodeBanner"); if(bn)bn.hidden=true;
-  if(s===targetId||!t) return; t.graph.edges.push({source:s,target:targetId,type:"linked_by_analyst",conf:1.0}); renderGraph(); toast("Nodes connected"); }
+let connectArm=false; // toolbar "Connect" armed: next node tap is the source
+function linkBanner(msg){ let b=$("#linkmodeBanner"); if(!b){ b=el("div","linkmode"); b.id="linkmodeBanner"; $(".graph-wrap").appendChild(b);} b.textContent=msg; b.hidden=false; }
+function clearLinkBanner(){ const b=$("#linkmodeBanner"); if(b)b.hidden=true; }
+// Toolbar entry point: arm connect mode, then pick source → target on the canvas.
+function startConnectMode(){ showView("graph"); connectArm=true; linkMode=null; linkBanner(t2("edge.pickSource")); }
+function startLink(id){ connectArm=false; linkMode=id; linkBanner(t2("edge.pickTarget")); }
+function finishLink(targetId){ if(!linkMode) return; const s=linkMode, tb=activeTab(); linkMode=null; clearLinkBanner();
+  if(s===targetId||!tb) return;
+  // Ask for an optional label on the connection (text on the arrow).
+  openModal(t2("edge.editTitle"),
+    `<div class="field">${esc(t2("edge.label.q"))}<input id="edgeLbl" placeholder="e.g. paid, met with, controls" /></div>`,
+    [{label:"Skip",cls:"ghost",act:()=>{ closeModal(); commitEdge(s,targetId,""); }},
+     {label:"Add",cls:"primary",act:()=>{ const v=($("#edgeLbl").value||"").trim(); closeModal(); commitEdge(s,targetId,v); }}]);
+  setTimeout(()=>{ const i=$("#edgeLbl"); if(i)i.focus(); },40);
+}
+function commitEdge(s,target,label){ const tb=activeTab(); if(!tb)return;
+  tb.graph.edges.push({source:s,target,type:label||"linked_by_analyst",conf:1.0,manual:true,label:label||""});
+  renderGraph(); toast(label?`Connected · "${label}"`:"Nodes connected","ok");
+}
+// Click a manual/any edge to edit its label or delete it.
+function editEdgeLabel(srcId,tgtId){ const tb=activeTab(); if(!tb)return;
+  const e=tb.graph.edges.find(x=>x.source===srcId&&x.target===tgtId); if(!e)return;
+  openModal(t2("edge.editTitle"),
+    `<div class="field">${esc(t2("edge.label.q"))}<input id="edgeLbl2" value="${esc(e.label||(e.type&&e.type!=="linked_by_analyst"?e.type:""))}" /></div>`,
+    [{label:t2("edge.delete"),cls:"ghost",act:()=>{ closeModal(); tb.graph.edges=tb.graph.edges.filter(x=>!(x.source===srcId&&x.target===tgtId)); renderGraph(); toast("Connection removed"); }},
+     {label:"Save",cls:"primary",act:()=>{ const v=($("#edgeLbl2").value||"").trim(); e.label=v; if(e.manual)e.type=v||"linked_by_analyst"; closeModal(); renderGraph(); }}]);
+  setTimeout(()=>{ const i=$("#edgeLbl2"); if(i){i.focus();i.select();} },40);
+}
 function removeNode(id){ const t=activeTab(); if(!t)return; t.graph.nodes=t.graph.nodes.filter(n=>n.id!==id); t.graph.edges=t.graph.edges.filter(e=>e.source!==id&&e.target!==id); $("#context").hidden=true; renderGraph(); renderGraphFilters(); toast("Node removed"); }
 window.addEventListener("click",()=>{ $("#ctxmenu").hidden=true; closeAllSelects(); });
 
@@ -1761,6 +1789,7 @@ function finishPath(targetId){ const src=pathSource; pathSource=null; pathBanner
 }
 function clearPath(){ pathSource=null; pathBanner(""); if(cy) cy.elements().removeClass("pathhl faded"); }
 $("#btnPath")&&$("#btnPath").addEventListener("click",()=>{ const sel=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; if(sel){ startPath(sel); } else { toast("Select a node, then click Path — or right-click a node → Find path from here"); } });
+$("#btnConnect")&&$("#btnConnect").addEventListener("click",()=>{ const t=activeTab(); if(!t||!t.graph.nodes.length){ toast("Add or load entities first","err"); return; } startConnectMode(); });
 
 // ---------- add entity manually (incl. media for analysis) ----------
 let aeUploadPath=null;
@@ -2538,7 +2567,7 @@ window.addEventListener("keydown",e=>{ const meta=e.metaKey||e.ctrlKey;
   else if(meta&&e.key.toLowerCase()==="r"){e.preventDefault();runModal();}
   else if(meta&&e.key.toLowerCase()==="n"){e.preventDefault();newProjectModal();}
   else if(meta&&e.key==="/"){e.preventDefault();openGlobalAsk();}
-  else if(e.key==="Escape"){ closePalette(); closeModal(); closeGlobalAsk(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); if(linkMode){ linkMode=null; const b=$("#linkmodeBanner"); if(b)b.hidden=true; } if(pathSource) clearPath(); } });
+  else if(e.key==="Escape"){ closePalette(); closeModal(); closeGlobalAsk(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); if(linkMode||connectArm){ linkMode=null; connectArm=false; const b=$("#linkmodeBanner"); if(b)b.hidden=true; } if(pathSource) clearPath(); } });
 
 // ---------- file helpers ----------
 function pickFile(cb){ const inp=$("#filePicker"); inp.removeAttribute("accept"); inp.value=""; inp.onchange=()=>{ const f=inp.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>cb(rd.result); rd.readAsText(f); }; inp.click(); }
