@@ -114,6 +114,16 @@ impl RefSets {
         best
     }
 
+    /// Nearest perceptual distance (bits) to any same-length reference, ignoring
+    /// the threshold — used by calibration to see the distance distribution.
+    pub fn nearest_perceptual(&self, phash: &str) -> Option<u32> {
+        let bits = hex_to_bytes(phash).filter(|b| !b.is_empty())?;
+        self.perceptual.iter()
+            .filter(|p| p.bits.len() == bits.len())
+            .map(|p| bits.iter().zip(&p.bits).map(|(a, b)| (a ^ b).count_ones()).sum::<u32>())
+            .min()
+    }
+
     fn ingest(&mut self, groups: Vec<RefGroup>) {
         for g in groups {
             self.source_count += 1;

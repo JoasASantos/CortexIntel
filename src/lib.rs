@@ -7,6 +7,7 @@ pub mod anomaly;
 pub mod assessment;
 pub mod audit;
 pub mod auth;
+pub mod calibrate;
 pub mod cli;
 pub mod config;
 pub mod connectors;

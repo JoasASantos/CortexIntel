@@ -25,7 +25,15 @@ pub struct AnomalyReport {
 /// Numeric features compared within each entity-kind peer group.
 const FEATURES: &[&str] = &["degree", "betweenness", "pagerank", "sources"];
 
+/// Default robust-z threshold for flagging a peer-relative outlier.
+pub const DEFAULT_Z: f32 = 3.5;
+
 pub fn detect(graph: &KnowledgeGraph) -> AnomalyReport {
+    detect_with(graph, DEFAULT_Z)
+}
+
+/// Anomaly detection with an explicit robust-z threshold (for calibration).
+pub fn detect_with(graph: &KnowledgeGraph, z_thresh: f32) -> AnomalyReport {
     let degree = graph.degree_centrality();
     let mut report = AnomalyReport::default();
 
@@ -71,7 +79,7 @@ pub fn detect(graph: &KnowledgeGraph) -> AnomalyReport {
                 let ratio = if median > 1e-6 { x / median } else { f32::INFINITY };
                 // Robust z for spread groups; ratio fallback when MAD collapses
                 // (e.g. most peers identical) — needs a real gap, not just +1.
-                let outlier = (mad > 1e-6 && z >= 3.5) || (mad <= 1e-6 && ratio >= 2.0 && (x - median) >= 2.0);
+                let outlier = (mad > 1e-6 && z >= z_thresh) || (mad <= 1e-6 && ratio >= 2.0 && (x - median) >= 2.0);
                 if outlier {
                     let strength = if z >= 6.0 || ratio >= 4.0 { 0.8 } else { 0.62 };
                     let reason = if mad > 1e-6 {

@@ -21,9 +21,17 @@ pub struct Prediction {
     pub common: usize,
 }
 
-/// Predict likely-but-absent links. Returns up to `top_k`, ranked by Adamic-Adar,
-/// requiring at least 2 shared neighbours (a single shared hub is too weak).
+/// Minimum shared neighbours for a pair to be a candidate prediction.
+pub const DEFAULT_MIN_SHARED: usize = 2;
+
+/// Predict likely-but-absent links (default min shared neighbours).
 pub fn predict(graph: &KnowledgeGraph, top_k: usize) -> Vec<Prediction> {
+    predict_with(graph, DEFAULT_MIN_SHARED, top_k)
+}
+
+/// Predict likely-but-absent links, ranked by Adamic-Adar, requiring at least
+/// `min_shared` shared neighbours (a single shared hub is too weak).
+pub fn predict_with(graph: &KnowledgeGraph, min_shared: usize, top_k: usize) -> Vec<Prediction> {
     let ids: Vec<&String> = graph.entities.keys().collect();
     let n = ids.len();
     if n < 3 {
@@ -34,6 +42,10 @@ pub fn predict(graph: &KnowledgeGraph, top_k: usize) -> Vec<Prediction> {
     // Undirected adjacency sets.
     let mut adj: Vec<HashSet<usize>> = vec![HashSet::new(); n];
     for r in &graph.relationships {
+        // Never let predictions feed predictions — only observed edges count.
+        if r.rel_type == "predicted_link" {
+            continue;
+        }
         let (Some(&a), Some(&b)) = (index.get(r.source_id.as_str()), index.get(r.target_id.as_str())) else { continue };
         if a != b {
             adj[a].insert(b);
@@ -66,7 +78,7 @@ pub fn predict(graph: &KnowledgeGraph, top_k: usize) -> Vec<Prediction> {
     // Keep pairs with >=2 shared neighbours that are NOT already directly linked.
     let mut preds: Vec<Prediction> = common
         .into_iter()
-        .filter(|(pair, c)| *c >= 2 && !adj[pair.0].contains(&pair.1))
+        .filter(|(pair, c)| *c >= min_shared && !adj[pair.0].contains(&pair.1))
         .map(|((u, v), c)| Prediction {
             a: ids[u].clone(),
             b: ids[v].clone(),

@@ -424,6 +424,12 @@ pub fn run(
     let assessment = crate::assessment::assess(&graph, &risk_report, config.domain, &config.lang);
     let next_actions = crate::assessment::next_best_actions(&graph, &risk_report, config.domain, &config.lang);
 
+    // Threshold calibration report (opt-in) — measures anomaly / link-prediction /
+    // perceptual-hash behaviour on THIS dataset and recommends threshold values.
+    if std::env::var("CORTEX_CALIBRATE").is_ok() {
+        crate::calibrate::report(&graph);
+    }
+
     let finished_at = Utc::now();
     let output = RunOutput {
         config,
