@@ -24,9 +24,11 @@ pub struct Prediction {
 /// Minimum shared neighbours for a pair to be a candidate prediction.
 pub const DEFAULT_MIN_SHARED: usize = 2;
 
-/// Predict likely-but-absent links (default min shared neighbours).
+/// Predict likely-but-absent links. Honours CORTEX_LINK_MIN_SHARED (tunable
+/// without a rebuild); falls back to the default.
 pub fn predict(graph: &KnowledgeGraph, top_k: usize) -> Vec<Prediction> {
-    predict_with(graph, DEFAULT_MIN_SHARED, top_k)
+    let min_shared = std::env::var("CORTEX_LINK_MIN_SHARED").ok().and_then(|s| s.parse().ok()).unwrap_or(DEFAULT_MIN_SHARED);
+    predict_with(graph, min_shared.max(1), top_k)
 }
 
 /// Predict likely-but-absent links, ranked by Adamic-Adar, requiring at least

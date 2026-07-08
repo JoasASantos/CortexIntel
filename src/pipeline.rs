@@ -404,7 +404,8 @@ pub fn run(
     // Information → intelligence: deterministic assessment + next-best-actions.
     // Link prediction: infer likely-but-absent edges (topological, deterministic).
     // Added as `predicted_link` (marked predicted) so they're distinct from fact.
-    let predictions = crate::linkpred::predict(&graph, 12);
+    let link_topk = std::env::var("CORTEX_LINK_TOPK").ok().and_then(|s| s.parse().ok()).unwrap_or(12usize);
+    let predictions = crate::linkpred::predict(&graph, link_topk);
     if !predictions.is_empty() {
         crate::linkpred::add_to_graph(&mut graph, &predictions);
         audit.record(

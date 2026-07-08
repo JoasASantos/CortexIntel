@@ -29,7 +29,8 @@ const FEATURES: &[&str] = &["degree", "betweenness", "pagerank", "sources"];
 pub const DEFAULT_Z: f32 = 3.5;
 
 pub fn detect(graph: &KnowledgeGraph) -> AnomalyReport {
-    detect_with(graph, DEFAULT_Z)
+    let z = std::env::var("CORTEX_ANOMALY_Z").ok().and_then(|s| s.parse().ok()).unwrap_or(DEFAULT_Z);
+    detect_with(graph, z)
 }
 
 /// Anomaly detection with an explicit robust-z threshold (for calibration).
