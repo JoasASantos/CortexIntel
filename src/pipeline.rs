@@ -169,6 +169,37 @@ pub fn run(
         graph.relationship_count().to_string().green()
     );
 
+    // "Potentiate": derive normalized/derived attributes and hub entities so the
+    // correlator has more to link (e.g. the registrable domain of every URL).
+    // CORTEX_NO_ENRICH=1 skips it (A/B comparison + escape hatch).
+    let enr = if std::env::var("CORTEX_NO_ENRICH").is_ok() {
+        crate::enrich::EnrichStats::default()
+    } else {
+        crate::enrich::enrich(&mut graph)
+    };
+    if enr.attrs + enr.entities + enr.edges + enr.ref_matches > 0 {
+        audit.record(
+            Utc::now(),
+            "enrich_entities",
+            "enrichment",
+            &format!("{} derived attributes, {} derived entities, {} derived links, {} reference-source matches", enr.attrs, enr.entities, enr.edges, enr.ref_matches),
+            "data potentiation",
+            false,
+            false,
+            None,
+            None,
+        );
+        println!(
+            "      +{} derived attributes · +{} derived entities · +{} derived links",
+            enr.attrs.to_string().green(),
+            enr.entities.to_string().green(),
+            enr.edges.to_string().green()
+        );
+        if enr.ref_matches > 0 {
+            println!("      ⚑ {} reference-source match(es) (known-hash feed)", enr.ref_matches.to_string().red());
+        }
+    }
+
     step("4/7", "Graph correlation");
     let added = correlation::correlate(&mut graph);
     // LLM correlation augmentation.
@@ -208,6 +239,68 @@ pub fn run(
             None,
             None,
         );
+    }
+
+    // Network science: structural intelligence (broker / importance / communities).
+    let net = crate::netsci::analyze(&graph);
+    if !net.betweenness.is_empty() {
+        for (id, b) in &net.betweenness {
+            if let Some(e) = graph.entities.get_mut(id) {
+                e.attributes.insert("betweenness".into(), format!("{:.3}", b));
+                if let Some(p) = net.pagerank.get(id) { e.attributes.insert("pagerank".into(), format!("{:.3}", p)); }
+                if let Some(c) = net.community.get(id) { e.attributes.insert("community".into(), c.to_string()); }
+            }
+        }
+        if let Some(broker) = &net.top_broker {
+            if let Some(e) = graph.entities.get_mut(broker) {
+                if !e.tags.iter().any(|t| t == "broker") { e.tags.push("broker".into()); }
+            }
+        }
+        let broker_label = net.top_broker.as_ref().and_then(|id| graph.entities.get(id)).map(|e| e.label.clone()).unwrap_or_default();
+        audit.record(
+            Utc::now(),
+            "network_analysis",
+            "network-science",
+            &format!("{} communities (modularity {:.2}); top broker: {}", net.communities, net.modularity, broker_label),
+            "structural analysis",
+            false,
+            false,
+            None,
+            None,
+        );
+        println!(
+            "      {} communities (Q={:.2}) · top broker: {}",
+            net.communities.to_string().green(),
+            net.modularity,
+            broker_label.cyan()
+        );
+    }
+
+    // Anomaly detection: entities that deviate from their same-kind peers
+    // (outlier degree/betweenness/pagerank) or behave oddly (off-hours activity).
+    // Writes an anomaly_score that risk prioritization folds in.
+    let anom = crate::anomaly::detect(&graph);
+    if !anom.anomalies.is_empty() {
+        for a in &anom.anomalies {
+            if let Some(e) = graph.entities.get_mut(&a.entity_id) {
+                e.attributes.insert("anomaly_score".into(), format!("{:.2}", a.score));
+                e.attributes.insert("anomaly_reason".into(), a.reason.clone());
+                if !e.tags.iter().any(|t| t == "anomaly") { e.tags.push("anomaly".into()); }
+            }
+        }
+        let top = anom.anomalies.iter().take(1).next().and_then(|a| graph.entities.get(&a.entity_id)).map(|e| e.label.clone()).unwrap_or_default();
+        audit.record(
+            Utc::now(),
+            "anomaly_detection",
+            "anomaly",
+            &format!("{} anomalous entit(y/ies); top: {}", anom.anomalies.len(), top),
+            "outlier analysis",
+            false,
+            false,
+            None,
+            None,
+        );
+        println!("      ⚑ {} anomalous entit(y/ies) · top: {}", anom.anomalies.len().to_string().yellow(), top.cyan());
     }
 
     step("5/7", "Risk prioritization");
@@ -309,8 +402,34 @@ pub fn run(
     );
 
     // Information → intelligence: deterministic assessment + next-best-actions.
+    // Link prediction: infer likely-but-absent edges (topological, deterministic).
+    // Added as `predicted_link` (marked predicted) so they're distinct from fact.
+    let link_topk = std::env::var("CORTEX_LINK_TOPK").ok().and_then(|s| s.parse().ok()).unwrap_or(12usize);
+    let predictions = crate::linkpred::predict(&graph, link_topk);
+    if !predictions.is_empty() {
+        crate::linkpred::add_to_graph(&mut graph, &predictions);
+        audit.record(
+            Utc::now(),
+            "link_prediction",
+            "inference",
+            &format!("{} likely-but-absent links inferred", predictions.len()),
+            "relationship inference",
+            false,
+            false,
+            None,
+            None,
+        );
+        println!("      +{} predicted link(s) (inferred, not observed)", predictions.len().to_string().green());
+    }
+
     let assessment = crate::assessment::assess(&graph, &risk_report, config.domain, &config.lang);
     let next_actions = crate::assessment::next_best_actions(&graph, &risk_report, config.domain, &config.lang);
+
+    // Threshold calibration report (opt-in) — measures anomaly / link-prediction /
+    // perceptual-hash behaviour on THIS dataset and recommends threshold values.
+    if std::env::var("CORTEX_CALIBRATE").is_ok() {
+        crate::calibrate::report(&graph);
+    }
 
     let finished_at = Utc::now();
     let output = RunOutput {

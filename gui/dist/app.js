@@ -8,6 +8,7 @@
 const I18N = {
   en: {
     "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
+    "nav.agents":"Agents","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted",
     "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
     "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store",
     "set.keys":"API Keys","set.plugins":"Classifier Plugins","set.project":"Project","set.users":"Users & Access","set.security":"Security","set.language":"Language",
@@ -18,8 +19,8 @@ const I18N = {
     "sev.critical":"Critical","sev.high":"High","sev.medium":"Medium","sev.low":"Low","sev.none":"No severity",
     "sit.domain":"Vertical","sit.owner":"Owner","sit.jurisdiction":"Jurisdiction","sit.created":"Created","sit.updated":"Updated","sit.entities":"entities","sit.relationships":"relationships","sit.critical":"critical","sit.alerts":"alerts",
     "auth.signin":"Sign in","auth.register":"Create account",
-    "gmode.overview":"Overview","gmode.risk":"Risk","gmode.neighborhood":"Neighborhood","gmode.timeline":"Timeline","gmode.full":"Full",
-    "gtool.entity":"Entity","gtool.fit":"Fit","gtool.path":"Path","gtool.reset":"Reset","gtool.ask":"Ask",
+    "gmode.overview":"Overview","gmode.risk":"Risk","gmode.neighborhood":"Neighborhood","gmode.timeline":"Timeline","gmode.full":"Full","gmode.network":"Network","gmode.network.hint":"colour = community · size = broker (betweenness) · the largest node is the network's articulation point",
+    "gtool.entity":"Entity","gtool.fit":"Fit","gtool.path":"Path","gtool.connect":"Connect","gtool.reset":"Reset","gtool.ask":"Ask","edge.label.q":"Edge label (optional)","edge.pickSource":"Connect: click the source node (Esc to cancel)","edge.pickTarget":"Connect: click the target node (Esc to cancel)","edge.editTitle":"Edit connection","edge.delete":"Delete connection",
     "gf.all":"All","gf.crit":"Critical + High","gf.suspicious":"Suspicious/Malicious","gf.sensitive":"Sensitive",
     "view.entities":"Entity Registry","view.entities.sub":"Validate, resolve, enrich and prioritize the entities that feed your intelligence.",
     "view.intelligence":"Intelligence","view.intelligence.sub":"Decision-ready product synthesized from the current investigation.",
@@ -38,6 +39,7 @@ const I18N = {
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
+    "nav.agents":"Agentes","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído",
     "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
     "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms",
     "set.keys":"Chaves de API","set.plugins":"Plugins de Classificação","set.project":"Projeto","set.users":"Usuários & Acesso","set.security":"Segurança","set.language":"Idioma",
@@ -48,8 +50,8 @@ const I18N = {
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Médio","sev.low":"Baixo","sev.none":"Sem severidade",
     "sit.domain":"Vertical","sit.owner":"Responsável","sit.jurisdiction":"Jurisdição","sit.created":"Criado","sit.updated":"Atualizado","sit.entities":"entidades","sit.relationships":"relações","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Entrar","auth.register":"Criar conta",
-    "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Linha do tempo","gmode.full":"Completo",
-    "gtool.entity":"Entidade","gtool.fit":"Ajustar","gtool.path":"Caminho","gtool.reset":"Redefinir","gtool.ask":"Perguntar",
+    "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Linha do tempo","gmode.full":"Completo","gmode.network":"Rede","gmode.network.hint":"cor = comunidade · tamanho = broker (intermediação) · o maior nó é o ponto de articulação da rede",
+    "gtool.entity":"Entidade","gtool.fit":"Ajustar","gtool.path":"Caminho","gtool.connect":"Conectar","gtool.reset":"Redefinir","gtool.ask":"Perguntar","edge.label.q":"Rótulo da conexão (opcional)","edge.pickSource":"Conectar: clique no nó de origem (Esc para cancelar)","edge.pickTarget":"Conectar: clique no nó de destino (Esc para cancelar)","edge.editTitle":"Editar conexão","edge.delete":"Excluir conexão",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Suspeito/Malicioso","gf.sensitive":"Sensível",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valide, resolva, enriqueça e priorize as entidades que alimentam sua inteligência.",
     "view.intelligence":"Inteligência","view.intelligence.sub":"Produto pronto para decisão, sintetizado da investigação atual.",
@@ -68,6 +70,7 @@ const I18N = {
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
+    "nav.agents":"Agentes","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado",
     "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
     "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms",
     "set.keys":"Claves de API","set.plugins":"Plugins de Clasificación","set.project":"Proyecto","set.users":"Usuarios y Acceso","set.security":"Seguridad","set.language":"Idioma",
@@ -78,8 +81,8 @@ const I18N = {
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Medio","sev.low":"Bajo","sev.none":"Sin severidad",
     "sit.domain":"Vertical","sit.owner":"Responsable","sit.jurisdiction":"Jurisdicción","sit.created":"Creado","sit.updated":"Actualizado","sit.entities":"entidades","sit.relationships":"relaciones","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Iniciar sesión","auth.register":"Crear cuenta",
-    "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Línea de tiempo","gmode.full":"Completo",
-    "gtool.entity":"Entidad","gtool.fit":"Ajustar","gtool.path":"Ruta","gtool.reset":"Restablecer","gtool.ask":"Preguntar",
+    "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Línea de tiempo","gmode.full":"Completo","gmode.network":"Red","gmode.network.hint":"color = comunidad · tamaño = broker (intermediación) · el nodo más grande es el punto de articulación de la red",
+    "gtool.entity":"Entidad","gtool.fit":"Ajustar","gtool.path":"Ruta","gtool.connect":"Conectar","gtool.reset":"Restablecer","gtool.ask":"Preguntar","edge.label.q":"Etiqueta de la conexión (opcional)","edge.pickSource":"Conectar: haz clic en el nodo de origen (Esc para cancelar)","edge.pickTarget":"Conectar: haz clic en el nodo de destino (Esc para cancelar)","edge.editTitle":"Editar conexión","edge.delete":"Eliminar conexión",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Sospechoso/Malicioso","gf.sensitive":"Sensible",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valida, resuelve, enriquece y prioriza las entidades que alimentan tu inteligencia.",
     "view.intelligence":"Inteligencia","view.intelligence.sub":"Producto listo para decidir, sintetizado de la investigación actual.",
@@ -185,6 +188,9 @@ const KIND_COLOR = {
   repository:"#A3E635", unknown:"#94A3B8"
 };
 const kColor = k => KIND_COLOR[k] || KIND_COLOR.unknown;
+// Categorical palette for the network-science lens (colour by community).
+const COMMUNITY_PALETTE = ["#57D7E8","#8B7CFF","#F59E0B","#34D399","#FB7185","#A3E635","#60A5FA","#F472B6","#FBBF24","#2DD4BF","#C084FC","#4ADE80"];
+const communityColor = c => COMMUNITY_PALETTE[(parseInt(c,10)||0) % COMMUNITY_PALETTE.length];
 const GRAPH_BG = "#070A0F", NODE_FILL = "#151D27";
 // Node sizing: bounded so nothing becomes a giant blob.
 const NODE_MIN=22, NODE_MAX=44, META_MIN=40, META_MAX=88;
@@ -224,9 +230,14 @@ const ENTITY_GLYPH = {
   repository:'<circle cx="7" cy="6" r="2.2"/><circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="8" r="2.2"/><path d="M7 8.2v7.6M17 10.2c0 3.5-4.5 2.8-6.5 4.3"/>',
   unknown:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 013.7 2.1c0 1.6-2.2 2-2.2 3.2M12 17.2h.01"/>',
 };
-function nodeIcon(kind){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
-  // Dark glyph so it reads on any entity-type fill colour (Maltego-style badge).
-  const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#0B1220' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
+// Uniform clean dark disc for every node; the glyph is drawn in the bright
+// entity-type colour so TYPE reads from the icon, and the ring carries RISK.
+const DISC_FILL = "#141E2B";
+function glyphColor(kc){ const h=(kc||"#94A3B8").replace("#",""); // brighten toward white so even dim hues read
+  const c=[0,2,4].map(o=>{ const v=parseInt(h.slice(o,o+2),16); return Math.round(v+(255-v)*0.25); });
+  return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
+function nodeIcon(kind, stroke){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
+  const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${stroke||"#EAF2FC"}' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
   return "data:image/svg+xml;utf8,"+encodeURIComponent(s); }
 const bandOf = s => s>=0.85?"critical":s>=0.6?"high":s>=0.35?"medium":"low";
 const bandColor = b => ({low:"#34d399",medium:"#f59e0b",high:"#fb7185",critical:"#ef4444"}[b]||"#34d399");
@@ -510,7 +521,7 @@ function consolidatedToGraph(c) {
   Object.values(c.entities||{}).forEach(a=>{ if(Array.isArray(a)) nodes=nodes.concat(a); });
   nodes = nodes.map(n=>({ id:n.id, kind:n.kind, label:n.label, risk:n.risk_score||0, band:n.risk_band||bandOf(n.risk_score||0),
     attributes:n.attributes||{}, tags:n.tags||[], sources:n.sources||[], sensitive:!!n.sensitive }));
-  const edges=(c.relationships||[]).map(r=>({source:r.source_id,target:r.target_id,type:r.rel_type,conf:r.confidence||0.5}));
+  const edges=(c.relationships||[]).map(r=>({source:r.source_id,target:r.target_id,type:r.rel_type,conf:r.confidence||0.5,predicted:r.rel_type==="predicted_link"}));
   return {nodes, edges, meta:{risk:c.ai_assessments,investigation:c.investigation,governance:c.governance,audit:c.audit_events||[],assessment:c.assessment||[],nba:c.next_best_actions||[]}};
 }
 
@@ -528,17 +539,18 @@ function initCy() {
     motionBlur: false,
     pixelRatio: 1,
     style: [
-      // Maltego-style: a solid colour-coded circular badge (fill = entity-type
-      // colour) with a dark glyph that reads on any hue, and a soft light ring.
+      // Dark, type-tinted disc with a light glyph. Type = disc tint + thin ring
+      // (kc); risk = the ring colour/width (hc) via the [halo] rule. No coloured
+      // underlay square — risk lives on the ring so the canvas stays clean.
       { selector:"node", style:{
-        "background-color":"data(kc)", "background-image":"data(icon)", "background-width":"58%", "background-height":"58%", "background-fit":"none", "background-clip":"none",
+        "background-color":DISC_FILL, "background-image":"data(icon)", "background-width":"52%", "background-height":"52%", "background-fit":"none", "background-clip":"none",
         "width":"data(size)", "height":"data(size)", "shape":"ellipse",
         "label":"data(label)", "font-size":"9px", "font-weight":600, "font-family":"SF Mono, Menlo, monospace", "color":"#E6EDF7",
         "text-wrap":"wrap", "text-max-width":"88px", "text-valign":"bottom", "text-margin-y":5, "min-zoomed-font-size":8,
         "text-outline-color":"#070A0F", "text-outline-width":2, "text-outline-opacity":0.85,
-        "border-width":"data(bw)", "border-color":"rgba(255,255,255,0.35)", "border-opacity":1,
-        "transition-property":"opacity border-width", "transition-duration":"140ms" }},
-      { selector:"node[halo]", style:{ "underlay-color":"data(hc)", "underlay-padding":6, "underlay-opacity":0.4 }},
+        "border-width":"data(bw)", "border-color":"data(kc)", "border-opacity":0.4,
+        "transition-property":"opacity border-width border-color", "transition-duration":"140ms" }},
+      { selector:"node[halo]", style:{ "border-color":"data(hc)", "border-opacity":1 }},
       // perf mode: solid coloured dot, no SVG icon
       { selector:"node.plain", style:{ "background-image":"none", "background-color":"data(kc)" }},
       // ---- edges: discreet by default ----
@@ -557,6 +569,11 @@ function initCy() {
       { selector:"edge.dim", style:{ "opacity":0.05 }},
       { selector:".faded", style:{ "opacity":0.1 }},
       { selector:".hyp", style:{ "line-style":"dashed", "line-color":"#8B7CFF", "border-color":"#8B7CFF", "border-style":"dashed" }},
+      // Predicted (inferred, not observed) links: dashed amber so they never read
+      // as fact. Label makes the "predicted" nature explicit on hover/zoom.
+      { selector:"edge.predicted", style:{ "line-style":"dashed", "line-color":"#F59E0B", "target-arrow-color":"#F59E0B", "target-arrow-shape":"triangle", "opacity":0.7, "label":"predicted", "font-size":"7px", "color":"#F59E0B", "text-background-color":"#070A0F", "text-background-opacity":0.7 }},
+      // Analyst-drawn connections: solid cyan arrow with the label always shown.
+      { selector:"edge.manual", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "target-arrow-shape":"triangle", "arrow-scale":0.9, "width":2, "opacity":1, "label":"data(elabel)", "font-size":"9px", "font-weight":600, "color":"#CDE9F0", "text-background-color":"#070A0F", "text-background-opacity":0.75, "text-background-padding":2, "text-rotation":"autorotate", "min-zoomed-font-size":7, "z-index":45 }},
       { selector:".fresh", style:{ "underlay-color":"#34D399", "underlay-padding":10, "underlay-opacity":0.55 }},
       { selector:"node.pathhl", style:{ "border-width":3, "border-color":"#57D7E8", "underlay-color":"#57D7E8", "underlay-padding":8, "underlay-opacity":0.5, "opacity":1, "z-index":60 }},
       { selector:"edge.pathhl", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "width":3, "opacity":1, "label":"data(type)", "z-index":60 }},
@@ -569,7 +586,8 @@ function initCy() {
       { selector:"core", style:{} },
     ],
   });
-  cy.on("tap","node", ev=>{ const id=ev.target.id(); if(linkMode){ finishLink(id); return; } if(pathSource){ finishPath(id); return; } selectNode(id); });
+  cy.on("tap","node", ev=>{ const id=ev.target.id(); if(linkMode){ finishLink(id); return; } if(connectArm){ startLink(id); return; } if(pathSource){ finishPath(id); return; } selectNode(id); });
+  cy.on("tap","edge", ev=>{ const d=ev.target.data(); if(d&&d.source&&d.target) editEdgeLabel(d.source,d.target); });
   cy.on("dbltap","node", ev=>{ const id=ev.target.id(); const t=activeTab(); if(!t)return; if(t._metas&&t._metas[id]) expandCluster(id); else if((t.clusterMode||"none")!=="none") collapseNodeCluster(id); });
   cy.on("tap", ev=>{ if(ev.target===cy){ clearFocus(); cy.$(":selected").unselect(); $("#context").hidden=true; } });
   cy.on("cxttap","node", ev=>{ const e=ev.originalEvent; if(linkMode) finishLink(ev.target.id()); else openCtxMenu(e.clientX,e.clientY,ev.target.id()); });
@@ -705,14 +723,27 @@ function renderGraph() {
   const perf = g.nodes.length > 500;
   t._perf = perf;
   const els = [];
+  // Network-science lens: ring colour = community, size = betweenness (broker),
+  // and the top broker gets a bright highlight. Metrics come from netsci (backend).
+  const netMode = (t.graphMode === "network");
   g.nodes.forEach(n=>{
-    if(n.meta){ els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon("group"), kc:kColor(n.kind), hc:bandColor(bandOf(n.risk)), size: metaSize(n.count) }, classes:"metanode"+(perf?" plain":"") }); return; }
+    if(n.meta){ els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon("group",glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(bandOf(n.risk)), size: metaSize(n.count) }, classes:"metanode"+(perf?" plain":"") }); return; }
     const band = n.band||bandOf(n.risk);
     const hot = band==="critical"||band==="high";
-    els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind), kc:kColor(n.kind), hc:bandColor(band),
-      size: nodeSize(n.risk), bw:hot?2.5:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+    if(netMode){
+      const at=n.attributes||{};
+      const bet=parseFloat(at.betweenness)||0;
+      const isBroker=(n.tags||[]).includes("broker");
+      const kc = at.community!=null ? communityColor(at.community) : kColor(n.kind);
+      const size = NODE_MIN + Math.sqrt(bet)*(NODE_MAX-NODE_MIN)*1.5 + (isBroker?10:0);
+      els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))),
+        kc, hc:"#E6EDF7", size, bw:isBroker?4.5:2, halo:(isBroker&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+      return;
+    }
+    els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band),
+      size: nodeSize(n.risk), bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
   });
-  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:e.hypothesis?"hyp":"" }); });
+  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, elabel:e.label||"", w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:(e.hypothesis?"hyp ":"")+(e.predicted?"predicted ":"")+(e.manual?"manual":"") }); });
   cy.elements().remove(); cy.add(els);
   // If the graph container isn't visible yet (0×0), layout would be degenerate;
   // defer it to when the Graph view is shown (see showView).
@@ -895,9 +926,34 @@ async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   if(match.length){ const s=el("div","mi sep"); m.appendChild(s); match.slice(0,8).forEach(t=>add("run",`Run: ${t.name}`,()=>{ cy.$(":selected").unselect(); cy.$id(id).select(); runTransformOnSelected(t); })); }
   m.style.left=Math.min(x,window.innerWidth-230)+"px"; m.style.top=Math.min(y,window.innerHeight-40-m.childElementCount*34)+"px"; m.hidden=false;
 }
-function startLink(id){ linkMode=id; let b=$("#linkmodeBanner"); if(!b){ b=el("div","linkmode"); b.id="linkmodeBanner"; b.textContent="Link mode: click a target node (Esc to cancel)"; $(".graph-wrap").appendChild(b);} b.hidden=false; }
-function finishLink(targetId){ if(!linkMode) return; const s=linkMode, t=activeTab(); linkMode=null; const bn=$("#linkmodeBanner"); if(bn)bn.hidden=true;
-  if(s===targetId||!t) return; t.graph.edges.push({source:s,target:targetId,type:"linked_by_analyst",conf:1.0}); renderGraph(); toast("Nodes connected"); }
+let connectArm=false; // toolbar "Connect" armed: next node tap is the source
+function linkBanner(msg){ let b=$("#linkmodeBanner"); if(!b){ b=el("div","linkmode"); b.id="linkmodeBanner"; $(".graph-wrap").appendChild(b);} b.textContent=msg; b.hidden=false; }
+function clearLinkBanner(){ const b=$("#linkmodeBanner"); if(b)b.hidden=true; }
+// Toolbar entry point: arm connect mode, then pick source → target on the canvas.
+function startConnectMode(){ showView("graph"); connectArm=true; linkMode=null; linkBanner(t2("edge.pickSource")); }
+function startLink(id){ connectArm=false; linkMode=id; linkBanner(t2("edge.pickTarget")); }
+function finishLink(targetId){ if(!linkMode) return; const s=linkMode, tb=activeTab(); linkMode=null; clearLinkBanner();
+  if(s===targetId||!tb) return;
+  // Ask for an optional label on the connection (text on the arrow).
+  openModal(t2("edge.editTitle"),
+    `<div class="field">${esc(t2("edge.label.q"))}<input id="edgeLbl" placeholder="e.g. paid, met with, controls" /></div>`,
+    [{label:"Skip",cls:"ghost",act:()=>{ closeModal(); commitEdge(s,targetId,""); }},
+     {label:"Add",cls:"primary",act:()=>{ const v=($("#edgeLbl").value||"").trim(); closeModal(); commitEdge(s,targetId,v); }}]);
+  setTimeout(()=>{ const i=$("#edgeLbl"); if(i)i.focus(); },40);
+}
+function commitEdge(s,target,label){ const tb=activeTab(); if(!tb)return;
+  tb.graph.edges.push({source:s,target,type:label||"linked_by_analyst",conf:1.0,manual:true,label:label||""});
+  renderGraph(); toast(label?`Connected · "${label}"`:"Nodes connected","ok");
+}
+// Click a manual/any edge to edit its label or delete it.
+function editEdgeLabel(srcId,tgtId){ const tb=activeTab(); if(!tb)return;
+  const e=tb.graph.edges.find(x=>x.source===srcId&&x.target===tgtId); if(!e)return;
+  openModal(t2("edge.editTitle"),
+    `<div class="field">${esc(t2("edge.label.q"))}<input id="edgeLbl2" value="${esc(e.label||(e.type&&e.type!=="linked_by_analyst"?e.type:""))}" /></div>`,
+    [{label:t2("edge.delete"),cls:"ghost",act:()=>{ closeModal(); tb.graph.edges=tb.graph.edges.filter(x=>!(x.source===srcId&&x.target===tgtId)); renderGraph(); toast("Connection removed"); }},
+     {label:"Save",cls:"primary",act:()=>{ const v=($("#edgeLbl2").value||"").trim(); e.label=v; if(e.manual)e.type=v||"linked_by_analyst"; closeModal(); renderGraph(); }}]);
+  setTimeout(()=>{ const i=$("#edgeLbl2"); if(i){i.focus();i.select();} },40);
+}
 function removeNode(id){ const t=activeTab(); if(!t)return; t.graph.nodes=t.graph.nodes.filter(n=>n.id!==id); t.graph.edges=t.graph.edges.filter(e=>e.source!==id&&e.target!==id); $("#context").hidden=true; renderGraph(); renderGraphFilters(); toast("Node removed"); }
 window.addEventListener("click",()=>{ $("#ctxmenu").hidden=true; closeAllSelects(); });
 
@@ -912,7 +968,7 @@ function showView(name){ currentView=name; $$(".view").forEach(v=>v.hidden=true)
     // empty corner of the graph (looks blank). A trailing settle() re-fits after
     // the layout has committed.
     const settle=()=>{ initCy(); if(!cy) return;
-      if(canvasMode==="map"){ renderMap(); return; }
+      if(canvasMode==="map"){ renderWorldMap(); return; }
       cy.resize();
       const t=activeTab();
       if(t && t._needsRelayout && cy.nodes().length){ t._needsRelayout=false; runLayout(t._perf); }
@@ -923,6 +979,149 @@ function showView(name){ currentView=name; $$(".view").forEach(v=>v.hidden=true)
 $$(".nav li").forEach(li=>li.addEventListener("click",()=>showView(li.dataset.view)));
 
 function renderAll(){ renderGraph(); renderDashboard(); renderEntities(); renderReport(); renderTimeline(); renderAlerts(); renderSavedConnectors(); renderIntelligence(); }
+
+// ============ Agents browser (markdown-defined agent library) ============
+// Lists ready-made agents grouped by niche → category, plus a "recommended for
+// this data" strip driven by what the graph actually contains. Running an agent
+// dispatches its prompt (with project specs) over the current graph and reflects
+// the result: merges proposed entities/links, applies focus, switches the view.
+async function renderAgents(){
+  const t=activeTab(); const domain=t?t.project.domain:"generic";
+  const reco=$("#agentReco"), list=$("#agentList"), meta=$("#agentMeta"); if(!reco||!list) return;
+  const q=($("#agentSearch")&&$("#agentSearch").value||"").trim();
+  const kinds=t?[...new Set(t.graph.nodes.map(n=>n.kind))]:[];
+  // Recommended by data
+  try{
+    if(t && kinds.length){
+      const rec=await api(`/api/agents/recommend?domain=${encodeURIComponent(domain)}&kinds=${encodeURIComponent(kinds.join(","))}`);
+      reco.innerHTML=""; rec.slice(0,6).forEach(a=>reco.appendChild(agentRow(a,true)));
+      if(!rec.length) reco.innerHTML=`<div class="empty">${esc(t2("agents.none"))}</div>`;
+      const pill=$("#agentRecoPill"); if(pill) pill.textContent=`${kinds.length} data types`;
+    } else { reco.innerHTML=`<div class="empty">${esc(t2("agents.none"))}</div>`; }
+  }catch(e){ reco.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
+  // Full library grouped by niche → category
+  try{
+    const lib=await api(`/api/agents/library?domain=${encodeURIComponent(domain)}&q=${encodeURIComponent(q)}`);
+    if(meta) meta.textContent=`${lib.length} ${t2("agents.all").toLowerCase()}`;
+    const groups={}; lib.forEach(a=>{ const niche=(a.domains&&a.domains[0]&&a.domains[0]!=="*")?a.domains[0]:"generic"; (groups[niche]=groups[niche]||[]).push(a); });
+    list.innerHTML="";
+    Object.keys(groups).sort().forEach(niche=>{
+      const card=el("div","card"); const head=el("div","card-head"); head.innerHTML=`<h3>${esc(niche)}</h3><span class="conf-pill">${groups[niche].length}</span>`; card.appendChild(head);
+      const wrap=el("div","list");
+      groups[niche].sort((a,b)=>(a.category||"").localeCompare(b.category||"")||a.name.localeCompare(b.name)).forEach(a=>wrap.appendChild(agentRow(a,false)));
+      card.appendChild(wrap); list.appendChild(card);
+    });
+    if(!lib.length) list.innerHTML=`<div class="empty">No agents match "${esc(q)}".</div>`;
+  }catch(e){ list.innerHTML=`<div class="empty">${esc(e.message)}</div>`; }
+}
+function agentRow(a,recommended){
+  const row=el("div","li");
+  const left=el("div","l");
+  const badge=recommended&&a.score?`<span class="chip">★ ${Math.round(a.score)}</span> `:"";
+  const cat=a.category?` <span class="conf muted">· ${esc(a.category)}</span>`:"";
+  const form=(a.inputs&&a.inputs.length)?' <span class="conf muted">· form</span>':"";
+  left.innerHTML=`<div>${badge}<span class="label">${esc(a.name)}</span>${cat}${form}</div><div class="muted" style="font-size:11px;margin-top:2px">${esc(a.description||"")}</div>`;
+  const actions=el("div"); actions.style.cssText="display:flex;gap:6px;flex:0 0 auto;align-items:center";
+  const edit=el("button","btn ghost"); edit.style.cssText="padding:4px 8px"; edit.textContent="✎"; edit.title=t2("agents.edit");
+  edit.addEventListener("click",e=>{ e.stopPropagation(); openAgentEditor(a.id); });
+  const del=el("button","btn ghost"); del.style.cssText="padding:4px 8px"; del.textContent="🗑"; del.title=t2("agents.delete");
+  del.addEventListener("click",async e=>{ e.stopPropagation(); if(!confirm(`${t2("agents.delete")}: ${a.name}?`))return; try{ await api("/api/agents/delete",{method:"POST",body:{id:a.id}}); toast(t2("agents.deleted"),"ok"); renderAgents(); }catch(err){ toast(err.message,"err"); } });
+  const btn=el("button","btn primary"); btn.style.cssText="padding:4px 12px"; btn.textContent=t2("agents.run");
+  btn.addEventListener("click",()=>runAgentById(a.id));
+  actions.appendChild(edit); actions.appendChild(del); actions.appendChild(btn);
+  row.appendChild(left); row.appendChild(actions); return row;
+}
+// Rebuild an agent's markdown (frontmatter + body) for the editor.
+function agentToMarkdown(a){
+  const fm=["---",`name: ${a.name||""}`,`description: ${a.description||""}`,`domains: [${(a.domains||["*"]).join(", ")}]`,`category: ${a.category||""}`];
+  if(a.tags&&a.tags.length) fm.push(`tags: [${a.tags.join(", ")}]`);
+  if(a.triggers&&a.triggers.length) fm.push(`triggers: [${a.triggers.join(", ")}]`);
+  if(a.inputs&&a.inputs.length) fm.push(`inputs: [${a.inputs.map(i=>`${i.name}:${i.kind}:${i.label}${i.options&&i.options.length?":"+i.options.join("|"):""}`).join(", ")}]`);
+  if(a.view) fm.push(`view: ${a.view}`);
+  if(a.auto) fm.push("auto: true");
+  fm.push(`reflects: ${a.reflects||"answer"}`,"---","");
+  return fm.join("\n")+(a.body||"");
+}
+const AGENT_TEMPLATE=`---
+name: My Agent
+description: What this agent does, in one line.
+domains: ["*"]
+category: Custom
+tags: [custom]
+triggers: []
+reflects: answer
+---
+Describe the task the agent performs over the current graph. Use {{field}} to
+reference an input value (declare fields in "inputs:", e.g. inputs: [target:text:Target]).
+`;
+async function openAgentEditor(id){
+  let md=AGENT_TEMPLATE, curId="";
+  if(id){ try{ const a=await api("/api/agents/get?id="+encodeURIComponent(id)); md=agentToMarkdown(a); curId=a.id; }catch(e){} }
+  openModal(id?`${t2("agents.edit")} · ${curId}`:t2("agents.new"),
+    `<div class="field">ID (file name)<input id="agId" placeholder="my-agent" value="${esc(curId)}" ${id?"readonly":""}/></div>
+     <div class="field">Markdown<textarea id="agMd" rows="16" style="font-family:SF Mono,Menlo,monospace;font-size:12px">${esc(md)}</textarea></div>`,
+    [{label:"Cancel",cls:"ghost",act:closeModal},
+     {label:t2("agents.save"),cls:"primary",act:async()=>{ const aid=(curId||$("#agId").value||"").trim(); const content=$("#agMd").value;
+        if(!aid){ toast("ID required","err"); return; }
+        try{ await api("/api/agents/save",{method:"POST",body:{id:aid,content}}); closeModal(); toast(t2("agents.saved"),"ok"); renderAgents(); }
+        catch(e){ toast("Save failed: "+e.message,"err"); } }}]);
+}
+async function runAgentById(id){
+  const t=activeTab(); if(!t){ toast("Open a project first","err"); return; }
+  let agent; try{ agent=await api("/api/agents/get?id="+encodeURIComponent(id)); }catch(e){ toast("Agent load failed: "+e.message,"err"); return; }
+  if(agent.inputs&&agent.inputs.length){ openAgentForm(agent); } else { dispatchAgent(agent,{}); }
+}
+function openAgentForm(agent){
+  const fields=(agent.inputs||[]).map(inp=>{
+    if(inp.kind==="select"){ return `<div class="field">${esc(inp.label)}<select id="af_${esc(inp.name)}" class="select">${(inp.options||[]).map(o=>`<option>${esc(o)}</option>`).join("")}</select></div>`; }
+    return `<div class="field">${esc(inp.label)}<input id="af_${esc(inp.name)}" type="${inp.kind==="number"?"number":"text"}" /></div>`;
+  }).join("");
+  openModal(agent.name,`<p class="muted">${esc(agent.description)}</p>${fields}`,[
+    {label:"Cancel",cls:"ghost",act:closeModal},
+    {label:t2("agents.form.run"),cls:"primary",act:()=>{ const v={}; (agent.inputs||[]).forEach(inp=>{ const e=$("#af_"+inp.name); v[inp.name]=e?e.value:""; }); closeModal(); dispatchAgent(agent,v); }}
+  ]);
+}
+async function dispatchAgent(agent,vals){
+  const t=activeTab(); if(!t) return;
+  let body=agent.body||"";
+  Object.entries(vals||{}).forEach(([k,val])=>{ body=body.split("{{"+k+"}}").join(val||""); });
+  body=body.replace(/\{\{[^}]+\}\}/g,""); // strip any unfilled placeholders
+  setSync("busy","running"); toast(`✦ ${agent.name}…`);
+  try{
+    const graph={nodes:t.graph.nodes,edges:t.graph.edges};
+    const res=await runJob("ask",{question:body,domain:t.project.domain,provider:state.provider,graph,aiInstructions:t.project.ai_instructions||""});
+    setSync("ok","complete");
+    const hasAdds=(res.entities&&res.entities.length)||(res.relationships&&res.relationships.length);
+    if(agent.reflects==="graph"&&hasAdds){ mergeProposals(res); }
+    else { try{ applyFocus(res.focus); }catch(e){} }
+    if(agent.view){ if(agent.view==="map"){ try{ setCanvasMode("map"); }catch(e){} } else { try{ setGraphMode(agent.view); }catch(e){} } }
+    showAgentResult(agent,res);
+    // Persist the agent run on the project (survives reload).
+    if(MODE!=="mock"&&t.project&&t.project.id){
+      const summary=(res.answer||"").slice(0,240);
+      api("/api/projects/activity",{method:"POST",body:{id:t.project.id,kind:"agent",summary:`${agent.name}: ${summary}`,meta:{agent:agent.id,reflects:agent.reflects,key_points:res.key_points||[]}}}).catch(()=>{});
+    }
+    pushNotif("ai",`Agent "${agent.name}" ran`);
+  }catch(e){ setSync("err","failed"); toast("Agent failed: "+e.message,"err"); }
+}
+function showAgentResult(agent,res){
+  openAsk(); const log=$("#askLog"); if(!log) return;
+  log.appendChild(el("div","ask-msg u",`▶ ${agent.name}`));
+  const a=el("div","ask-msg a");
+  let h=`<div>${esc(res.answer||"(done)")}</div>`;
+  if(res.key_points&&res.key_points.length) h+='<ul class="pts">'+res.key_points.map(p=>`<li>${esc(p)}</li>`).join("")+'</ul>';
+  if(res.recommended_actions&&res.recommended_actions.length) h+='<ul class="pts">'+res.recommended_actions.map(p=>`<li>▸ ${esc(p)}</li>`).join("")+'</ul>';
+  a.innerHTML=h; log.appendChild(a); log.scrollTop=log.scrollHeight;
+}
+// Run the agents flagged auto (capped) — fired on upload/run completion.
+async function autoRunAgents(){
+  const t=activeTab(); if(!t) return;
+  try{
+    const lib=await api(`/api/agents/library?domain=${encodeURIComponent(t.project.domain)}`);
+    const autos=lib.filter(a=>a.auto).slice(0,3);
+    for(const a of autos){ const full=await api("/api/agents/get?id="+encodeURIComponent(a.id)).catch(()=>null); if(full) await dispatchAgent(full,{}); }
+  }catch(e){}
+}
 
 // ===== decision-oriented metrics engine (shared by Dashboard + Entities + Intelligence) =====
 function entResolution(n, deg){ let s=0.4; s+=Math.min(0.25,(n.sources?n.sources.length:0)*0.12);
@@ -1198,6 +1397,7 @@ async function doRun(){
     t.project = await api(`/api/projects/get?id=${encodeURIComponent(t.project.id)}`).catch(()=>t.project);
     setSync("ok","complete"); renderAll(); showView("graph"); setTimeout(()=>{initCy(); if(cy)cy.fit(cy.elements(),50);},700);
     pushNotif("run",`Analysis complete: ${t.graph.nodes.length} entities`);
+    autoRunAgents(); // fire the auto-flagged agents on upload/run completion
     toast(`Done — ${t.graph.nodes.length} entities, ${t.graph.edges.length} relationships`,"ok");
   } catch(e){ setSync("err","failed"); toast("Run failed: "+e.message,"err"); }
 }
@@ -1589,6 +1789,7 @@ function finishPath(targetId){ const src=pathSource; pathSource=null; pathBanner
 }
 function clearPath(){ pathSource=null; pathBanner(""); if(cy) cy.elements().removeClass("pathhl faded"); }
 $("#btnPath")&&$("#btnPath").addEventListener("click",()=>{ const sel=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; if(sel){ startPath(sel); } else { toast("Select a node, then click Path — or right-click a node → Find path from here"); } });
+$("#btnConnect")&&$("#btnConnect").addEventListener("click",()=>{ const t=activeTab(); if(!t||!t.graph.nodes.length){ toast("Add or load entities first","err"); return; } startConnectMode(); });
 
 // ---------- add entity manually (incl. media for analysis) ----------
 let aeUploadPath=null;
@@ -1703,6 +1904,7 @@ function setGraphMode(mode, opts){ const t=activeTab(); if(!t||!t.graph.nodes.le
       cy.elements().style("display","none"); nb.style("display","element"); cy.fit(nb,70); selectNode(seedId); t._nbSeed=seedId;
       modeHint(`<b>Neighborhood</b> — ${hops} hop(s) around "${nodeData(seedId).label}" · right-click another node → Neighborhood`); }
     else if(mode==="timeline"){ buildTimeline(t); }
+    else if(mode==="network"){ renderGraph(); modeHint(`<b>${t2("gmode.network")}</b> — ${t2("gmode.network.hint")}`); setTimeout(()=>{ if(cy){ cy.resize(); cy.fit(cy.elements(),55); } },320); }
   }), delay);
 }
 function buildTimeline(t){ const withTs=t.graph.nodes.map(n=>({n,ts:parseTs(n)})).filter(x=>x.ts!=null);
@@ -1747,7 +1949,8 @@ $("#paletteInput").addEventListener("keydown",e=>{ const items=$("#paletteList")
 $("#paletteBackdrop").addEventListener("click",e=>{ if(e.target===$("#paletteBackdrop")) closePalette(); });
 
 // nav hooks that need lazy render
-$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="entities")renderEntities(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
+$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="entities")renderEntities(); if(li.dataset.view==="agents")renderAgents(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
+{ const s=$("#agentSearch"); if(s){ let _d; s.addEventListener("input",()=>{ clearTimeout(_d); _d=setTimeout(renderAgents,250); }); } const ab=$("#btnAgentAuto"); if(ab) ab.addEventListener("click",autoRunAgents); const an=$("#btnAgentNew"); if(an) an.addEventListener("click",()=>openAgentEditor(null)); }
 $("#profileBtn").addEventListener("click",()=>{showView("settings");openSettingsTab("account");});
 
 // ---------- settings tabs ----------
@@ -1860,7 +2063,7 @@ async function runTransformOnSelected(t){ const id=cy&&cy.$(":selected").length?
 }
 // Build a cytoscape element for one graph node (shared by render + append).
 function graphNodeEl(n){ const band=n.band||bandOf(n.risk); const hot=band==="critical"||band==="high";
-  return { data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind), kc:kColor(n.kind), hc:bandColor(band), size:24+(n.risk||0)*26, bw:hot?2.5:1.5, halo:hot?1:undefined }, classes:n.hypothesis?"hyp":"" }; }
+  return { data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band), size:24+(n.risk||0)*26, bw:hot?3:1.5, halo:hot?1:undefined }, classes:n.hypothesis?"hyp":"" }; }
 // Incrementally add nodes/edges near an anchor WITHOUT re-laying-out the whole
 // graph — new results appear next to the seed and settle with a small local layout.
 function appendToCy(newNodes, newEdges, anchorId){ if(!cy){ renderGraph(); return; }
@@ -2102,10 +2305,14 @@ function setCanvasMode(mode){ canvasMode=mode;
   $$("#canvasSwitch .cmode").forEach(b=>b.classList.toggle("active",b.dataset.canvas===mode));
   const isMap=mode==="map";
   $("#cy").style.display=isMap?"none":"";
-  $("#globe3d") && ($("#globe3d").hidden = !(isMap && HAS_WEBGL));
-  $("#mapCanvas").hidden = !(isMap && !HAS_WEBGL);
+  // Flat choropleth world map (reference style): a clear geographic canvas filled
+  // by the project's geolocated data. The 3D globe stays available but the flat
+  // map is the default lens.
+  $("#globe3d") && ($("#globe3d").hidden = true);
+  $("#mapCanvas").hidden = !isMap;
   GRAPH_CHROME.forEach(sel=>{ const e=$(sel); if(e) e.style.display=isMap?"none":""; });
-  if(isMap){ if(HAS_WEBGL) renderGlobe3D(); else renderMap(); }
+  const ml=$("#mapLayers"); if(ml) ml.hidden=!isMap;
+  if(isMap){ if(_g3) _g3.stop(); renderWorldMap(); }
   else { $("#mapEmpty")&&($("#mapEmpty").hidden=true); if(_g3) _g3.stop(); requestAnimationFrame(()=>{ if(cy){cy.resize();cy.fit(cy.elements(":visible"),50);} }); }
 }
 
@@ -2178,7 +2385,7 @@ let _g3LabelsAdded=false;
 function addGlobeGeoLabels(){ const g=_g3; if(!g||_g3LabelsAdded)return; _g3LabelsAdded=true; const THREE=g.THREE;
   GEO_LABELS.forEach(([name,lat,lon],i)=>{ const cont=i<7; const sp=g.textSprite(name, cont?"rgba(120,200,220,0.95)":"rgba(200,215,230,0.75)"); sp.position.copy(g.llToVec(lat,lon,g.R*1.02)); if(!cont)sp.scale.multiplyScalar(0.8); g.labels.add(sp); }); }
 function renderGlobe3D(){
-  const g=initGlobe3D(); if(!g){ renderMap(); return; } const t=activeTab(); if(!t) return; const THREE=g.THREE;
+  const g=initGlobe3D(); if(!g){ renderWorldMap(); return; } const t=activeTab(); if(!t) return; const THREE=g.THREE;
   addGlobeGeoLabels();
   let pts=t.graph.nodes.map(n=>{ const geo=geoOf(n); return geo?{n,...geo}:null; }).filter(Boolean);
   const capped=pts.length>2000; if(capped) pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,2000);
@@ -2204,63 +2411,86 @@ function renderGlobe3D(){
   const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${trajCount?` · ${t2("map.trajectories",trajCount)}`:""}${capped?" · (top 2000)":""}`;
 }
 let _mapState=null;
-let _globe={lon0:0,lat0:20,user:false};
-function renderMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=$("#mapEmpty"); if(!cv||!t) return;
+let _worldGeo=null;                       // cached world GeoJSON
+let _mapView={scale:1, ox:0, oy:0, init:false};
+let _mapLayers=null;                       // Set of enabled entity kinds (null = all)
+let _mapChoropleth=true;                   // severity fill on/off
+function loadWorld(cb){ if(_worldGeo){ cb(_worldGeo); return; } fetch("/vendor/countries.min.json").then(r=>r.json()).then(g=>{ _worldGeo=g; cb(g); }).catch(()=>cb(null)); }
+function hexA(hex,a){ const h=(hex||"#888").replace("#",""); return `rgba(${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)},${a})`; }
+function pointInRing(lon,lat,ring){ let inside=false; for(let i=0,j=ring.length-1;i<ring.length;j=i++){ const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1]; if(((yi>lat)!==(yj>lat)) && (lon<(xj-xi)*(lat-yi)/((yj-yi)||1e-9)+xi)) inside=!inside; } return inside; }
+function pointInFeature(lon,lat,f){ const polys=f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates; for(const poly of polys){ if(pointInRing(lon,lat,poly[0])){ let hole=false; for(let k=1;k<poly.length;k++){ if(pointInRing(lon,lat,poly[k])){ hole=true; break; } } if(!hole) return true; } } return false; }
+
+// Flat equirectangular world map. Comes "clear" and is filled geographically by
+// the project's geolocated data: countries shade by aggregated severity
+// (choropleth), entities plot as markers, edges draw as connections, and layers
+// (by entity kind — CCTV, air base, unit… per project) toggle on/off. Pan + zoom.
+function renderWorldMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=$("#mapEmpty"); if(!cv||!t) return;
   const wrap=cv.parentElement; const W=wrap.clientWidth||900, H=wrap.clientHeight||600; const dpr=Math.min(2,window.devicePixelRatio||1);
-  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px";
+  cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px"; cv.hidden=false;
   const ctx=cv.getContext("2d"); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
-  // Collect geolocated nodes (cap for very large graphs — served-slice rule).
+  const baseW=W, baseH=W/2;                 // 2:1 equirectangular
+  if(!_mapView.init){ const s=Math.max(1,H/baseH); _mapView={scale:s, ox:0, oy:(H-baseH*s)/2, init:true}; }
+  const sc=_mapView.scale;
+  const proj=(lon,lat)=>({ x:((lon+180)/360*baseW)*sc+_mapView.ox, y:((90-lat)/180*baseH)*sc+_mapView.oy });
+  ctx.fillStyle="#0a0e14"; ctx.fillRect(0,0,W,H);                 // ocean
   let pts=t.graph.nodes.map(n=>{ const g=geoOf(n); return g?{n,...g}:null; }).filter(Boolean);
-  const capped = pts.length>2000; if(capped){ pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,2000); }
-  if(empty){ empty.hidden=pts.length>0; if(!pts.length){ empty.innerHTML=`<div class="ge-inner"><div class="ge-icon">🌐</div><p>${esc(t2("map.none"))}</p></div>`; } }
-  // Auto-centre the globe on the data centroid until the user rotates it.
-  if(!_globe.user && pts.length){ const la=pts.reduce((s,p)=>s+p.lat,0)/pts.length, lo=pts.reduce((s,p)=>s+p.lon,0)/pts.length; _globe.lat0=la; _globe.lon0=lo; }
-  const RAD=Math.PI/180; const R=Math.max(60,Math.min(W,H)/2-46); const cx=W/2, cy=H/2;
-  const la0=_globe.lat0*RAD, lo0=_globe.lon0*RAD;
-  const proj=(latDeg,lonDeg)=>{ const la=latDeg*RAD, lo=lonDeg*RAD, dlo=lo-lo0;
-    const cosc=Math.sin(la0)*Math.sin(la)+Math.cos(la0)*Math.cos(la)*Math.cos(dlo);
-    return { x:cx+R*Math.cos(la)*Math.sin(dlo), y:cy-R*(Math.cos(la0)*Math.sin(la)-Math.sin(la0)*Math.cos(la)*Math.cos(dlo)), vis:cosc>=-0.02 }; };
-  // Globe disk (ocean) + rim.
-  ctx.beginPath(); ctx.arc(cx,cy,R,0,7);
-  const grad=ctx.createRadialGradient(cx-R*0.3,cy-R*0.3,R*0.2,cx,cy,R);
-  grad.addColorStop(0,"#0e2836"); grad.addColorStop(1,"#081019"); ctx.fillStyle=grad; ctx.fill();
-  ctx.lineWidth=1.5; ctx.strokeStyle="rgba(87,215,232,0.35)"; ctx.stroke();
-  // Graticule (only the near hemisphere).
-  ctx.strokeStyle="rgba(148,163,184,0.14)"; ctx.lineWidth=1;
-  const arc=(fn)=>{ ctx.beginPath(); let started=false; for(let s=-90;s<=90;s+=3){ const p=fn(s); if(p.vis){ if(started)ctx.lineTo(p.x,p.y); else {ctx.moveTo(p.x,p.y);started=true;} } else started=false; } ctx.stroke(); };
-  for(let lon=-180;lon<180;lon+=30) arc(s=>proj(s,lon));
-  for(let lat=-60;lat<=60;lat+=30){ ctx.beginPath(); let st=false; for(let s=-180;s<=180;s+=3){ const p=proj(lat,s); if(p.vis){ if(st)ctx.lineTo(p.x,p.y); else{ctx.moveTo(p.x,p.y);st=true;} } else st=false; } ctx.stroke(); }
-  // Trajectories: group temporally-ordered points sharing a trajectory key.
-  const groups={}; pts.forEach(p=>{ const key=(p.n.attributes&&(p.n.attributes.trajectory||p.n.attributes.track||p.n.attributes.vessel||p.n.attributes.subject))||null; if(key){ (groups[key]=groups[key]||[]).push(p); } });
-  let trajCount=0;
-  Object.values(groups).forEach(list=>{ if(list.length<2)return; trajCount++;
-    list.sort((a,b)=>(parseTs(a.n)||0)-(parseTs(b.n)||0));
-    ctx.strokeStyle="rgba(87,215,232,0.65)"; ctx.lineWidth=1.8; ctx.beginPath(); let st=false;
-    list.forEach(p=>{ const xy=proj(p.lat,p.lon); if(xy.vis){ if(st)ctx.lineTo(xy.x,xy.y); else{ctx.moveTo(xy.x,xy.y);st=true;} } else st=false; }); ctx.stroke(); });
-  // Points on the visible hemisphere (same badge colours as the graph).
-  const screenPts=[];
-  pts.forEach(p=>{ const xy=proj(p.lat,p.lon); if(!xy.vis) return; const r=4+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
-    const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+4,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.28)":"rgba(251,113,133,0.24)"); ctx.fill(); }
-    ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.6)"; ctx.stroke(); });
-  _mapState={screenPts};
-  const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${trajCount?` · ${t2("map.trajectories",trajCount)}`:""}${capped?" · (top 2000)":""}`;
+  if(_mapLayers) pts=pts.filter(p=>_mapLayers.has(p.n.kind));
+  const capped=pts.length>3000; if(capped) pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,3000);
+  loadWorld(gj=>{
+    // Choropleth: max entity risk per country (assign each point to a country).
+    const sevByFeat=new Map();
+    if(_mapChoropleth && pts.length && gj){ pts.forEach(p=>{ for(let i=0;i<gj.features.length;i++){ if(pointInFeature(p.lon,p.lat,gj.features[i])){ sevByFeat.set(i,Math.max(sevByFeat.get(i)||0,p.n.risk||0)); break; } } }); }
+    if(gj){ gj.features.forEach((f,idx)=>{ const polys=f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates;
+      ctx.beginPath();
+      polys.forEach(poly=>poly.forEach(ring=>{ ring.forEach((c,i)=>{ const p=proj(c[0],c[1]); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); }); ctx.closePath(); }));
+      const sev=sevByFeat.get(idx); ctx.fillStyle=sev!=null?hexA(bandColor(bandOf(sev)),0.5):"rgba(28,38,54,0.75)"; ctx.fill();
+      ctx.lineWidth=0.5; ctx.strokeStyle="rgba(120,140,160,0.22)"; ctx.stroke();
+    }); }
+    // Connections between geolocated entities that share an edge.
+    const byId={}; pts.forEach(p=>byId[p.n.id]=p);
+    ctx.setLineDash([5,4]); ctx.lineWidth=1.2; ctx.strokeStyle="rgba(245,158,11,0.55)";
+    (t.graph.edges||[]).forEach(e=>{ const a=byId[e.source],b=byId[e.target]; if(a&&b){ const pa=proj(a.lon,a.lat),pb=proj(b.lon,b.lat); ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke(); } });
+    ctx.setLineDash([]);
+    // Markers.
+    const screenPts=[];
+    pts.forEach(p=>{ const xy=proj(p.lon,p.lat); const r=4+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
+      const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+5,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.30)":"rgba(251,113,133,0.24)"); ctx.fill(); }
+      ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.7)"; ctx.stroke(); });
+    _mapState={screenPts};
+    if(empty) empty.hidden = !!gj || pts.length>0;
+    const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${capped?" · (top 3000)":""}`;
+    renderMapLayerLegend(t);
+  });
 }
-// Drag to rotate the globe.
+// Layer panel: toggle the severity choropleth + each entity kind present on the
+// map (this is where CCTV / air-base / unit layers live — generic, per project).
+function renderMapLayerLegend(t){ const wrap=$(".graph-wrap"); if(!wrap)return; let box=$("#mapLayers");
+  if(!box){ box=el("div"); box.id="mapLayers"; box.style.cssText="position:absolute;top:64px;right:14px;z-index:6;background:rgba(10,16,24,0.86);border:1px solid rgba(120,140,160,0.25);border-radius:10px;padding:10px 12px;font-size:11px;color:#cdd8e6;max-height:60%;overflow:auto;backdrop-filter:blur(6px)"; wrap.appendChild(box); }
+  box.hidden = canvasMode!=="map";
+  const kinds=[...new Set(t.graph.nodes.map(n=>geoOf(n)?n.kind:null).filter(Boolean))].sort();
+  if(_mapLayers==null) _mapLayers=new Set(kinds);
+  const row=(inner)=>`<label style="display:flex;align-items:center;gap:7px;margin:4px 0;cursor:pointer">${inner}</label>`;
+  box.innerHTML=`<div style="font-weight:600;letter-spacing:0.5px;color:#8fa8c0;margin-bottom:6px">LAYERS</div>`+
+    row(`<input type="checkbox" ${_mapChoropleth?"checked":""} data-cho><span style="width:9px;height:9px;border-radius:2px;background:#ef4444;display:inline-block"></span> Severity choropleth`)+
+    (kinds.length?`<div style="height:1px;background:rgba(120,140,160,0.2);margin:6px 0"></div>`:"")+
+    kinds.map(k=>row(`<input type="checkbox" ${_mapLayers.has(k)?"checked":""} data-kind="${esc(k)}"><span style="width:9px;height:9px;border-radius:50%;background:${kColor(k)};display:inline-block"></span> ${esc(k)}`)).join("")||
+    (kinds.length?"":`<div style="color:#889;font-size:10px">No geolocated entities yet.</div>`);
+  const cho=box.querySelector("[data-cho]"); if(cho) cho.addEventListener("change",e=>{ _mapChoropleth=e.target.checked; renderWorldMap(); });
+  box.querySelectorAll("[data-kind]").forEach(cb=>cb.addEventListener("change",e=>{ const k=e.target.dataset.kind; if(e.target.checked)_mapLayers.add(k); else _mapLayers.delete(k); renderWorldMap(); }));
+}
+// Pan (drag), zoom (wheel around cursor), click-to-select on the flat map.
 (function(){ const cv=$("#mapCanvas"); if(!cv)return; let drag=null;
-  cv.addEventListener("mousedown",e=>{ drag={x:e.clientX,y:e.clientY,moved:false}; });
-  window.addEventListener("mousemove",e=>{ if(!drag)return; const dx=e.clientX-drag.x, dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true;
-    _globe.user=true; _globe.lon0-=dx*0.4; _globe.lat0=Math.max(-89,Math.min(89,_globe.lat0+dy*0.4)); drag.x=e.clientX; drag.y=e.clientY; renderMap(); });
-  window.addEventListener("mouseup",e=>{ if(drag&&!drag.moved){ // treat as click → open nearest point
-      const rect=cv.getBoundingClientRect(); const x=e.clientX-rect.left, y=e.clientY-rect.top; let best=null,bd=1e9;
-      (_mapState?_mapState.screenPts:[]).forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} });
-      if(best) selectNode(best.n.id); }
-    drag=null; });
+  cv.addEventListener("mousedown",e=>{ drag={x:e.clientX,y:e.clientY,ox:_mapView.ox,oy:_mapView.oy,moved:false}; });
+  window.addEventListener("mousemove",e=>{ if(!drag)return; const dx=e.clientX-drag.x,dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true; _mapView.ox=drag.ox+dx; _mapView.oy=drag.oy+dy; if(canvasMode==="map") renderWorldMap(); });
+  window.addEventListener("mouseup",e=>{ if(drag&&!drag.moved&&canvasMode==="map"){ const rect=cv.getBoundingClientRect(); const x=e.clientX-rect.left,y=e.clientY-rect.top; let best=null,bd=1e9; (_mapState?_mapState.screenPts:[]).forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} }); if(best) selectNode(best.n.id); } drag=null; });
+  cv.addEventListener("wheel",e=>{ if(canvasMode!=="map")return; e.preventDefault(); const rect=cv.getBoundingClientRect(); const mx=e.clientX-rect.left,my=e.clientY-rect.top; const f=e.deltaY<0?1.15:1/1.15; const ns=Math.max(0.6,Math.min(14,_mapView.scale*f));
+    _mapView.ox=mx-(mx-_mapView.ox)*(ns/_mapView.scale); _mapView.oy=my-(my-_mapView.oy)*(ns/_mapView.scale); _mapView.scale=ns; renderWorldMap(); },{passive:false});
 })();
 $$("#canvasSwitch .cmode").forEach(b=>b.addEventListener("click",()=>setCanvasMode(b.dataset.canvas)));
 // Responsiveness: re-render the active canvas when the window resizes.
 let _rsz=null;
 window.addEventListener("resize",()=>{ clearTimeout(_rsz); _rsz=setTimeout(()=>{
-  if(currentView==="graph"){ if(canvasMode==="map") renderMap(); else if(cy){ cy.resize(); cy.fit(cy.elements(":visible"),50); } }
+  if(currentView==="graph"){ if(canvasMode==="map") renderWorldMap(); else if(cy){ cy.resize(); cy.fit(cy.elements(":visible"),50); } }
 },150); });
 
 // Pre-defined analysis flows (one-click prompts that steer the assessment).
@@ -2364,7 +2594,7 @@ window.addEventListener("keydown",e=>{ const meta=e.metaKey||e.ctrlKey;
   else if(meta&&e.key.toLowerCase()==="r"){e.preventDefault();runModal();}
   else if(meta&&e.key.toLowerCase()==="n"){e.preventDefault();newProjectModal();}
   else if(meta&&e.key==="/"){e.preventDefault();openGlobalAsk();}
-  else if(e.key==="Escape"){ closePalette(); closeModal(); closeGlobalAsk(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); if(linkMode){ linkMode=null; const b=$("#linkmodeBanner"); if(b)b.hidden=true; } if(pathSource) clearPath(); } });
+  else if(e.key==="Escape"){ closePalette(); closeModal(); closeGlobalAsk(); $("#ctxmenu").hidden=true; $("#notifDrawer").hidden=true; closeAllSelects(); if(linkMode||connectArm){ linkMode=null; connectArm=false; const b=$("#linkmodeBanner"); if(b)b.hidden=true; } if(pathSource) clearPath(); } });
 
 // ---------- file helpers ----------
 function pickFile(cb){ const inp=$("#filePicker"); inp.removeAttribute("accept"); inp.value=""; inp.onchange=()=>{ const f=inp.files[0]; if(!f)return; const rd=new FileReader(); rd.onload=()=>cb(rd.result); rd.readAsText(f); }; inp.click(); }

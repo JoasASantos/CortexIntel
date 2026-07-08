@@ -2,25 +2,33 @@
 //! desktop GUI drive the same code. See `api` for the high-level entry points
 //! the GUI calls over Tauri commands.
 
+pub mod agentlib;
 pub mod agents;
+pub mod anomaly;
 pub mod assessment;
 pub mod audit;
 pub mod auth;
+pub mod calibrate;
 pub mod cli;
 pub mod config;
 pub mod connectors;
 pub mod correlation;
+pub mod enrich;
 pub mod extract;
 pub mod keys;
+pub mod linkpred;
 pub mod llm;
+pub mod netsci;
 pub mod ontology;
 pub mod pipeline;
 pub mod plugins;
 pub mod profile;
 pub mod projects;
 pub mod prompts;
+pub mod references;
 pub mod report;
 pub mod reportpdf;
+pub mod reward;
 pub mod resolve;
 pub mod risk;
 pub mod serve;

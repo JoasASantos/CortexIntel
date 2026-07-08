@@ -5,7 +5,7 @@
 use crate::config::{DataType, Domain, ProviderChoice, RunConfig};
 use crate::llm::LlmRouter;
 use crate::{agents, pipeline, sources};
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand};
 use owo_colors::OwoColorize;
 use std::path::PathBuf;
@@ -136,7 +136,8 @@ impl RunArgs {
 pub fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Command::Run(args) => {
+        Command::Run(mut args) => {
+            load_cortex_manifest(&mut args)?;
             let inputs = args.input.clone();
             let cfg = args.into_config();
             run_pipeline(inputs, cfg)
@@ -155,6 +156,30 @@ pub fn main() -> Result<()> {
         }
         Command::Desktop { port } => desktop(port),
     }
+}
+
+/// `.cortex` project manifest: a portable JSON that presets a run. If `-i` points
+/// to a single `.cortex` file, expand it into the real inputs + domain/out.
+/// Example:
+///   { "name": "Case 114", "domain": "fraud",
+///     "inputs": ["exports/tx.csv", "exports/accounts.csv"], "out": "./out" }
+fn load_cortex_manifest(args: &mut RunArgs) -> Result<()> {
+    use clap::ValueEnum;
+    if args.input.len() != 1 { return Ok(()); }
+    let p = &args.input[0];
+    if p.extension().map(|e| e != "cortex").unwrap_or(true) { return Ok(()); }
+    let text = std::fs::read_to_string(p).with_context(|| format!("reading {}", p.display()))?;
+    let m: serde_json::Value = serde_json::from_str(&text).context("parsing .cortex manifest (must be JSON)")?;
+    let base = p.parent().unwrap_or_else(|| std::path::Path::new("."));
+    let inputs: Vec<PathBuf> = m.get("inputs").and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_str()).map(|s| { let pb = PathBuf::from(s); if pb.is_absolute() { pb } else { base.join(pb) } }).collect())
+        .unwrap_or_default();
+    if inputs.is_empty() { return Err(anyhow::anyhow!(".cortex manifest has no 'inputs'")); }
+    args.input = inputs;
+    if let Some(d) = m.get("domain").and_then(|v| v.as_str()) { if let Ok(dom) = Domain::from_str(d, true) { args.domain = dom; } }
+    if let Some(o) = m.get("out").and_then(|v| v.as_str()) { args.out = PathBuf::from(o); }
+    println!("{} loaded .cortex manifest ({} input(s), domain={})", "·".dimmed(), args.input.len(), args.domain);
+    Ok(())
 }
 
 /// Launch the native Tauri app if present; otherwise serve + open the browser.

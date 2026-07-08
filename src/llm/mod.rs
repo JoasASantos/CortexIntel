@@ -10,10 +10,12 @@
 
 mod claude;
 mod codex;
+mod generic;
 mod mock;
 
 pub use claude::ClaudeProvider;
 pub use codex::CodexProvider;
+pub use generic::GenericProvider;
 pub use mock::MockProvider;
 
 use crate::config::ProviderChoice;
@@ -177,6 +179,7 @@ pub struct LlmRouter {
     choice: ProviderChoice,
     claude: ClaudeProvider,
     codex: CodexProvider,
+    generic: GenericProvider,
     mock: MockProvider,
     verbose: bool,
 }
@@ -192,6 +195,7 @@ impl LlmRouter {
             choice,
             claude: ClaudeProvider::new(claude_model),
             codex: CodexProvider::new(codex_model),
+            generic: GenericProvider::new(),
             mock: MockProvider::default(),
             verbose,
         }
@@ -203,6 +207,7 @@ impl LlmRouter {
             choice: ProviderChoice::Mock,
             claude: ClaudeProvider::new(None),
             codex: CodexProvider::new(None),
+            generic: GenericProvider::new(),
             mock: MockProvider::default(),
             verbose,
         }
@@ -234,26 +239,32 @@ impl LlmRouter {
                 if r.model.is_none() { r.model = Some(model_simple()); }
                 self.codex.complete(&r)
             }
+            ProviderChoice::Custom => with_retry(|| self.generic.complete(req)),
             ProviderChoice::Auto => self.route_auto(req),
         }
     }
 
     fn route_auto(&self, req: &LlmRequest) -> Result<LlmResponse> {
-        let plan = route_plan(req.complexity);
+        let mut plan = route_plan(req.complexity);
+        // A configured custom model is a universal final fallback.
+        if self.generic.is_configured() {
+            plan.push(Attempt { provider: "custom", model: "custom".into() });
+        }
         let mut errors = Vec::new();
         for attempt in plan {
             let mut r = req.clone();
             // An explicit per-request model wins over the routed one.
-            if r.model.is_none() {
+            if r.model.is_none() && attempt.provider != "custom" {
                 r.model = Some(attempt.model.clone());
             }
             if self.verbose {
                 eprintln!("    → try {}::{}", attempt.provider, attempt.model);
             }
-            let res = match attempt.provider {
+            let res = with_retry(|| match attempt.provider {
                 "claude" => self.claude.complete(&r),
+                "custom" => self.generic.complete(&r),
                 _ => self.codex.complete(&r),
-            };
+            });
             match res {
                 Ok(v) => return Ok(v),
                 Err(e) => {
@@ -272,9 +283,30 @@ impl LlmRouter {
         vec![
             ("claude".into(), self.claude.health()),
             ("codex".into(), self.codex.health()),
+            ("custom".into(), self.generic.health()),
             ("mock".into(), self.mock.health()),
         ]
     }
+}
+
+/// Retry a completion on transient failure (backoff between tries). Count is
+/// `CORTEX_LLM_RETRIES` (default 1 extra try). Makes the harness more robust to
+/// flaky CLIs / rate limits without masking a hard failure.
+fn with_retry<F: Fn() -> Result<LlmResponse>>(f: F) -> Result<LlmResponse> {
+    let retries: u32 = std::env::var("CORTEX_LLM_RETRIES").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
+    let mut last: Option<anyhow::Error> = None;
+    for attempt in 0..=retries {
+        match f() {
+            Ok(v) => return Ok(v),
+            Err(e) => {
+                last = Some(e);
+                if attempt < retries {
+                    std::thread::sleep(std::time::Duration::from_millis(400 * (attempt as u64 + 1)));
+                }
+            }
+        }
+    }
+    Err(last.unwrap_or_else(|| anyhow!("request failed")))
 }
 
 /// Extract a JSON object/array from arbitrary model output.

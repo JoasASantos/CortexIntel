@@ -294,6 +294,9 @@ pub enum ProviderChoice {
     Codex,
     /// Try Claude first, fall back to Codex on failure.
     Auto,
+    /// A generic CLI model set via `CORTEX_LLM_CMD` (Ollama, `llm`, any local or
+    /// custom model that reads a prompt on stdin and writes the answer to stdout).
+    Custom,
     /// Deterministic offline stub — no external calls, no cost.
     Mock,
 }
@@ -304,6 +307,7 @@ impl fmt::Display for ProviderChoice {
             ProviderChoice::Claude => "claude",
             ProviderChoice::Codex => "codex",
             ProviderChoice::Auto => "auto",
+            ProviderChoice::Custom => "custom",
             ProviderChoice::Mock => "mock",
         };
         write!(f, "{s}")

@@ -232,7 +232,8 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
     if user.role == "viewer" && m != "GET" {
         let writes = p.starts_with("/api/projects") || p.starts_with("/api/run") || p.starts_with("/api/jobs")
             || p.starts_with("/api/transforms") || p.starts_with("/api/connectors") || p.starts_with("/api/keys")
-            || p.starts_with("/api/plugins") || p.starts_with("/api/report") || p.starts_with("/api/users");
+            || p.starts_with("/api/plugins") || p.starts_with("/api/report") || p.starts_with("/api/users")
+            || p.starts_with("/api/agents/save") || p.starts_with("/api/agents/delete");
         if writes {
             return respond(stream, 403, "application/json; charset=utf-8", br#"{"error":"read-only role (viewer): ask an admin for access"}"#);
         }
@@ -260,6 +261,50 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/api/domains") => json_ok(stream, &api::list_domains()),
         ("GET", "/api/data_types") => json_ok(stream, &api::list_data_types()),
         ("GET", "/api/agents") => json_ok(stream, &api::list_agents(&param(&req.query, "domain").unwrap_or_else(|| "generic".into()))),
+        // Agent library (markdown-defined, ready-made, thousands-scalable).
+        ("GET", "/api/agents/library") => json_ok(stream, &crate::agentlib::library(
+            &param(&req.query, "domain").unwrap_or_else(|| "generic".into()),
+            &param(&req.query, "q").unwrap_or_default(),
+        )),
+        // Recommend agents for the current data (kinds = comma-separated entity kinds/tags).
+        ("GET", "/api/agents/recommend") => {
+            let kinds: Vec<String> = param(&req.query, "kinds").unwrap_or_default()
+                .split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+            json_ok(stream, &crate::agentlib::recommend(
+                &param(&req.query, "domain").unwrap_or_else(|| "generic".into()), &kinds, 20))
+        }
+        // Fetch one agent (with its prompt body) to dispatch.
+        ("GET", "/api/agents/get") => match param(&req.query, "id").and_then(|id| crate::agentlib::get(&id)) {
+            Some(a) => json_ok(stream, &a),
+            None => respond(stream, 404, "application/json; charset=utf-8", br#"{"error":"agent not found"}"#),
+        },
+        // Create/edit an agent (GUI editor): body = { id, content }.
+        ("POST", "/api/agents/save") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let id = b.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let content = b.get("content").and_then(|v| v.as_str()).unwrap_or("");
+            match crate::agentlib::save(id, content) {
+                Ok(a) => json_ok(stream, &a),
+                Err(e) => json_err(stream, &e),
+            }
+        }
+        // Reward engine: record analyst feedback (confirm/reject) on a dimension.
+        ("POST", "/api/feedback") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let key = b.get("key").and_then(|v| v.as_str()).unwrap_or("");
+            let signal = b.get("signal").and_then(|v| v.as_f64()).unwrap_or(0.0) as f32;
+            let weight = b.get("weight").and_then(|v| v.as_f64()).unwrap_or(1.0) as f32;
+            crate::reward::record(key, signal, weight);
+            json_ok(stream, &serde_json::json!({"ok": true}))
+        }
+        ("GET", "/api/feedback") => json_ok(stream, &crate::reward::adjustments()),
+        ("POST", "/api/agents/delete") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            match crate::agentlib::delete(b.get("id").and_then(|v| v.as_str()).unwrap_or("")) {
+                Ok(_) => json_ok(stream, &serde_json::json!({"ok": true})),
+                Err(e) => json_err(stream, &e),
+            }
+        }
         ("GET", "/api/doctor") => json_ok(stream, &api::doctor()),
         ("GET", "/api/graph") => match param(&req.query, "dir") {
             Some(dir) => finish(stream, api::load_graph(&dir)),
@@ -315,6 +360,16 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("POST", "/api/projects/delete") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, projects::delete(b.get("id").and_then(|v| v.as_str()).unwrap_or("")).map(|_| serde_json::json!({"ok":true})))
+        }
+        // Record an activity/result on a project (agent runs persist here).
+        ("POST", "/api/projects/activity") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, projects::add_activity(
+                b.get("id").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("kind").and_then(|v| v.as_str()).unwrap_or("agent"),
+                b.get("summary").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("meta").cloned().unwrap_or(serde_json::json!({})),
+            ).map(|_| serde_json::json!({"ok":true})))
         }
         ("GET", "/api/projects/export") => match param(&req.query, "id") {
             Some(id) => match projects::export(&id) { Ok(s) => respond(stream, 200, "application/json; charset=utf-8", s.as_bytes()), Err(e) => json_err(stream, &e.to_string()) },

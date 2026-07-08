@@ -99,6 +99,7 @@
           <li data-view="dashboard" class="active"><span class="ni">▤</span><span data-i18n="nav.dashboard">Dashboard</span></li>
           <li data-view="graph"><span class="ni">◕</span><span data-i18n="nav.graph">Graph</span></li>
           <li data-view="intelligence"><span class="ni">✦</span><span data-i18n="nav.intelligence">Intelligence</span></li>
+          <li data-view="agents"><span class="ni">◈</span><span data-i18n="nav.agents">Agents</span></li>
           <li data-view="entities"><span class="ni">⬡</span><span data-i18n="nav.entities">Entities</span></li>
           <li data-view="timeline"><span class="ni">⧗</span><span data-i18n="nav.timeline">Timeline</span></li>
           <li data-view="alerts"><span class="ni">⚠</span><span data-i18n="nav.alerts">Alerts</span></li>
@@ -156,6 +157,7 @@
                   <button class="gmode" data-mode="neighborhood" title="Around the selected entity" data-i18n="gmode.neighborhood">Neighborhood</button>
                   <button class="gmode" data-mode="timeline" title="By time" data-i18n="gmode.timeline">Timeline</button>
                   <button class="gmode" data-mode="full" title="Everything" data-i18n="gmode.full">Full</button>
+                  <button class="gmode" data-mode="network" title="Broker &amp; communities" data-i18n="gmode.network">Network</button>
                 </div>
                 <span class="muted" id="graphStats">0 nodes · 0 edges</span>
               </div>
@@ -166,6 +168,7 @@
                 <button class="btn ghost" id="btnAddEntity"><span>+ </span><span data-i18n="gtool.entity">Entity</span></button>
                 <button class="btn ghost" id="btnFit" data-i18n="gtool.fit">Fit</button>
                 <button class="btn ghost" id="btnPath" data-i18n="gtool.path">Path</button>
+                <button class="btn ghost" id="btnConnect" data-i18n="gtool.connect">Connect</button>
                 <button class="btn ghost" id="btnReset" data-i18n="gtool.reset">Reset</button>
                 <button class="btn ghost" id="btnAsk2"><span>✦ </span><span data-i18n="gtool.ask">Ask</span></button>
               </div>
@@ -258,6 +261,20 @@
             <div class="dm-wrap"><table class="tbl dmtable" id="intelDecision"><thead><tr><th>Action</th><th>Impact</th><th>Confidence</th><th>Risk if wrong</th><th>Effort</th><th>Score</th><th>Route</th></tr></thead><tbody></tbody></table></div></div>
           <div class="card nba" id="intelNbaCard"><div class="card-head"><h3 data-i18n="card.nextBestAction">Next best action</h3></div><div id="intelNba"><div class="empty">Generate intelligence to get a recommended decision.</div></div></div>
           <div class="card"><div class="card-head"><h3 data-i18n="card.riskClusters">Risk clusters</h3></div><div id="intelClusters"><div class="empty">—</div></div></div>
+        </section>
+
+        <!-- Agents -->
+        <section class="view" id="view-agents" hidden>
+          <div class="view-head"><h1 data-i18n="nav.agents">Agents</h1><p class="muted" data-i18n="view.agents.sub">Ready-made agents that work over your data and reflect results in the graph.</p></div>
+          <div class="intel-ask">
+            <input id="agentSearch" placeholder="Search agents by name, category or tag…" />
+            <button class="btn ghost" id="btnAgentAuto"><span>⚡ </span><span data-i18n="agents.runauto">Run auto agents</span></button>
+            <button class="btn ghost" id="btnAgentNew"><span>＋ </span><span data-i18n="agents.new">New agent</span></button>
+            <span class="intel-meta" id="agentMeta"></span>
+          </div>
+          <div class="card"><div class="card-head"><h3 data-i18n="agents.recommended">Recommended for this data</h3><span class="conf-pill" id="agentRecoPill"></span></div>
+            <div id="agentReco" class="list"><div class="empty" data-i18n="agents.none">Open a project and run an analysis to see recommended agents.</div></div></div>
+          <div id="agentList"></div>
         </section>
 
         <!-- Timeline -->
