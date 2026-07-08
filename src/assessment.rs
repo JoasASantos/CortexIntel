@@ -195,6 +195,120 @@ pub fn assess(g: &KnowledgeGraph, risk: &RiskReport, domain: Domain, lang: &str)
         out.push(Assessment { statement, confidence: 0.6, evidence, evidence_ids: vec![], action, basis: "observed".into(), attributed_to: deterministic_engine() });
     }
 
+    // 5) Reference-source (known-hash) matches — an exact, observed hit against an
+    // integrated feed (known-CSAM set, malware hashes, watchlist). High confidence
+    // because a hash match is exact; the identity of what it IS rests on the source.
+    let matches: Vec<&crate::ontology::Entity> = g
+        .entities
+        .values()
+        .filter(|e| e.attributes.contains_key("ref_source"))
+        .collect();
+    if !matches.is_empty() {
+        let exact: Vec<&crate::ontology::Entity> = matches.iter().copied()
+            .filter(|e| e.attributes.get("ref_match").map(|m| m != "perceptual").unwrap_or(true)).collect();
+        let perceptual: Vec<&crate::ontology::Entity> = matches.iter().copied()
+            .filter(|e| e.attributes.get("ref_match").map(|m| m == "perceptual").unwrap_or(false)).collect();
+
+        // 5a) Exact file-hash matches — definitive, already-catalogued material.
+        if !exact.is_empty() {
+            let srcs: Vec<String> = { let mut s: Vec<String> = exact.iter().filter_map(|e| e.attributes.get("ref_source").cloned()).collect(); s.sort(); s.dedup(); s };
+            let cat = exact[0].attributes.get("ref_category").cloned().unwrap_or_default();
+            let statement = match lang {
+                "pt" => format!("{} arquivo(s) batem EXATAMENTE com base(s) de material conhecido ({}), categoria \"{}\" — material já catalogado.", exact.len(), srcs.join(", "), cat),
+                "es" => format!("{} archivo(s) coinciden EXACTAMENTE con base(s) de material conocido ({}), categoría \"{}\" — material ya catalogado.", exact.len(), srcs.join(", "), cat),
+                _ => format!("{} file(s) EXACTLY match known-material reference source(s) ({}), category \"{}\" — already-catalogued material.", exact.len(), srcs.join(", "), cat),
+            };
+            let action = match lang { "pt" => format!("Confirmação humana obrigatória; {}.", l.escalate), "es" => format!("Confirmación humana obligatoria; {}.", l.escalate), _ => format!("Mandatory human confirmation; {}.", l.escalate) };
+            out.push(Assessment { statement, confidence: 0.95, evidence: exact.iter().take(5).map(|e| e.label.clone()).collect(), evidence_ids: exact.iter().map(|e| e.id.clone()).collect(), action, basis: "observed".into(), attributed_to: deterministic_engine() });
+        }
+
+        // 5b) Perceptual near-duplicate matches — likely altered/recompressed copy
+        // of known material. Confidence scaled by the (worst) similarity seen.
+        if !perceptual.is_empty() {
+            let srcs: Vec<String> = { let mut s: Vec<String> = perceptual.iter().filter_map(|e| e.attributes.get("ref_source").cloned()).collect(); s.sort(); s.dedup(); s };
+            let sims: Vec<f32> = perceptual.iter().filter_map(|e| e.attributes.get("ref_similarity").and_then(|v| v.parse().ok())).collect();
+            let min_sim = sims.iter().cloned().fold(1.0f32, f32::min);
+            let pct = (min_sim * 100.0).round() as i32;
+            let statement = match lang {
+                "pt" => format!("{} arquivo(s) são quase-duplicatas de material conhecido ({}) — similaridade ≥{}%, provável cópia recomprimida/alterada.", perceptual.len(), srcs.join(", "), pct),
+                "es" => format!("{} archivo(s) son casi-duplicados de material conocido ({}) — similitud ≥{}%, probable copia recomprimida/alterada.", perceptual.len(), srcs.join(", "), pct),
+                _ => format!("{} file(s) are near-duplicates of known material ({}) — ≥{}% similar, likely a recompressed/altered copy.", perceptual.len(), srcs.join(", "), pct),
+            };
+            let action = match lang { "pt" => format!("Confirmação humana obrigatória (match por similaridade, não exato); {}.", l.escalate), "es" => format!("Confirmación humana obligatoria (coincidencia por similitud, no exacta); {}.", l.escalate), _ => format!("Mandatory human confirmation (similarity match, not exact); {}.", l.escalate) };
+            out.push(Assessment { statement, confidence: (min_sim * 0.9).clamp(0.5, 0.9), evidence: perceptual.iter().take(5).map(|e| format!("{} (~{:.0}%)", e.label, e.attributes.get("ref_similarity").and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0) * 100.0)).collect(), evidence_ids: perceptual.iter().map(|e| e.id.clone()).collect(), action, basis: "observed".into(), attributed_to: deterministic_engine() });
+        }
+    }
+
+    // 6) Network structure — the broker (top betweenness) and emergent communities.
+    // Reads the metrics network science wrote onto the entities.
+    let mut broker: Option<(&crate::ontology::Entity, f32)> = None;
+    let mut comms: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for e in g.entities.values() {
+        if let Some(c) = e.attributes.get("community") { comms.insert(c.clone()); }
+        if let Some(b) = e.attributes.get("betweenness").and_then(|v| v.parse::<f32>().ok()) {
+            if broker.map(|(_, bb)| b > bb).unwrap_or(true) { broker = Some((e, b)); }
+        }
+    }
+    if let Some((e, b)) = broker {
+        if b >= 0.15 {
+            let kl = kind_label(e.kind, lang);
+            let (statement, action) = match lang {
+                "pt" => (
+                    format!("O {} \"{}\" é o principal ponto de articulação da rede (intermediação {:.2}) — conecta partes que, sem ele, ficariam separadas; provável facilitador/elo central.", kl, e.label, b),
+                    "Priorize este nó: expanda-o, confirme o vínculo e avalie o impacto de removê-lo (fragmentação da rede).".to_string(),
+                ),
+                "es" => (
+                    format!("El {} \"{}\" es el principal punto de articulación de la red (intermediación {:.2}) — conecta partes que sin él quedarían separadas; probable facilitador/enlace central.", kl, e.label, b),
+                    "Prioriza este nodo: expándelo, confirma el vínculo y evalúa el impacto de removerlo (fragmentación de la red).".to_string(),
+                ),
+                _ => (
+                    format!("The {} \"{}\" is the network's main broker (betweenness {:.2}) — it connects parts that would otherwise be separate; likely a facilitator / central link.", kl, e.label, b),
+                    "Prioritize this node: expand it, confirm the link, and assess the impact of removing it (network fragmentation).".to_string(),
+                ),
+            };
+            out.push(Assessment { statement, confidence: (0.4 + b * 0.5).min(0.85), evidence: vec![format!("betweenness {:.2}", b)], evidence_ids: vec![e.id.clone()], action, basis: "inferred".into(), attributed_to: deterministic_engine() });
+        }
+    }
+    if comms.len() >= 2 {
+        let (statement, action) = match lang {
+            "pt" => (format!("A rede se organiza em {} comunidades distintas — subgrupos internamente mais conectados que entre si.", comms.len()),
+                "Analise cada comunidade como uma unidade; ligações ENTRE comunidades costumam ser as pontes mais informativas.".to_string()),
+            "es" => (format!("La red se organiza en {} comunidades distintas — subgrupos más conectados internamente que entre sí.", comms.len()),
+                "Analiza cada comunidad como una unidad; los enlaces ENTRE comunidades suelen ser los puentes más informativos.".to_string()),
+            _ => (format!("The network organizes into {} distinct communities — subgroups more connected within than between.", comms.len()),
+                "Examine each community as a unit; links BETWEEN communities are usually the most informative bridges.".to_string()),
+        };
+        out.push(Assessment { statement, confidence: 0.55, evidence: vec![format!("{} communities", comms.len())], evidence_ids: vec![], action, basis: "inferred".into(), attributed_to: deterministic_engine() });
+    }
+
+    // 7) Anomalies — entities that stand out from their same-kind peers.
+    let mut anoms: Vec<(&crate::ontology::Entity, f32, String)> = g.entities.values()
+        .filter_map(|e| {
+            let s = e.attributes.get("anomaly_score").and_then(|v| v.parse::<f32>().ok())?;
+            let r = e.attributes.get("anomaly_reason").cloned().unwrap_or_default();
+            Some((e, s, r))
+        }).collect();
+    if !anoms.is_empty() {
+        anoms.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        let (top, tscore, treason) = (&anoms[0].0, anoms[0].1, anoms[0].2.clone());
+        let kl = kind_label(top.kind, lang);
+        let (statement, action) = match lang {
+            "pt" => (
+                format!("{} entidade(s) destoam dos seus pares. A mais destacada: o {} \"{}\" — {}.", anoms.len(), kl, top.label, treason),
+                "Revise os outliers: um valor fora da curva costuma ser conta-ponte, coletor ou erro de dado — vale confirmar qual.".to_string(),
+            ),
+            "es" => (
+                format!("{} entidad(es) se desvían de sus pares. La más destacada: el {} \"{}\" — {}.", anoms.len(), kl, top.label, treason),
+                "Revisa los outliers: un valor fuera de rango suele ser cuenta-puente, recolector o error de dato — conviene confirmar cuál.".to_string(),
+            ),
+            _ => (
+                format!("{} entit(y/ies) deviate from their peers. Most notable: the {} \"{}\" — {}.", anoms.len(), kl, top.label, treason),
+                "Review the outliers: an off-the-curve value is often a bridge account, a collector, or a data error — worth confirming which.".to_string(),
+            ),
+        };
+        out.push(Assessment { statement, confidence: (0.45 + tscore * 0.4).min(0.85), evidence: anoms.iter().take(4).map(|(e, _, r)| format!("{} — {}", e.label, r)).collect(), evidence_ids: anoms.iter().take(6).map(|(e, _, _)| e.id.clone()).collect(), action, basis: "inferred".into(), attributed_to: deterministic_engine() });
+    }
+
     out.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap());
     out
 }

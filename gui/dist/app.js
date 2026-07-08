@@ -18,7 +18,7 @@ const I18N = {
     "sev.critical":"Critical","sev.high":"High","sev.medium":"Medium","sev.low":"Low","sev.none":"No severity",
     "sit.domain":"Vertical","sit.owner":"Owner","sit.jurisdiction":"Jurisdiction","sit.created":"Created","sit.updated":"Updated","sit.entities":"entities","sit.relationships":"relationships","sit.critical":"critical","sit.alerts":"alerts",
     "auth.signin":"Sign in","auth.register":"Create account",
-    "gmode.overview":"Overview","gmode.risk":"Risk","gmode.neighborhood":"Neighborhood","gmode.timeline":"Timeline","gmode.full":"Full",
+    "gmode.overview":"Overview","gmode.risk":"Risk","gmode.neighborhood":"Neighborhood","gmode.timeline":"Timeline","gmode.full":"Full","gmode.network":"Network","gmode.network.hint":"colour = community · size = broker (betweenness) · the largest node is the network's articulation point",
     "gtool.entity":"Entity","gtool.fit":"Fit","gtool.path":"Path","gtool.reset":"Reset","gtool.ask":"Ask",
     "gf.all":"All","gf.crit":"Critical + High","gf.suspicious":"Suspicious/Malicious","gf.sensitive":"Sensitive",
     "view.entities":"Entity Registry","view.entities.sub":"Validate, resolve, enrich and prioritize the entities that feed your intelligence.",
@@ -48,7 +48,7 @@ const I18N = {
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Médio","sev.low":"Baixo","sev.none":"Sem severidade",
     "sit.domain":"Vertical","sit.owner":"Responsável","sit.jurisdiction":"Jurisdição","sit.created":"Criado","sit.updated":"Atualizado","sit.entities":"entidades","sit.relationships":"relações","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Entrar","auth.register":"Criar conta",
-    "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Linha do tempo","gmode.full":"Completo",
+    "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Linha do tempo","gmode.full":"Completo","gmode.network":"Rede","gmode.network.hint":"cor = comunidade · tamanho = broker (intermediação) · o maior nó é o ponto de articulação da rede",
     "gtool.entity":"Entidade","gtool.fit":"Ajustar","gtool.path":"Caminho","gtool.reset":"Redefinir","gtool.ask":"Perguntar",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Suspeito/Malicioso","gf.sensitive":"Sensível",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valide, resolva, enriqueça e priorize as entidades que alimentam sua inteligência.",
@@ -78,7 +78,7 @@ const I18N = {
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Medio","sev.low":"Bajo","sev.none":"Sin severidad",
     "sit.domain":"Vertical","sit.owner":"Responsable","sit.jurisdiction":"Jurisdicción","sit.created":"Creado","sit.updated":"Actualizado","sit.entities":"entidades","sit.relationships":"relaciones","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Iniciar sesión","auth.register":"Crear cuenta",
-    "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Línea de tiempo","gmode.full":"Completo",
+    "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Línea de tiempo","gmode.full":"Completo","gmode.network":"Red","gmode.network.hint":"color = comunidad · tamaño = broker (intermediación) · el nodo más grande es el punto de articulación de la red",
     "gtool.entity":"Entidad","gtool.fit":"Ajustar","gtool.path":"Ruta","gtool.reset":"Restablecer","gtool.ask":"Preguntar",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Sospechoso/Malicioso","gf.sensitive":"Sensible",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valida, resuelve, enriquece y prioriza las entidades que alimentan tu inteligencia.",
@@ -185,6 +185,9 @@ const KIND_COLOR = {
   repository:"#A3E635", unknown:"#94A3B8"
 };
 const kColor = k => KIND_COLOR[k] || KIND_COLOR.unknown;
+// Categorical palette for the network-science lens (colour by community).
+const COMMUNITY_PALETTE = ["#57D7E8","#8B7CFF","#F59E0B","#34D399","#FB7185","#A3E635","#60A5FA","#F472B6","#FBBF24","#2DD4BF","#C084FC","#4ADE80"];
+const communityColor = c => COMMUNITY_PALETTE[(parseInt(c,10)||0) % COMMUNITY_PALETTE.length];
 const GRAPH_BG = "#070A0F", NODE_FILL = "#151D27";
 // Node sizing: bounded so nothing becomes a giant blob.
 const NODE_MIN=22, NODE_MAX=44, META_MIN=40, META_MAX=88;
@@ -224,9 +227,14 @@ const ENTITY_GLYPH = {
   repository:'<circle cx="7" cy="6" r="2.2"/><circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="8" r="2.2"/><path d="M7 8.2v7.6M17 10.2c0 3.5-4.5 2.8-6.5 4.3"/>',
   unknown:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 013.7 2.1c0 1.6-2.2 2-2.2 3.2M12 17.2h.01"/>',
 };
-function nodeIcon(kind){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
-  // Dark glyph so it reads on any entity-type fill colour (Maltego-style badge).
-  const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='#0B1220' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
+// Uniform clean dark disc for every node; the glyph is drawn in the bright
+// entity-type colour so TYPE reads from the icon, and the ring carries RISK.
+const DISC_FILL = "#141E2B";
+function glyphColor(kc){ const h=(kc||"#94A3B8").replace("#",""); // brighten toward white so even dim hues read
+  const c=[0,2,4].map(o=>{ const v=parseInt(h.slice(o,o+2),16); return Math.round(v+(255-v)*0.25); });
+  return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
+function nodeIcon(kind, stroke){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
+  const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${stroke||"#EAF2FC"}' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
   return "data:image/svg+xml;utf8,"+encodeURIComponent(s); }
 const bandOf = s => s>=0.85?"critical":s>=0.6?"high":s>=0.35?"medium":"low";
 const bandColor = b => ({low:"#34d399",medium:"#f59e0b",high:"#fb7185",critical:"#ef4444"}[b]||"#34d399");
@@ -528,17 +536,18 @@ function initCy() {
     motionBlur: false,
     pixelRatio: 1,
     style: [
-      // Maltego-style: a solid colour-coded circular badge (fill = entity-type
-      // colour) with a dark glyph that reads on any hue, and a soft light ring.
+      // Dark, type-tinted disc with a light glyph. Type = disc tint + thin ring
+      // (kc); risk = the ring colour/width (hc) via the [halo] rule. No coloured
+      // underlay square — risk lives on the ring so the canvas stays clean.
       { selector:"node", style:{
-        "background-color":"data(kc)", "background-image":"data(icon)", "background-width":"58%", "background-height":"58%", "background-fit":"none", "background-clip":"none",
+        "background-color":DISC_FILL, "background-image":"data(icon)", "background-width":"52%", "background-height":"52%", "background-fit":"none", "background-clip":"none",
         "width":"data(size)", "height":"data(size)", "shape":"ellipse",
         "label":"data(label)", "font-size":"9px", "font-weight":600, "font-family":"SF Mono, Menlo, monospace", "color":"#E6EDF7",
         "text-wrap":"wrap", "text-max-width":"88px", "text-valign":"bottom", "text-margin-y":5, "min-zoomed-font-size":8,
         "text-outline-color":"#070A0F", "text-outline-width":2, "text-outline-opacity":0.85,
-        "border-width":"data(bw)", "border-color":"rgba(255,255,255,0.35)", "border-opacity":1,
-        "transition-property":"opacity border-width", "transition-duration":"140ms" }},
-      { selector:"node[halo]", style:{ "underlay-color":"data(hc)", "underlay-padding":6, "underlay-opacity":0.4 }},
+        "border-width":"data(bw)", "border-color":"data(kc)", "border-opacity":0.4,
+        "transition-property":"opacity border-width border-color", "transition-duration":"140ms" }},
+      { selector:"node[halo]", style:{ "border-color":"data(hc)", "border-opacity":1 }},
       // perf mode: solid coloured dot, no SVG icon
       { selector:"node.plain", style:{ "background-image":"none", "background-color":"data(kc)" }},
       // ---- edges: discreet by default ----
@@ -705,12 +714,25 @@ function renderGraph() {
   const perf = g.nodes.length > 500;
   t._perf = perf;
   const els = [];
+  // Network-science lens: ring colour = community, size = betweenness (broker),
+  // and the top broker gets a bright highlight. Metrics come from netsci (backend).
+  const netMode = (t.graphMode === "network");
   g.nodes.forEach(n=>{
-    if(n.meta){ els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon("group"), kc:kColor(n.kind), hc:bandColor(bandOf(n.risk)), size: metaSize(n.count) }, classes:"metanode"+(perf?" plain":"") }); return; }
+    if(n.meta){ els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon("group",glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(bandOf(n.risk)), size: metaSize(n.count) }, classes:"metanode"+(perf?" plain":"") }); return; }
     const band = n.band||bandOf(n.risk);
     const hot = band==="critical"||band==="high";
-    els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind), kc:kColor(n.kind), hc:bandColor(band),
-      size: nodeSize(n.risk), bw:hot?2.5:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+    if(netMode){
+      const at=n.attributes||{};
+      const bet=parseFloat(at.betweenness)||0;
+      const isBroker=(n.tags||[]).includes("broker");
+      const kc = at.community!=null ? communityColor(at.community) : kColor(n.kind);
+      const size = NODE_MIN + Math.sqrt(bet)*(NODE_MAX-NODE_MIN)*1.5 + (isBroker?10:0);
+      els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))),
+        kc, hc:"#E6EDF7", size, bw:isBroker?4.5:2, halo:(isBroker&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+      return;
+    }
+    els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band),
+      size: nodeSize(n.risk), bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
   });
   g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:e.hypothesis?"hyp":"" }); });
   cy.elements().remove(); cy.add(els);
@@ -1703,6 +1725,7 @@ function setGraphMode(mode, opts){ const t=activeTab(); if(!t||!t.graph.nodes.le
       cy.elements().style("display","none"); nb.style("display","element"); cy.fit(nb,70); selectNode(seedId); t._nbSeed=seedId;
       modeHint(`<b>Neighborhood</b> — ${hops} hop(s) around "${nodeData(seedId).label}" · right-click another node → Neighborhood`); }
     else if(mode==="timeline"){ buildTimeline(t); }
+    else if(mode==="network"){ renderGraph(); modeHint(`<b>${t2("gmode.network")}</b> — ${t2("gmode.network.hint")}`); setTimeout(()=>{ if(cy){ cy.resize(); cy.fit(cy.elements(),55); } },320); }
   }), delay);
 }
 function buildTimeline(t){ const withTs=t.graph.nodes.map(n=>({n,ts:parseTs(n)})).filter(x=>x.ts!=null);
@@ -1860,7 +1883,7 @@ async function runTransformOnSelected(t){ const id=cy&&cy.$(":selected").length?
 }
 // Build a cytoscape element for one graph node (shared by render + append).
 function graphNodeEl(n){ const band=n.band||bandOf(n.risk); const hot=band==="critical"||band==="high";
-  return { data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind), kc:kColor(n.kind), hc:bandColor(band), size:24+(n.risk||0)*26, bw:hot?2.5:1.5, halo:hot?1:undefined }, classes:n.hypothesis?"hyp":"" }; }
+  return { data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band), size:24+(n.risk||0)*26, bw:hot?3:1.5, halo:hot?1:undefined }, classes:n.hypothesis?"hyp":"" }; }
 // Incrementally add nodes/edges near an anchor WITHOUT re-laying-out the whole
 // graph — new results appear next to the seed and settle with a small local layout.
 function appendToCy(newNodes, newEdges, anchorId){ if(!cy){ renderGraph(); return; }

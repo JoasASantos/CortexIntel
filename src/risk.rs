@@ -122,6 +122,24 @@ pub fn score_graph(graph: &KnowledgeGraph, domain: Domain, extra_signals: &[(Str
             factors.push(format!("connectivity:{}", d as usize));
         }
 
+        // Brokerage: betweenness centrality (from network science) — a bridge /
+        // chokepoint is structurally critical even when its raw degree is modest,
+        // so it adds signal beyond connectivity. Written onto the entity by netsci.
+        if let Some(bet) = e.attributes.get("betweenness").and_then(|v| v.parse::<f32>().ok()) {
+            if bet > 0.0 {
+                score += bet * 0.22;
+                factors.push(format!("brokerage:{:.2}", bet));
+            }
+        }
+
+        // Anomaly: being an outlier among peers is itself a reason to look.
+        if let Some(an) = e.attributes.get("anomaly_score").and_then(|v| v.parse::<f32>().ok()) {
+            if an > 0.0 {
+                score += an * 0.22;
+                factors.push(format!("anomaly:{:.2}", an));
+            }
+        }
+
         let score = score.clamp(0.0, 1.0);
         let band = RiskBand::from_score(score);
         let requires_review = e.sensitive || band >= RiskBand::High;

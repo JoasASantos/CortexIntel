@@ -62,6 +62,19 @@ pub fn extract_record(rec: &Record, _dt: DataType, extra: &[(String, EntityKind)
             let mut e = Entity::new(*kind, &label).with_source(&origin);
             // Attach a few descriptive attributes if present.
             attach_attrs(&mut e, rec);
+            // Preserve the raw file hash (a one-way fingerprint, safe to keep and
+            // to match against reference feeds) — the label itself is redacted.
+            attach_hash(&mut e, val);
+            // Media also carries a perceptual hash when present: matched by
+            // similarity (near-duplicate), so recompressed/altered copies still hit.
+            if *kind == EntityKind::Media {
+                if let Some(ph) = rec.get_any(&["perceptual_hash", "phash", "p_hash"]) {
+                    let ph = ph.trim().to_lowercase();
+                    if !ph.is_empty() {
+                        e.attributes.entry("perceptual_hash".into()).or_insert(ph);
+                    }
+                }
+            }
             out.entities.push(e);
             by_kind.push((*kind, label));
         }
@@ -82,11 +95,12 @@ pub fn extract_record(rec: &Record, _dt: DataType, extra: &[(String, EntityKind)
 
     // 2) Scan every value for indicators (covers undeclared/free-text feeds).
     for (_k, v) in &rec.fields {
-        for (kind, label) in scan_indicators(v) {
-            let label = safe_label(kind, &label);
+        for (kind, raw) in scan_indicators(v) {
+            let label = safe_label(kind, &raw);
             if !by_kind.iter().any(|(k, l)| *k == kind && *l == label) {
-                out.entities
-                    .push(Entity::new(kind, &label).with_source(&origin));
+                let mut e = Entity::new(kind, &label).with_source(&origin);
+                attach_hash(&mut e, &raw);
+                out.entities.push(e);
                 by_kind.push((kind, label));
             }
         }
@@ -118,6 +132,24 @@ pub fn extract_record(rec: &Record, _dt: DataType, extra: &[(String, EntityKind)
     out.links.extend(infer_links(&by_kind));
 
     out
+}
+
+/// If `raw` is a file hash, retain it (lowercased) plus its type as attributes.
+/// A hash is a one-way fingerprint — safe to keep and to match against known-hash
+/// reference feeds (malware sets, known-CSAM hash lists, etc.), unlike the file.
+fn attach_hash(e: &mut Entity, raw: &str) {
+    let t = raw.trim();
+    if !is_hash(t) {
+        return;
+    }
+    let kind = match t.len() {
+        32 => "md5",
+        40 => "sha1",
+        64 => "sha256",
+        _ => "hash",
+    };
+    e.attributes.entry("file_hash".into()).or_insert_with(|| t.to_lowercase());
+    e.attributes.entry("hash_type".into()).or_insert_with(|| kind.to_string());
 }
 
 fn attach_attrs(e: &mut Entity, rec: &Record) {
