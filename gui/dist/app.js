@@ -9,6 +9,7 @@ const I18N = {
   en: {
     "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
     "nav.agents":"Agents","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted",
+    "risk.adjust":"Adjust risk","risk.adjust.title":"Adjust risk","risk.new":"New risk","risk.just":"Justification (why)","risk.just.ph":"Why are you overriding the score? (required, recorded)","risk.just.req":"A justification is required","risk.apply":"Apply","risk.manual":"manual","risk.done":"Risk adjusted",
     "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
     "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store",
     "set.keys":"API Keys","set.plugins":"Classifier Plugins","set.project":"Project","set.users":"Users & Access","set.security":"Security","set.language":"Language",
@@ -40,6 +41,7 @@ const I18N = {
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
     "nav.agents":"Agentes","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído",
+    "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado",
     "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
     "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms",
     "set.keys":"Chaves de API","set.plugins":"Plugins de Classificação","set.project":"Projeto","set.users":"Usuários & Acesso","set.security":"Segurança","set.language":"Idioma",
@@ -71,6 +73,7 @@ const I18N = {
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
     "nav.agents":"Agentes","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado",
+    "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado",
     "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
     "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms",
     "set.keys":"Claves de API","set.plugins":"Plugins de Clasificación","set.project":"Proyecto","set.users":"Usuarios y Acceso","set.security":"Seguridad","set.language":"Idioma",
@@ -865,6 +868,8 @@ function selectNode(id) {
   const rc=n._rc!=null?n._rc:entResolution(n,deg); const q=n._q!=null?n._q:entQuality(n,deg);
   $("#ctxRisk").innerHTML = `<span class="band ${band}">${band} · ${(n.risk||0).toFixed(2)}</span><div class="risk-bar"><span style="width:${Math.round((n.risk||0)*100)}%;background:${bandColor(band)}"></span></div>`+
     (n.meta?"":`<div class="ctx-scores"><span class="score-badge ${scoreCls(rc)}">resolution ${pct(rc)}</span> <span class="qual-badge ${qualityLabel(q)}">quality ${qualityLabel(q)}</span> <span class="chip">${deg} conns</span></div>`);
+  if(!n.meta){ const adj=el("button","btn ghost"); adj.style.cssText="margin-top:6px;padding:3px 10px;font-size:11px"; adj.textContent="✎ "+t2("risk.adjust"); adj.addEventListener("click",()=>openRiskAdjust(id)); $("#ctxRisk").appendChild(adj);
+    if(n.attributes&&n.attributes.risk_justification){ const j=el("div","muted"); j.style.cssText="font-size:10px;margin-top:4px"; j.textContent="⚑ "+t2("risk.manual")+": "+n.attributes.risk_justification; $("#ctxRisk").appendChild(j); } }
   const tags=$("#ctxTags"); tags.innerHTML = n.tags.length?"":'<span class="chip">none</span>';
   n.tags.forEach(x=>{ const c=el("span","chip tag-chip"); c.appendChild(document.createTextNode(x));
     if(!n.meta){ const rm=el("span","tag-x"," ×"); rm.title="remove tag"; rm.addEventListener("click",e=>{ e.stopPropagation(); n.tags=n.tags.filter(t=>t!==x); selectNode(id); renderGraphFilters&&renderGraphFilters(); }); c.appendChild(rm); }
@@ -880,8 +885,16 @@ function selectNode(id) {
   const rels=$("#ctxRels"); rels.innerHTML="";
   const t=activeTab(); const related=(t?.graph.edges||[]).filter(e=>e.source===id||e.target===id);
   if(!related.length) rels.innerHTML='<div class="empty">no direct relations</div>';
-  related.slice(0,50).forEach(e=>{ const other=e.source===id?e.target:e.source; const o=nodeData(other); if(!o)return;
-    const r=el("div","rel"); r.innerHTML=`<span class="rt">${esc(e.type)}</span> ${e.source===id?"→":"←"} ${esc(o.label)}`;
+  // Sort by confidence desc; humanize the type; colour-dot by the other kind;
+  // show confidence and flag predicted links.
+  const hum=s=>String(s).replace(/_/g," ");
+  [...related].sort((a,b)=>(b.conf||0)-(a.conf||0)).slice(0,60).forEach(e=>{ const other=e.source===id?e.target:e.source; const o=nodeData(other); if(!o)return;
+    const r=el("div","rel"); r.style.cursor="pointer";
+    const dir=e.source===id?"→":"←"; const conf=e.conf!=null?`<span class="conf muted" style="margin-left:auto;font-size:10px">${Math.round(e.conf*100)}%</span>`:"";
+    const pred=e.predicted?' <span class="chip" style="color:#F59E0B;border-color:#F59E0B">predicted</span>':"";
+    r.innerHTML=`<span class="kdot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${kColor(o.kind)};margin-right:7px;flex:0 0 auto"></span>`+
+      `<span class="rt">${esc(hum(e.type))}</span> <span class="muted">${dir}</span> <b>${esc(o.label)}</b>${pred}${conf}`;
+    r.style.display="flex"; r.style.alignItems="center"; r.style.gap="4px";
     r.addEventListener("click",()=>{ selectNode(other); if(cy){const el2=cy.$id(other); if(el2) cy.animate({center:{eles:el2},duration:300}); } }); rels.appendChild(r); });
   const src=$("#ctxSources"); src.innerHTML = n.sources.length?"":'<span class="chip">—</span>'; n.sources.forEach(s=>src.appendChild(el("span","chip",s)));
   renderCtxTransforms(n.kind);
@@ -890,6 +903,34 @@ function selectNode(id) {
   if (cy){ const e2=cy.$id(id); if(e2) cy.animate({center:{eles:e2},duration:300}); }
 }
 $("#ctxClose").addEventListener("click",()=>$("#context").hidden=true);
+// Manual risk override with a REQUIRED justification (recorded to the project
+// activity + reward feedback so it's auditable and teaches the scorer).
+function openRiskAdjust(id){ const n=nodeData(id); if(!n) return;
+  const cur=Math.round((n.risk||0)*100);
+  openModal(t2("risk.adjust.title")+" · "+esc(n.label),
+    `<div class="field">${esc(t2("risk.new"))}: <b id="raOut">${cur}%</b>
+       <input id="raVal" type="range" min="0" max="100" value="${cur}" oninput="document.getElementById('raOut').textContent=this.value+'%'" style="width:100%"/></div>
+     <div class="field">${esc(t2("risk.just"))} <span style="color:#fb7185">*</span>
+       <textarea id="raJust" rows="3" placeholder="${esc(t2('risk.just.ph'))}">${esc((n.attributes&&n.attributes.risk_justification)||"")}</textarea></div>`,
+    [{label:"Cancel",cls:"ghost",act:closeModal},
+     {label:t2("risk.apply"),cls:"primary",act:()=>{
+        const v=(parseInt(($("#raVal")||{}).value)||0)/100; const j=(($("#raJust")||{}).value||"").trim();
+        if(!j){ toast(t2("risk.just.req"),"err"); return; }
+        n.risk=v; n.band=bandOf(v); n.attributes=n.attributes||{};
+        n.attributes.risk_adjusted="manual"; n.attributes.risk_justification=j;
+        n.attributes.risk_adjusted_by=(state.user&&(state.user.display_name||state.user.email))||"analyst";
+        if(!n.tags.includes("risk-adjusted")) n.tags.push("risk-adjusted");
+        closeModal(); renderGraph(); selectNode(id);
+        const t=activeTab();
+        if(MODE!=="mock"&&t&&t.project&&t.project.id){
+          api("/api/projects/activity",{method:"POST",body:{id:t.project.id,kind:"risk-adjust",summary:`${n.label}: risco → ${v.toFixed(2)} (${n.band}) — ${j}`,meta:{entity:n.label,kind:n.kind,risk:v,justification:j}}}).catch(()=>{});
+          api("/api/feedback",{method:"POST",body:{key:"kind:"+n.kind,signal:v>=0.6?1:-1,weight:1}}).catch(()=>{});
+        }
+        pushNotif("entity",`Risco de ${n.label} ajustado para ${v.toFixed(2)} (justificado)`);
+        toast(t2("risk.done"),"ok");
+     }}]);
+  setTimeout(()=>{ const e=$("#raJust"); if(e) e.focus(); },40);
+}
 
 // G5 — per-object comments (persisted per project). Attribution on decision
 // cards already comes from the backend; this adds analyst discussion per object.
