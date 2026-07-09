@@ -304,4 +304,15 @@ const STARTERS: &[(&str, &str)] = &[
     ("geo-layer-triage.md", include_str!("../agents/geo-layer-triage.md")),
     ("geo-geofence.md", include_str!("../agents/geo-geofence.md")),
     ("geo-pattern-of-life.md", include_str!("../agents/geo-pattern-of-life.md")),
+    // OSINT / SIGINT / HUMINT discipline packs (v0.0.2).
+    ("osint-footprint.md", include_str!("../agents/osint-footprint.md")),
+    ("osint-selector.md", include_str!("../agents/osint-selector.md")),
+    ("osint-corroboration.md", include_str!("../agents/osint-corroboration.md")),
+    ("osint-infra.md", include_str!("../agents/osint-infra.md")),
+    ("sigint-pattern.md", include_str!("../agents/sigint-pattern.md")),
+    ("sigint-selectors.md", include_str!("../agents/sigint-selectors.md")),
+    ("sigint-network.md", include_str!("../agents/sigint-network.md")),
+    ("humint-reliability.md", include_str!("../agents/humint-reliability.md")),
+    ("humint-corroboration.md", include_str!("../agents/humint-corroboration.md")),
+    ("humint-tasking.md", include_str!("../agents/humint-tasking.md")),
 ];

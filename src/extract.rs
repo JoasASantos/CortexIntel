@@ -164,6 +164,9 @@ fn attach_attrs(e: &mut Entity, rec: &Record) {
         "customer_type", "order_status", "product_category", "department",
         // Monetary: needed so payments/wallets/accounts carry their value.
         "amount", "value", "currency", "transaction_amount", "total", "balance",
+        // Discipline signals: HUMINT reliability grading reads these.
+        "source_reliability", "reliability", "credibility", "corroboration",
+        "source_grade", "info_grade", "reporter_type",
         // Geo / temporal / trajectory: needed by the map lens to plot entities
         // and draw movement paths. Coordinates are references, not raw content.
         "latitude", "longitude", "lat", "lon", "lng", "latitude_approx", "longitude_approx",
