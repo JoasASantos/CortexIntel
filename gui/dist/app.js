@@ -11,7 +11,7 @@ const I18N = {
     "nav.agents":"Agents","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted",
     "risk.adjust":"Adjust risk","risk.adjust.title":"Adjust risk","risk.new":"New risk","risk.just":"Justification (why)","risk.just.ph":"Why are you overriding the score? (required, recorded)","risk.just.req":"A justification is required","risk.apply":"Apply","risk.manual":"manual","risk.done":"Risk adjusted","route.intel":"Open Intelligence","route.map":"Open Map","route.timeline":"Open Timeline","route.entities":"Open Entities","route.graph":"Show in graph","onb.title":"Welcome — set up your workspace","onb.sub":"First access: this creates your admin workspace. Name your tenant so cases stay organized by company / unit / team.","onb.org":"Company / business unit / team","onb.org.ph":"e.g. Acme Corp · Fraud Unit · Blue Team","onb.org.req":"Enter an organization name","onb.type":"Type","onb.type.company":"Company","onb.type.bu":"Business unit","onb.type.team":"Team","onb.region":"Region (for KYC / disclaimers)","onb.legal":"Person/identity data is regulated (LGPD/GDPR). This is decision-support, never a definitive ruling.","onb.continue":"Continue","onb.done":"Workspace ready",
     "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
-    "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store",
+    "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store","src.byDiscipline":"SOURCES BY DISCIPLINE","src.generic":"GENERIC CONNECTORS","src.noparams":"No parameters — click to pull.","src.testrun":"Test & pull","src.pulling":"Pulling from source…","src.pulled":"Source pulled & processed","src.opendemo":"Open a project first (test only in demo).",
     "set.keys":"API Keys","set.plugins":"Classifier Plugins","set.project":"Project","set.users":"Users & Access","set.security":"Security","set.language":"Language",
     "btn.run":"Run","btn.askai":"Ask AI","btn.newProject":"New project","btn.fit":"Fit","btn.reset":"Reset","btn.path":"Path","btn.addEntity":"Entity",
     "launcher.open":"Open a recent project or start a new investigation.","launcher.new":"New project","launcher.import":"Import project","launcher.empty":"No projects yet — create your first investigation.",
@@ -43,7 +43,7 @@ const I18N = {
     "nav.agents":"Agentes","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído",
     "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado","route.intel":"Abrir Inteligência","route.map":"Abrir Mapa","route.timeline":"Abrir Linha do tempo","route.entities":"Abrir Entidades","route.graph":"Ver no grafo","onb.title":"Bem-vindo — configure seu workspace","onb.sub":"Primeiro acesso: isto cria seu workspace admin. Nomeie o tenant para organizar os casos por empresa / unidade / time.","onb.org":"Empresa / unidade de negócio / time","onb.org.ph":"ex.: Acme Corp · Unidade Fraude · Blue Team","onb.org.req":"Informe o nome da organização","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidade de negócio","onb.type.team":"Time","onb.region":"Região (para KYC / avisos legais)","onb.legal":"Dados de pessoa/identidade são regulados (LGPD/GDPR). Isto é apoio à decisão, nunca um veredito definitivo.","onb.continue":"Continuar","onb.done":"Workspace pronto",
     "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
-    "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms",
+    "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms","src.byDiscipline":"FONTES POR DISCIPLINA","src.generic":"CONECTORES GENÉRICOS","src.noparams":"Sem parâmetros — clique para puxar.","src.testrun":"Testar e puxar","src.pulling":"Puxando da fonte…","src.pulled":"Fonte puxada e processada","src.opendemo":"Abra um projeto primeiro (teste só no demo).",
     "set.keys":"Chaves de API","set.plugins":"Plugins de Classificação","set.project":"Projeto","set.users":"Usuários & Acesso","set.security":"Segurança","set.language":"Idioma",
     "btn.run":"Executar","btn.askai":"Perguntar à IA","btn.newProject":"Novo projeto","btn.fit":"Ajustar","btn.reset":"Redefinir","btn.path":"Caminho","btn.addEntity":"Entidade",
     "launcher.open":"Abra um projeto recente ou inicie uma nova investigação.","launcher.new":"Novo projeto","launcher.import":"Importar projeto","launcher.empty":"Nenhum projeto ainda — crie sua primeira investigação.",
@@ -75,7 +75,7 @@ const I18N = {
     "nav.agents":"Agentes","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado",
     "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado","route.intel":"Abrir Inteligencia","route.map":"Abrir Mapa","route.timeline":"Abrir Línea de tiempo","route.entities":"Abrir Entidades","route.graph":"Ver en el grafo","onb.title":"Bienvenido — configura tu espacio","onb.sub":"Primer acceso: esto crea tu espacio admin. Nombra el tenant para organizar los casos por empresa / unidad / equipo.","onb.org":"Empresa / unidad de negocio / equipo","onb.org.ph":"ej.: Acme Corp · Unidad Fraude · Blue Team","onb.org.req":"Ingresa el nombre de la organización","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidad de negocio","onb.type.team":"Equipo","onb.region":"Región (para KYC / avisos)","onb.legal":"Los datos de persona/identidad están regulados (LGPD/GDPR). Esto es apoyo a la decisión, nunca un veredicto definitivo.","onb.continue":"Continuar","onb.done":"Espacio listo",
     "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
-    "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms",
+    "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms","src.byDiscipline":"FUENTES POR DISCIPLINA","src.generic":"CONECTORES GENÉRICOS","src.noparams":"Sin parámetros — clic para extraer.","src.testrun":"Probar y extraer","src.pulling":"Extrayendo de la fuente…","src.pulled":"Fuente extraída y procesada","src.opendemo":"Abre un proyecto primero (prueba solo en demo).",
     "set.keys":"Claves de API","set.plugins":"Plugins de Clasificación","set.project":"Proyecto","set.users":"Usuarios y Acceso","set.security":"Seguridad","set.language":"Idioma",
     "btn.run":"Ejecutar","btn.askai":"Preguntar a la IA","btn.newProject":"Nuevo proyecto","btn.fit":"Ajustar","btn.reset":"Restablecer","btn.path":"Ruta","btn.addEntity":"Entidad",
     "launcher.open":"Abre un proyecto reciente o inicia una nueva investigación.","launcher.new":"Nuevo proyecto","launcher.import":"Importar proyecto","launcher.empty":"Aún no hay proyectos — crea tu primera investigación.",
@@ -1728,8 +1728,50 @@ const CONNECTORS=[
   {kind:"looker",name:"Looker",desc:"Pull a Look/query result via the Looker API.",api:true},
   {kind:"webhook",name:"REST / Webhook / API",desc:"Pull JSON records from any REST endpoint.",api:true},
 ];
-function renderConnectorCards(){ const w=$("#connectorCards"); if(!w)return; w.innerHTML="";
+async function renderConnectorCards(){ const w=$("#connectorCards"); if(!w)return; w.innerHTML="";
+  // Discipline-tagged source templates first (OSINT/GEOINT/SIGINT/HUMINT).
+  try{
+    const cat=await api("/api/connectors/catalog");
+    if(cat&&cat.length){
+      const groups={}; cat.forEach(c=>{ (groups[c.discipline]=groups[c.discipline]||[]).push(c); });
+      const wrap=el("div"); wrap.style.cssText="margin-bottom:14px";
+      wrap.appendChild(Object.assign(el("div"),{textContent:t2("src.byDiscipline"),style:"font-weight:600;color:#8fa8c0;letter-spacing:0.5px;font-size:11px;margin:2px 0 8px"}));
+      ["OSINT","GEOINT","SIGINT","HUMINT"].forEach(disc=>{ if(!groups[disc])return;
+        const row=el("div"); row.style.cssText="margin-bottom:8px";
+        row.appendChild(Object.assign(el("span","chip"),{textContent:disc,style:"margin-right:8px;color:#57D7E8;border-color:#57D7E8"}));
+        groups[disc].forEach(tpl=>{ const b=el("button","btn ghost"); b.style.cssText="margin:3px 4px 3px 0;padding:4px 10px;font-size:11px"; b.textContent=tpl.name; b.title=tpl.description;
+          b.addEventListener("click",()=>connectorFromTemplate(tpl)); row.appendChild(b); });
+        wrap.appendChild(row);
+      });
+      w.appendChild(wrap);
+      w.appendChild(Object.assign(el("div"),{textContent:t2("src.generic"),style:"font-weight:600;color:#8fa8c0;letter-spacing:0.5px;font-size:11px;margin:4px 0 8px"}));
+    }
+  }catch(e){}
   CONNECTORS.forEach(c=>{ const card=el("div","card conn"); card.innerHTML=`<div class="ct">⇄ ${esc(c.name)}</div><div class="cd">${esc(c.desc)}</div>`; card.addEventListener("click",()=>connectorModal(c)); w.appendChild(card); }); }
+// Open the connector form pre-shaped from a discipline template: the template's
+// kind + config, with an input per {placeholder} param the operator must fill.
+function connectorFromTemplate(tpl){
+  const params=tpl.params||[];
+  const fields=params.map(p=>`<div class="field">${esc(p)}${tpl.auth&&(p==="api_key"||p==="token")?' <span style="color:#fb7185">(secret)</span>':""}<input id="ct_${esc(p)}" type="${(p.includes("key")||p==="token")?"password":"text"}" placeholder="${esc(p)}"/></div>`).join("")||`<p class="muted">${esc(t2("src.noparams"))}</p>`;
+  openModal(`${tpl.discipline} · ${tpl.name}`,
+    `<p class="muted">${esc(tpl.description||"")}</p>${fields}`,
+    [{label:"Cancel",cls:"ghost",act:closeModal},
+     {label:t2("src.testrun"),cls:"primary",act:async()=>{
+        const cfg={}; ["endpoint","method","body","provider","records_path"].forEach(k=>{ if(tpl[k]!=null) cfg[k]=tpl[k]; });
+        if(tpl.provider) cfg.provider=undefined; if(tpl.provider) cfg.provider=tpl.provider; // datalake provider
+        if(tpl.provider) cfg["provider"]=tpl.provider;
+        if(tpl.records_path) cfg.records_path=tpl.records_path;
+        params.forEach(p=>{ const e=$("#ct_"+p); if(e&&e.value.trim()) cfg[p]=e.value.trim(); });
+        // datalake templates use 'uri'; rest use endpoint (already set)
+        const t=activeTab();
+        try{ const st=await api("/api/connectors/test",{method:"POST",body:{kind:tpl.kind,config:cfg}}); toast("✓ "+(st.status||"ready"),"ok");
+          if(t&&t.project&&MODE!=="mock"){ closeModal(); setSync("busy","running"); toast(t2("src.pulling"));
+            const res=await runJob("connector_run",{kind:tpl.kind,config:cfg,domain:t.project.domain,provider:state.provider,projectId:t.project.id,maxRecords:4000,lang:LANG});
+            t.result=res; t.graph=consolidatedToGraph(res); setSync("ok","complete"); renderAll(); showView("graph"); pushNotif("import",`${tpl.name} pulled`); toast(t2("src.pulled"),"ok");
+          } else { toast(t2("src.opendemo"),"err"); }
+        }catch(e){ setSync("err","failed"); toast(e.message,"err"); }
+     }}]);
+}
 function connectorModal(c){
   let fields="";
   if(c.kind==="csv"||c.kind==="json"){ fields=`<div class="field">File path<input id="cPath" placeholder="/path/to/data.csv or .json" /></div>`; }

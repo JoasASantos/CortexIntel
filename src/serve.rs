@@ -385,6 +385,8 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             finish(stream, projects::import(&raw, &user.email))
         }
         // Connectors
+        // Discipline-tagged source templates (OSINT/GEOINT/SIGINT/HUMINT).
+        ("GET", "/api/connectors/catalog") => json_ok(stream, &connectors::source_catalog()),
         ("POST", "/api/connectors/test") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, connectors::test(
