@@ -366,6 +366,13 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, projects::delete(b.get("id").and_then(|v| v.as_str()).unwrap_or("")).map(|_| serde_json::json!({"ok":true})))
         }
+        // Continuous intelligence: standing watchlist rules per project.
+        ("POST", "/api/projects/watchlist") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let id = b.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let rules = b.get("rules").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+            finish(stream, projects::set_watchlist(id, rules).map(|_| serde_json::json!({"ok": true})))
+        }
         // Record an activity/result on a project (agent runs persist here).
         ("POST", "/api/projects/activity") => {
             let b: serde_json::Value = parse_body(&req.body)?;

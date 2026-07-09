@@ -20,6 +20,7 @@ pub mod geoint;
 pub mod keys;
 pub mod linkpred;
 pub mod llm;
+pub mod monitor;
 pub mod netsci;
 pub mod ontology;
 pub mod pipeline;
@@ -210,6 +211,25 @@ pub mod api {
                 let n_ent = result.get("entities").and_then(|e| e.as_object())
                     .map(|o| o.values().filter_map(|v| v.as_array().map(|a| a.len())).sum::<usize>()).unwrap_or(0);
                 let n_rel = result.get("relationships").and_then(|r| r.as_array()).map(|a| a.len()).unwrap_or(0);
+                // Continuous intelligence: diff vs the previous result + evaluate
+                // the project's watchlist, before we overwrite last_result.
+                if let Ok(prev) = crate::projects::load(pid) {
+                    if let Some(prev_result) = &prev.last_result {
+                        let changes = crate::monitor::diff(prev_result, &result);
+                        let has_change = changes.get("new_entities").and_then(|v| v.as_array()).map(|a| !a.is_empty()).unwrap_or(false)
+                            || changes.get("risk_increased").and_then(|v| v.as_array()).map(|a| !a.is_empty()).unwrap_or(false);
+                        if has_change {
+                            let summary = changes.get("summary").and_then(|v| v.as_str()).unwrap_or("changed").to_string();
+                            let _ = crate::projects::add_activity(pid, "change", &summary, changes.clone());
+                        }
+                        let watch = serde_json::Value::Array(prev.watchlist.clone());
+                        for alert in crate::monitor::evaluate_watchlist(&result, &watch) {
+                            let rule = alert.get("rule").and_then(|v| v.as_str()).unwrap_or("watchlist");
+                            let cnt = alert.get("count").and_then(|v| v.as_u64()).unwrap_or(0);
+                            let _ = crate::projects::add_activity(pid, "watchlist", &format!("⚑ {rule}: {cnt} match(es)"), alert);
+                        }
+                    }
+                }
                 let _ = crate::projects::add_activity(pid, "run",
                     &format!("Analysis: {} entities, {} relationships ({})", n_ent, n_rel, params.domain),
                     serde_json::json!({"entities": n_ent, "relationships": n_rel}));

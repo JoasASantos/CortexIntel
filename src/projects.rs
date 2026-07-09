@@ -66,6 +66,10 @@ pub struct Project {
     pub last_result: Option<serde_json::Value>,
     #[serde(default)]
     pub comments: Vec<Comment>,
+    /// Standing watchlist rules (continuous intelligence): each fires an alert on
+    /// a re-run when matched. Rule = {name, kind?, min_risk?, label_contains?}.
+    #[serde(default)]
+    pub watchlist: Vec<serde_json::Value>,
 }
 
 /// Lightweight listing entry (no heavy last_result payload).
@@ -117,9 +121,18 @@ pub fn create(name: &str, domain: &str, owner: &str, description: &str, ai_instr
         connectors: Vec::new(),
         last_result: None,
         comments: Vec::new(),
+        watchlist: Vec::new(),
     };
     save(&p)?;
     Ok(p)
+}
+
+/// Replace a project's watchlist rules (continuous intelligence).
+pub fn set_watchlist(id: &str, rules: Vec<serde_json::Value>) -> Result<()> {
+    let mut p = load(id)?;
+    p.watchlist = rules;
+    p.updated_at = now();
+    save(&p)
 }
 
 pub fn save(p: &Project) -> Result<()> {
