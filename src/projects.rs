@@ -70,6 +70,41 @@ pub struct Project {
     /// a re-run when matched. Rule = {name, kind?, min_risk?, label_contains?}.
     #[serde(default)]
     pub watchlist: Vec<serde_json::Value>,
+    /// Per-case RBAC (need-to-know): when `restricted`, only the owner, listed
+    /// `members` (by email) and admins can access the case.
+    #[serde(default)]
+    pub restricted: bool,
+    #[serde(default)]
+    pub members: Vec<String>,
+}
+
+/// Can this user access the project? Owner, listed member or admin always can;
+/// an unrestricted project is open to any signed-in user.
+pub fn can_access(p: &Project, email: &str, role: &str) -> bool {
+    if role == "admin" || p.owner.eq_ignore_ascii_case(email) {
+        return true;
+    }
+    if !p.restricted {
+        return true;
+    }
+    p.members.iter().any(|m| m.eq_ignore_ascii_case(email))
+}
+
+/// Set a project's access control (owner/admin only — enforced at the API).
+pub fn set_access(id: &str, restricted: bool, members: Vec<String>) -> Result<()> {
+    let mut p = load(id)?;
+    p.restricted = restricted;
+    p.members = members;
+    p.updated_at = now();
+    save(&p)
+}
+
+/// List only the projects a user may see.
+pub fn list_for(email: &str, role: &str) -> Vec<ProjectSummary> {
+    list()
+        .into_iter()
+        .filter(|s| load(&s.id).map(|p| can_access(&p, email, role)).unwrap_or(true))
+        .collect()
 }
 
 /// Lightweight listing entry (no heavy last_result payload).
@@ -122,6 +157,8 @@ pub fn create(name: &str, domain: &str, owner: &str, description: &str, ai_instr
         last_result: None,
         comments: Vec::new(),
         watchlist: Vec::new(),
+        restricted: false,
+        members: Vec::new(),
     };
     save(&p)?;
     Ok(p)

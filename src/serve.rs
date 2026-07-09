@@ -39,7 +39,7 @@ fn start_job(kind: String, payload: serde_json::Value) -> String {
             "ask" => api::ask(serde_json::from_value(payload)?),
             "run" => api::run_analysis(serde_json::from_value(payload)?),
             "connector_run" => api::connector_run(serde_json::from_value(payload)?),
-            "report_pdf" => api::report_pdf(payload.get("project_id").and_then(|v| v.as_str()).unwrap_or("")),
+            "report_pdf" => api::report_pdf_opt(payload.get("project_id").and_then(|v| v.as_str()).unwrap_or(""), payload.get("redact").and_then(|v| v.as_bool()).unwrap_or(false)),
             other => Err(anyhow!("unknown job kind '{other}'")),
         })();
         let mut map = jobs().lock().unwrap();
@@ -332,7 +332,7 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         },
         ("POST", "/api/report/pdf") => {
             let b: serde_json::Value = parse_body(&req.body)?;
-            finish(stream, api::report_pdf(b.get("project_id").and_then(|v| v.as_str()).unwrap_or("")))
+            finish(stream, api::report_pdf_opt(b.get("project_id").and_then(|v| v.as_str()).unwrap_or(""), b.get("redact").and_then(|v| v.as_bool()).unwrap_or(false)))
         }
         // Governance: verify an audit log's chain of custody (tamper-evident).
         ("GET", "/api/audit/verify") => match param(&req.query, "path") {
@@ -357,11 +357,29 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             _ => json_err(stream, "invalid path"),
         },
         // Projects
-        ("GET", "/api/projects") => json_ok(stream, &projects::list()),
+        ("GET", "/api/projects") => json_ok(stream, &projects::list_for(&user.email, &user.role)),
         ("GET", "/api/projects/get") => match param(&req.query, "id") {
-            Some(id) => finish(stream, projects::load(&id)),
+            Some(id) => match projects::load(&id) {
+                Ok(p) if projects::can_access(&p, &user.email, &user.role) => json_ok(stream, &p),
+                Ok(_) => respond(stream, 403, "application/json; charset=utf-8", br#"{"error":"restricted case - no access (need-to-know)"}"#),
+                Err(e) => json_err(stream, &e.to_string()),
+            },
             None => json_err(stream, "missing id"),
         },
+        // Per-case RBAC: owner/admin set who can access a restricted case.
+        ("POST", "/api/projects/access") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let id = b.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            match projects::load(id) {
+                Ok(p) if p.owner.eq_ignore_ascii_case(&user.email) || user.role == "admin" => {
+                    let members: Vec<String> = b.get("members").and_then(|v| v.as_array())
+                        .map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect()).unwrap_or_default();
+                    finish(stream, projects::set_access(id, b.get("restricted").and_then(|v| v.as_bool()).unwrap_or(false), members).map(|_| serde_json::json!({"ok": true})))
+                }
+                Ok(_) => respond(stream, 403, "application/json; charset=utf-8", br#"{"error":"only the case owner or an admin can change access"}"#),
+                Err(e) => json_err(stream, &e.to_string()),
+            }
+        }
         ("POST", "/api/projects") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, projects::create(

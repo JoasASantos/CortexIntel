@@ -29,6 +29,7 @@ pub mod plugins;
 pub mod profile;
 pub mod projects;
 pub mod prompts;
+pub mod redact;
 pub mod references;
 pub mod report;
 pub mod reportpdf;
@@ -519,11 +520,18 @@ pub mod api {
     /// Render a project's consolidated analysis to a PDF (via Typst) and return
     /// the PDF path.
     pub fn report_pdf(project_id: &str) -> Result<serde_json::Value> {
+        report_pdf_opt(project_id, false)
+    }
+
+    /// Generate the PDF report; when `redact`, PII is masked (governance export).
+    pub fn report_pdf_opt(project_id: &str, redact: bool) -> Result<serde_json::Value> {
         let p = crate::projects::load(project_id)?;
         let c = p.last_result.ok_or_else(|| anyhow!("project has no analysis yet — run one first"))?;
+        let c = if redact { crate::redact::redact_case(&c) } else { c };
         let now = chrono::Utc::now().format("%Y-%m-%d %H:%M UTC").to_string();
-        let path = crate::reportpdf::to_pdf(&c, &p.name, &p.domain, &p.owner, &now)?;
-        Ok(serde_json::json!({ "path": path }))
+        let name = if redact { format!("{} (redacted)", p.name) } else { p.name.clone() };
+        let path = crate::reportpdf::to_pdf(&c, &name, &p.domain, &p.owner, &now)?;
+        Ok(serde_json::json!({ "path": path, "redacted": redact }))
     }
 
     /// Load a previously written graph.json from an output directory.
