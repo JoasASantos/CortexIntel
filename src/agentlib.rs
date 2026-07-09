@@ -328,4 +328,18 @@ const STARTERS: &[(&str, &str)] = &[
     ("sales-winloss.md", include_str!("../agents/sales-winloss.md")),
     ("sales-territory.md", include_str!("../agents/sales-territory.md")),
     ("commercial-brief.md", include_str!("../agents/commercial-brief.md")),
+    // HR / Legal / Clinical / Banking / Insurance packs.
+    ("hr-attrition.md", include_str!("../agents/hr-attrition.md")),
+    ("hr-org-network.md", include_str!("../agents/hr-org-network.md")),
+    ("hr-hiring-funnel.md", include_str!("../agents/hr-hiring-funnel.md")),
+    ("hr-dei-signal.md", include_str!("../agents/hr-dei-signal.md")),
+    ("legal-privilege.md", include_str!("../agents/legal-privilege.md")),
+    ("legal-obligations.md", include_str!("../agents/legal-obligations.md")),
+    ("legal-comms-thread.md", include_str!("../agents/legal-comms-thread.md")),
+    ("legal-compliance-gap.md", include_str!("../agents/legal-compliance-gap.md")),
+    ("clin-safety-cluster.md", include_str!("../agents/clin-safety-cluster.md")),
+    ("clin-readmit.md", include_str!("../agents/clin-readmit.md")),
+    ("clin-pathway.md", include_str!("../agents/clin-pathway.md")),
+    ("bank-txn-monitor.md", include_str!("../agents/bank-txn-monitor.md")),
+    ("ins-claims-triage.md", include_str!("../agents/ins-claims-triage.md")),
 ];
