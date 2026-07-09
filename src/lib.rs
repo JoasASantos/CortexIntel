@@ -279,14 +279,21 @@ pub mod api {
     /// Instance config (country for locale-aware KYC + onboarding state).
     pub fn get_config() -> serde_json::Value {
         let s = crate::store::get_settings();
-        serde_json::json!({ "country": s.country, "onboarded": s.onboarded, "supported": ["BR", "US"] })
+        serde_json::json!({ "country": s.country, "onboarded": s.onboarded, "supported": ["BR", "US"],
+            "organization": s.organization, "org_type": s.org_type })
     }
 
     pub fn set_config(country: &str, onboarded: bool) -> Result<serde_json::Value> {
+        set_config_full(country, onboarded, None, None)
+    }
+
+    pub fn set_config_full(country: &str, onboarded: bool, organization: Option<&str>, org_type: Option<&str>) -> Result<serde_json::Value> {
         let mut s = crate::store::get_settings();
         if !country.is_empty() {
             s.country = country.to_uppercase();
         }
+        if let Some(o) = organization { if !o.trim().is_empty() { s.organization = o.trim().to_string(); } }
+        if let Some(t) = org_type { if !t.trim().is_empty() { s.org_type = t.trim().to_string(); } }
         s.onboarded = onboarded || s.onboarded;
         crate::store::save_settings(&s)?;
         Ok(get_config())

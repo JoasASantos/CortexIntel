@@ -438,7 +438,12 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/api/config") => json_ok(stream, &api::get_config()),
         ("POST", "/api/config") => {
             let b: serde_json::Value = parse_body(&req.body)?;
-            finish(stream, api::set_config(b.get("country").and_then(|v| v.as_str()).unwrap_or(""), b.get("onboarded").and_then(|v| v.as_bool()).unwrap_or(false)))
+            finish(stream, api::set_config_full(
+                b.get("country").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("onboarded").and_then(|v| v.as_bool()).unwrap_or(false),
+                b.get("organization").and_then(|v| v.as_str()),
+                b.get("org_type").and_then(|v| v.as_str()),
+            ))
         }
         // File upload (browse a file from the PC → temp path for the pipeline)
         ("POST", "/api/upload") => {

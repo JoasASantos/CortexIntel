@@ -9,7 +9,7 @@ const I18N = {
   en: {
     "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
     "nav.agents":"Agents","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted",
-    "risk.adjust":"Adjust risk","risk.adjust.title":"Adjust risk","risk.new":"New risk","risk.just":"Justification (why)","risk.just.ph":"Why are you overriding the score? (required, recorded)","risk.just.req":"A justification is required","risk.apply":"Apply","risk.manual":"manual","risk.done":"Risk adjusted","route.intel":"Open Intelligence","route.map":"Open Map","route.timeline":"Open Timeline","route.entities":"Open Entities","route.graph":"Show in graph",
+    "risk.adjust":"Adjust risk","risk.adjust.title":"Adjust risk","risk.new":"New risk","risk.just":"Justification (why)","risk.just.ph":"Why are you overriding the score? (required, recorded)","risk.just.req":"A justification is required","risk.apply":"Apply","risk.manual":"manual","risk.done":"Risk adjusted","route.intel":"Open Intelligence","route.map":"Open Map","route.timeline":"Open Timeline","route.entities":"Open Entities","route.graph":"Show in graph","onb.title":"Welcome — set up your workspace","onb.sub":"First access: this creates your admin workspace. Name your tenant so cases stay organized by company / unit / team.","onb.org":"Company / business unit / team","onb.org.ph":"e.g. Acme Corp · Fraud Unit · Blue Team","onb.org.req":"Enter an organization name","onb.type":"Type","onb.type.company":"Company","onb.type.bu":"Business unit","onb.type.team":"Team","onb.region":"Region (for KYC / disclaimers)","onb.legal":"Person/identity data is regulated (LGPD/GDPR). This is decision-support, never a definitive ruling.","onb.continue":"Continue","onb.done":"Workspace ready",
     "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
     "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store",
     "set.keys":"API Keys","set.plugins":"Classifier Plugins","set.project":"Project","set.users":"Users & Access","set.security":"Security","set.language":"Language",
@@ -41,7 +41,7 @@ const I18N = {
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
     "nav.agents":"Agentes","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído",
-    "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado","route.intel":"Abrir Inteligência","route.map":"Abrir Mapa","route.timeline":"Abrir Linha do tempo","route.entities":"Abrir Entidades","route.graph":"Ver no grafo",
+    "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado","route.intel":"Abrir Inteligência","route.map":"Abrir Mapa","route.timeline":"Abrir Linha do tempo","route.entities":"Abrir Entidades","route.graph":"Ver no grafo","onb.title":"Bem-vindo — configure seu workspace","onb.sub":"Primeiro acesso: isto cria seu workspace admin. Nomeie o tenant para organizar os casos por empresa / unidade / time.","onb.org":"Empresa / unidade de negócio / time","onb.org.ph":"ex.: Acme Corp · Unidade Fraude · Blue Team","onb.org.req":"Informe o nome da organização","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidade de negócio","onb.type.team":"Time","onb.region":"Região (para KYC / avisos legais)","onb.legal":"Dados de pessoa/identidade são regulados (LGPD/GDPR). Isto é apoio à decisão, nunca um veredito definitivo.","onb.continue":"Continuar","onb.done":"Workspace pronto",
     "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
     "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms",
     "set.keys":"Chaves de API","set.plugins":"Plugins de Classificação","set.project":"Projeto","set.users":"Usuários & Acesso","set.security":"Segurança","set.language":"Idioma",
@@ -73,7 +73,7 @@ const I18N = {
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
     "nav.agents":"Agentes","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado",
-    "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado","route.intel":"Abrir Inteligencia","route.map":"Abrir Mapa","route.timeline":"Abrir Línea de tiempo","route.entities":"Abrir Entidades","route.graph":"Ver en el grafo",
+    "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado","route.intel":"Abrir Inteligencia","route.map":"Abrir Mapa","route.timeline":"Abrir Línea de tiempo","route.entities":"Abrir Entidades","route.graph":"Ver en el grafo","onb.title":"Bienvenido — configura tu espacio","onb.sub":"Primer acceso: esto crea tu espacio admin. Nombra el tenant para organizar los casos por empresa / unidad / equipo.","onb.org":"Empresa / unidad de negocio / equipo","onb.org.ph":"ej.: Acme Corp · Unidad Fraude · Blue Team","onb.org.req":"Ingresa el nombre de la organización","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidad de negocio","onb.type.team":"Equipo","onb.region":"Región (para KYC / avisos)","onb.legal":"Los datos de persona/identidad están regulados (LGPD/GDPR). Esto es apoyo a la decisión, nunca un veredicto definitivo.","onb.continue":"Continuar","onb.done":"Espacio listo",
     "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
     "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms",
     "set.keys":"Claves de API","set.plugins":"Plugins de Clasificación","set.project":"Proyecto","set.users":"Usuarios y Acceso","set.security":"Seguridad","set.language":"Idioma",
@@ -421,8 +421,10 @@ async function enterApp() {
   refreshDoctor(); renderConnectorCards(); renderPluginExample();
   $("#providerPill").textContent = "provider: "+state.provider;
   checkProviders({silent:true});
-  // Onboarding: ask country (BR/US) once, THEN show the project launcher.
-  try { const cfg=await api("/api/config"); state.country=cfg.country; if(!cfg.onboarded){ onboardCountry(()=>showLauncher()); return; } } catch(e){}
+  // Onboarding: on first access, name the tenant (company/unit/team) + region.
+  try { const cfg=await api("/api/config"); state.country=cfg.country; state.organization=cfg.organization; if(!cfg.onboarded){ onboardCountry(()=>showLauncher()); return; } } catch(e){}
+  // Show the tenant name next to the brand so cases stay organized by org.
+  if(state.organization){ const bt=$(".brand-tenant"); if(bt) bt.textContent=state.organization; else { const b=document.querySelector(".topbar .brand,.brand"); if(b){ const s=el("span","brand-tenant"); s.style.cssText="margin-left:8px;padding:2px 8px;border:1px solid rgba(120,140,160,0.3);border-radius:6px;font-size:11px;color:#8fa8c0"; s.textContent=state.organization; b.appendChild(s); } } }
   showLauncher();
 }
 
@@ -528,16 +530,29 @@ function renderTabs() {
 
 let onboardSel="BR";
 function onboardCountry(done){
-  openModal("Welcome — set your region", `
-    <p class="muted">CortexIntel tailors identity/KYC checks and disclaimers to your country. Supported now: Brazil & United States.</p>
+  openModal(t2("onb.title"), `
+    <p class="muted">${esc(t2("onb.sub"))}</p>
+    <div class="field">${esc(t2("onb.org"))} <span style="color:#fb7185">*</span>
+      <input id="onbOrg" placeholder="${esc(t2("onb.org.ph"))}" /></div>
+    <div class="field">${esc(t2("onb.type"))}
+      <select id="onbType" class="select">
+        <option value="company">${esc(t2("onb.type.company"))}</option>
+        <option value="business_unit">${esc(t2("onb.type.bu"))}</option>
+        <option value="team">${esc(t2("onb.type.team"))}</option>
+      </select></div>
+    <div class="field" style="margin-top:6px">${esc(t2("onb.region"))}</div>
     <div class="country-grid">
       <div class="country-opt sel" data-c="BR"><div class="flag">🇧🇷</div><div class="cn">Brazil</div><div class="muted" style="margin:0">CPF · LGPD</div></div>
       <div class="country-opt" data-c="US"><div class="flag">🇺🇸</div><div class="cn">United States</div><div class="muted" style="margin:0">SSN · privacy</div></div>
     </div>
-    <div class="disclaimer">Person/identity data is regulated. Processing requires a lawful basis under LGPD (BR) / GDPR & state law (US). Validation is decision-support, never a definitive identity ruling.</div>
-  `,[{label:"Continue",cls:"primary",act:async()=>{ try{ await api("/api/config",{method:"POST",body:{country:onboardSel,onboarded:true}}); state.country=onboardSel; }catch(e){} closeModal(); toast("Region set: "+onboardSel,"ok"); if(typeof done==="function") done(); }}]);
+    <div class="disclaimer">${esc(t2("onb.legal"))}</div>
+  `,[{label:t2("onb.continue"),cls:"primary",act:async()=>{
+      const org=(($("#onbOrg")||{}).value||"").trim(); const otype=(($("#onbType")||{}).value)||"company";
+      if(!org){ toast(t2("onb.org.req"),"err"); return; }
+      try{ await api("/api/config",{method:"POST",body:{country:onboardSel,onboarded:true,organization:org,org_type:otype}}); state.country=onboardSel; state.organization=org; }catch(e){}
+      closeModal(); toast(t2("onb.done")+": "+org,"ok"); if(typeof done==="function") done(); }}]);
   onboardSel="BR";
-  setTimeout(()=>{ $$(".country-opt").forEach(o=>o.addEventListener("click",()=>{ $$(".country-opt").forEach(x=>x.classList.remove("sel")); o.classList.add("sel"); onboardSel=o.dataset.c; })); },40);
+  setTimeout(()=>{ const i=$("#onbOrg"); if(i)i.focus(); $$(".country-opt").forEach(o=>o.addEventListener("click",()=>{ $$(".country-opt").forEach(x=>x.classList.remove("sel")); o.classList.add("sel"); onboardSel=o.dataset.c; })); },40);
 }
 function newProjectModal() {
   const domainOpts = state.domains.map(d=>`<option value="${d.slug}">${esc(d.title)}</option>`).join("");
