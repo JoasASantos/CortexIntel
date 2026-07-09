@@ -162,6 +162,8 @@ fn attach_attrs(e: &mut Entity, rec: &Record) {
         "transaction_type", "url_type", "group_type", "report_category",
         "student_type", "student type", "created_at", "created at", "role",
         "customer_type", "order_status", "product_category", "department",
+        // Monetary: needed so payments/wallets/accounts carry their value.
+        "amount", "value", "currency", "transaction_amount", "total", "balance",
         // Geo / temporal / trajectory: needed by the map lens to plot entities
         // and draw movement paths. Coordinates are references, not raw content.
         "latitude", "longitude", "lat", "lon", "lng", "latitude_approx", "longitude_approx",

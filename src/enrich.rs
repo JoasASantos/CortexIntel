@@ -147,6 +147,40 @@ pub fn enrich(graph: &mut KnowledgeGraph) -> EnrichStats {
         }
     }
 
+    // Monetary rollup: total value each wallet/account is involved in, summed from
+    // the amounts on connected payment entities — so the value of each wallet is
+    // visible on the node, not just the transactions.
+    {
+        use crate::ontology::EntityKind;
+        use std::collections::HashMap;
+        let parse_amt = |s: &str| -> Option<f64> {
+            let c: String = s.chars().filter(|ch| ch.is_ascii_digit() || *ch == '.' || *ch == '-').collect();
+            c.parse::<f64>().ok()
+        };
+        let mut pay_amt: HashMap<String, f64> = HashMap::new();
+        for (id, e) in &graph.entities {
+            if e.kind == EntityKind::Payment {
+                if let Some(a) = e.attributes.get("amount").or_else(|| e.attributes.get("value")).or_else(|| e.attributes.get("transaction_amount")).and_then(|v| parse_amt(v)) {
+                    pay_amt.insert(id.clone(), a);
+                }
+            }
+        }
+        if !pay_amt.is_empty() {
+            let mut total: HashMap<String, f64> = HashMap::new();
+            for r in &graph.relationships {
+                if let Some(a) = pay_amt.get(&r.source_id) { *total.entry(r.target_id.clone()).or_insert(0.0) += a; }
+                if let Some(a) = pay_amt.get(&r.target_id) { *total.entry(r.source_id.clone()).or_insert(0.0) += a; }
+            }
+            for (id, sum) in total {
+                if let Some(e) = graph.entities.get_mut(&id) {
+                    if matches!(e.kind, EntityKind::Wallet | EntityKind::Account) {
+                        attrs += set_attr(e, "total_value", &format!("{sum:.2}"));
+                    }
+                }
+            }
+        }
+    }
+
     EnrichStats {
         attrs,
         entities: graph.entity_count() - e0,

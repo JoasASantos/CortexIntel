@@ -197,7 +197,7 @@ const NODE_MIN=22, NODE_MAX=44, META_MIN=40, META_MAX=88;
 // Uniform node size in normal/graph mode — risk is shown by the ring colour, not
 // size, so every disc (and its fixed-px glyph) reads at one consistent size.
 // (Network mode still sizes by betweenness; meta clusters by count.)
-const NODE_UNIFORM=32;
+const NODE_UNIFORM=34;
 const nodeSize = risk => NODE_MIN + Math.sqrt(Math.max(0,Math.min(1,risk||0)))*(NODE_MAX-NODE_MIN);
 // Cluster size scales with log(count) between META_MIN and META_MAX.
 const metaSize = count => Math.min(META_MAX, META_MIN + Math.log2((count||2))*7);
@@ -363,6 +363,51 @@ async function logout() {
 }
 
 // ---------- app enter ----------
+// Provider health: verify the chosen LLM backend is reachable; if not (and the
+// operator isn't offline), surface a troubleshooting alert instead of silently
+// falling back to the deterministic/mock engine. Updates the provider pill with a
+// ● (connected) / ○ (no live backend) indicator.
+async function checkProviders(opts){
+  const prov = state.provider || "auto";
+  const need = prov==="auto" ? ["claude","codex","custom"]
+    : (prov==="claude"||prov==="codex"||prov==="custom") ? [prov] : [];
+  let rows=[]; try{ rows = await api("/api/doctor"); }catch(e){ return null; }
+  const by={}; rows.forEach(r=>by[r.name]=r);
+  const live = need.filter(n=>by[n]&&by[n].ok);
+  const ok = need.length===0 || live.length>0;
+  const pill=$("#providerPill");
+  if(pill){
+    pill.textContent = "provider: "+prov+(need.length? (ok?" ●":" ○"):"");
+    pill.style.cursor="pointer";
+    pill.style.color = need.length===0 ? "" : (ok ? "#34d399" : "#fb7185");
+    pill.title = need.length===0 ? "offline / deterministic — no external model needed"
+      : (ok ? "connected: "+live.join(", ") : "no live AI backend — click to troubleshoot");
+    if(!pill._wired){ pill._wired=true; pill.addEventListener("click",()=>checkProviders()); }
+  }
+  if(need.length && live.length===0){
+    state._providerDown = true;
+    pushNotif("alert",`No live AI backend for provider "${prov}" — running deterministic only`);
+    if(!opts||!opts.silent) showProviderTrouble(rows, prov);
+  } else { state._providerDown = false; if(!opts||!opts.silent) toast("AI backend connected"+(live.length?": "+live.join(", "):""),"ok"); }
+  return { rows, live, need, ok };
+}
+function showProviderTrouble(rows, prov){
+  const detail=(rows||[]).map(r=>`<div class="li"><span class="label">${esc(r.name)}</span><span class="tag ${r.ok?"ok":"err"}">${r.ok?"online":"unavailable"}</span></div>`).join("");
+  openModal("AI backend not connected",
+    `<p class="muted">No live model is reachable for provider <b>${esc(prov)}</b>, so agents and assessments fall back to the offline deterministic engine (still fully functional — just no LLM narrative).</p>
+     <div class="list" style="margin:8px 0">${detail}</div>
+     <p class="muted">Troubleshoot:</p>
+     <ul class="pts">
+       <li>Install & authenticate the CLI: <code>claude</code> (Claude Code) or <code>codex</code>.</li>
+       <li>Start from a terminal where they're on PATH: <code>cortex serve</code> — GUI apps launched from Finder/Dock don't inherit your shell PATH.</li>
+       <li>Don't run as <b>root/sudo</b>: Claude Code refuses <code>--dangerously-skip-permissions</code> as root.</li>
+       <li>Or plug any model: <code>CORTEX_LLM_CMD="ollama run llama3"</code> + provider <b>custom</b>.</li>
+       <li>Or keep working <b>offline</b> — the deterministic engine runs without a model.</li>
+     </ul>`,
+    [{label:"Re-check",cls:"ghost",act:async()=>{ closeModal(); await checkProviders(); }},
+     {label:"OK",cls:"primary",act:closeModal}]);
+}
+
 async function enterApp() {
   $("#app").hidden = false;
   applyIcons();
@@ -372,6 +417,7 @@ async function enterApp() {
   buildProviderSelect();
   refreshDoctor(); renderConnectorCards(); renderPluginExample();
   $("#providerPill").textContent = "provider: "+state.provider;
+  checkProviders({silent:true});
   // Onboarding: ask country (BR/US) once, THEN show the project launcher.
   try { const cfg=await api("/api/config"); state.country=cfg.country; if(!cfg.onboarded){ onboardCountry(()=>showLauncher()); return; } } catch(e){}
   showLauncher();
@@ -547,7 +593,7 @@ function initCy() {
       // (kc); risk = the ring colour/width (hc) via the [halo] rule. No coloured
       // underlay square — risk lives on the ring so the canvas stays clean.
       { selector:"node", style:{
-        "background-color":DISC_FILL, "background-image":"data(icon)", "background-width":"18px", "background-height":"18px", "background-fit":"none", "background-clip":"none",
+        "background-color":DISC_FILL, "background-image":"data(icon)", "background-width":"22px", "background-height":"22px", "background-fit":"none", "background-clip":"none",
         "width":"data(size)", "height":"data(size)", "shape":"ellipse",
         "label":"data(label)", "font-size":"9px", "font-weight":600, "font-family":"SF Mono, Menlo, monospace", "color":"#E6EDF7",
         "text-wrap":"wrap", "text-max-width":"88px", "text-valign":"bottom", "text-margin-y":5, "min-zoomed-font-size":8,
@@ -583,7 +629,7 @@ function initCy() {
       { selector:"edge.pathhl", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "width":3, "opacity":1, "label":"data(type)", "z-index":60 }},
       // ---- meta cluster nodes: two-line label ----
       { selector:"node.metanode", style:{ "shape":"round-hexagon", "background-color":"#12202B", "border-color":"data(kc)", "border-width":2.5,
-        "background-image":"data(icon)", "background-width":"24px", "background-height":"24px",
+        "background-image":"data(icon)", "background-width":"30px", "background-height":"30px",
         "label":"data(label)", "text-wrap":"wrap", "font-size":"11px", "color":"#E6EDF7", "text-valign":"bottom", "text-margin-y":6,
         "text-outline-color":"#070A0F", "text-outline-width":2 }},
       // show a global "zoomed-in" edge label only when very close
@@ -1115,7 +1161,12 @@ function showAgentResult(agent,res){
   let h=`<div>${esc(res.answer||"(done)")}</div>`;
   if(res.key_points&&res.key_points.length) h+='<ul class="pts">'+res.key_points.map(p=>`<li>${esc(p)}</li>`).join("")+'</ul>';
   if(res.recommended_actions&&res.recommended_actions.length) h+='<ul class="pts">'+res.recommended_actions.map(p=>`<li>▸ ${esc(p)}</li>`).join("")+'</ul>';
+  // Offline-mock fallback → the selected provider isn't connected. Offer a fix.
+  if(/offline mock/i.test(res.answer||"")){
+    h+=`<div class="adds" id="agentTrouble">⚠ No live AI — this is the deterministic fallback. Click to troubleshoot the connection.</div>`;
+  }
   a.innerHTML=h; log.appendChild(a); log.scrollTop=log.scrollHeight;
+  const tb=$("#agentTrouble"); if(tb) tb.addEventListener("click",()=>checkProviders());
 }
 // Run the agents flagged auto (capped) — fired on upload/run completion.
 async function autoRunAgents(){
