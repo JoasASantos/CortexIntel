@@ -9,7 +9,7 @@ const I18N = {
   en: {
     "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
     "nav.agents":"Agents","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted",
-    "risk.adjust":"Adjust risk","risk.adjust.title":"Adjust risk","risk.new":"New risk","risk.just":"Justification (why)","risk.just.ph":"Why are you overriding the score? (required, recorded)","risk.just.req":"A justification is required","risk.apply":"Apply","risk.manual":"manual","risk.done":"Risk adjusted",
+    "risk.adjust":"Adjust risk","risk.adjust.title":"Adjust risk","risk.new":"New risk","risk.just":"Justification (why)","risk.just.ph":"Why are you overriding the score? (required, recorded)","risk.just.req":"A justification is required","risk.apply":"Apply","risk.manual":"manual","risk.done":"Risk adjusted","route.intel":"Open Intelligence","route.map":"Open Map","route.timeline":"Open Timeline","route.entities":"Open Entities","route.graph":"Show in graph",
     "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
     "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store",
     "set.keys":"API Keys","set.plugins":"Classifier Plugins","set.project":"Project","set.users":"Users & Access","set.security":"Security","set.language":"Language",
@@ -41,7 +41,7 @@ const I18N = {
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
     "nav.agents":"Agentes","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído",
-    "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado",
+    "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado","route.intel":"Abrir Inteligência","route.map":"Abrir Mapa","route.timeline":"Abrir Linha do tempo","route.entities":"Abrir Entidades","route.graph":"Ver no grafo",
     "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
     "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms",
     "set.keys":"Chaves de API","set.plugins":"Plugins de Classificação","set.project":"Projeto","set.users":"Usuários & Acesso","set.security":"Segurança","set.language":"Idioma",
@@ -73,7 +73,7 @@ const I18N = {
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
     "nav.agents":"Agentes","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado",
-    "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado",
+    "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado","route.intel":"Abrir Inteligencia","route.map":"Abrir Mapa","route.timeline":"Abrir Línea de tiempo","route.entities":"Abrir Entidades","route.graph":"Ver en el grafo",
     "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
     "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms",
     "set.keys":"Claves de API","set.plugins":"Plugins de Clasificación","set.project":"Proyecto","set.users":"Usuarios y Acceso","set.security":"Seguridad","set.language":"Idioma",
@@ -1521,6 +1521,28 @@ $("#btnAsk")&&$("#btnAsk").addEventListener("click",openGlobalAsk);
 $("#askBackdrop")&&$("#askBackdrop").addEventListener("click",e=>{ if(e.target===$("#askBackdrop")) closeGlobalAsk(); });
 $("#askGlobalInput")&&$("#askGlobalInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); runGlobalAsk($("#askGlobalInput").value); } });
 
+// Suggested follow-through actions ROUTED BY THE QUESTION'S INTENT. A count/
+// structure question is already answered inline (offer a graph focus, not a nav
+// push); a risk/assessment question → Intelligence; where → Map; when → Timeline;
+// who/which/list → Entities. Returns up to 2 actions.
+function suggestRoutes(q,res){
+  const s=(q||"").toLowerCase(); const out=[];
+  const has=(...ws)=>ws.some(w=>s.includes(w));
+  const hasFocus=res&&res.focus&&res.focus.action&&res.focus.action!=="none";
+  if(has("risco","risk","avali","assess","por que","porque","why","decid","priori","hipó","hipo","hypo","ameaç","threat","lavagem","launder","fraud")){
+    out.push({label:"✦ "+t2("route.intel"),run:()=>{showView("intelligence");renderIntelligence();}});
+  } else if(has("onde","where","local","geo","mapa"," map","país","pais","country","região","regiao","cidade","city")){
+    out.push({label:"🌐 "+t2("route.map"),run:()=>{showView("graph");try{setCanvasMode("map");}catch(e){}}});
+  } else if(has("quando","when"," tempo","timeline","linha do tempo","cronolog","sequ")){
+    out.push({label:"⧗ "+t2("route.timeline"),run:()=>{showView("graph");try{setGraphMode("timeline");}catch(e){}}});
+  } else if(has("quais","quem","who","which","list","liste","entidad","entit","carteira","wallet","conta","account")){
+    out.push({label:"⬡ "+t2("route.entities"),run:()=>{showView("entities");renderEntities();}});
+  }
+  if(hasFocus) out.push({label:"◕ "+t2("route.graph"),run:()=>applyFocus(res.focus)});
+  if(!out.length) out.push({label:"◕ "+t2("route.graph"),run:()=>{showView("graph");}});
+  return out.slice(0,2);
+}
+
 // Deterministic intent router — navigation + core actions, offline. Returns a
 // handled result {msg, run:fn} or null if it's a free-form question for the LLM.
 function globalIntent(q){
@@ -1553,9 +1575,8 @@ async function runGlobalAsk(q){ q=(q||"").trim(); if(!q) return;
     think.remove(); const a=el("div","askbar-msg a"); let h=`<div>${esc(res.answer||"(no answer)")}</div>`;
     if(res.key_points&&res.key_points.length) h+="<ul>"+res.key_points.slice(0,5).map(p=>`<li>${esc(p)}</li>`).join("")+"</ul>";
     a.innerHTML=h;
-    // offer quick follow-through
-    const goIntel=el("span","askbar-do","✦ Open Intelligence"); goIntel.addEventListener("click",()=>{closeGlobalAsk();showView("intelligence");renderIntelligence();}); a.appendChild(goIntel);
-    if(res.focus&&res.focus.action&&res.focus.action!=="none"){ const goG=el("span","askbar-do","Show in graph"); goG.addEventListener("click",()=>{closeGlobalAsk();applyFocus(res.focus);}); a.appendChild(goG); }
+    // Suggested actions routed BY THE QUESTION'S INTENT (not always Intelligence).
+    suggestRoutes(q,res).forEach(s=>{ const b=el("span","askbar-do",s.label); b.addEventListener("click",()=>{ closeGlobalAsk(); s.run(); }); a.appendChild(b); });
     body.appendChild(a);
   }catch(e){ think.remove();
     // offline fallback: local filter or a plain message
