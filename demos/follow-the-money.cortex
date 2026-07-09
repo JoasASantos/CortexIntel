@@ -1,2 +1,0 @@
-{ "name": "Follow the Money — demo", "domain": "fraud",
-  "inputs": ["follow-the-money.csv"], "out": "./cortex-out" }

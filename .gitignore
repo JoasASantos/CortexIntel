@@ -9,6 +9,9 @@
 /cortex-demo
 *.log
 
+# Sample/mock data — not shipped; scaffold your own with `cortex init`
+/demos
+
 # Test & tooling artifacts — NEVER commit screenshots (may contain real data)
 /.playwright-mcp
 /*.png
