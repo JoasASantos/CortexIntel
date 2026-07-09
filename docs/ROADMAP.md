@@ -24,17 +24,20 @@ with an optional multi-LLM / custom-model layer:
 
 ## v0.0.2 — Intelligence disciplines
 
-First-class support for the classic intelligence collection disciplines, each as
-a domain lens + agent pack + source connectors + tuned ontology:
+First-class support for the classic intelligence collection disciplines, each a
+deterministic signal in the pipeline + an agent pack:
 
-- **OSINT** — open-source collection (web, social, registries, leaks); dedicated
-  agents, source connectors and entity kinds.
-- **SIGINT** — signals metadata (comms patterns, selectors, infrastructure);
-  temporal/pattern agents, strict privacy minimization.
-- **HUMINT** — source/report management, reliability grading (admiralty code),
-  corroboration workflows.
-- **GEOINT** — geospatial-first analysis on the map layer: imagery/asset layers
-  (CCTV, air bases, units), movement and co-location analysis, geofencing.
+- **GEOINT** ✅ — geospatial co-location correlation (haversine) feeding the map
+  layer + pluggable per-project layers (CCTV, air bases, units); 6 agents.
+- **HUMINT** ✅ — source/report reliability grading with the NATO Admiralty Code
+  (source A–F × info 1–6) + corroboration; 3 agents.
+- **SIGINT** ✅ — communication-pattern correlation (co-communication, metadata
+  only, privacy-minimized); 3 agents.
+- **OSINT** ✅ — selector/handle reuse across sources (same-actor candidates) +
+  infrastructure clustering; 4 agents.
+
+Next for the disciplines: dedicated source connectors, tuned per-discipline
+ontology, and imagery/asset ingestion for GEOINT.
 
 ## Beyond
 
