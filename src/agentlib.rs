@@ -315,4 +315,17 @@ const STARTERS: &[(&str, &str)] = &[
     ("humint-reliability.md", include_str!("../agents/humint-reliability.md")),
     ("humint-corroboration.md", include_str!("../agents/humint-corroboration.md")),
     ("humint-tasking.md", include_str!("../agents/humint-tasking.md")),
+    // Customer Success + Commercial / Sales pack.
+    ("cs-health-scorecard.md", include_str!("../agents/cs-health-scorecard.md")),
+    ("cs-churn-risk.md", include_str!("../agents/cs-churn-risk.md")),
+    ("cs-expansion.md", include_str!("../agents/cs-expansion.md")),
+    ("cs-qbr-prep.md", include_str!("../agents/cs-qbr-prep.md")),
+    ("cs-champion-map.md", include_str!("../agents/cs-champion-map.md")),
+    ("cs-onboarding-risk.md", include_str!("../agents/cs-onboarding-risk.md")),
+    ("sales-lead-priority.md", include_str!("../agents/sales-lead-priority.md")),
+    ("sales-pipeline-hygiene.md", include_str!("../agents/sales-pipeline-hygiene.md")),
+    ("sales-account-plan.md", include_str!("../agents/sales-account-plan.md")),
+    ("sales-winloss.md", include_str!("../agents/sales-winloss.md")),
+    ("sales-territory.md", include_str!("../agents/sales-territory.md")),
+    ("commercial-brief.md", include_str!("../agents/commercial-brief.md")),
 ];
