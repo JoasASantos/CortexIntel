@@ -43,28 +43,41 @@ impl LlmProvider for ClaudeProvider {
             );
         }
 
-        let mut cmd = Command::new(&self.bin);
-        cmd.arg("-p")
-            .arg(&req.prompt)
-            .arg("--dangerously-skip-permissions")
-            .arg("--output-format")
-            .arg("json")
-            .arg("--append-system-prompt")
-            .arg(&system);
-
-        // Claude Code refuses `--dangerously-skip-permissions` under root/sudo
-        // unless the environment declares itself externally sandboxed via
-        // IS_SANDBOX=1. CortexIntel is an unattended automation harness, so we
-        // set it by default (this is Claude Code's own supported escape hatch,
-        // not a binary patch). Opt out with CORTEX_CLAUDE_NO_SANDBOX=1.
-        if std::env::var_os("CORTEX_CLAUDE_NO_SANDBOX").is_none() {
-            cmd.env("IS_SANDBOX", "1");
-        }
-
         let model = req.model.clone().or_else(|| self.model.clone());
+
+        // Claude Code's args. Built as a vector so we can run them either directly
+        // or, when we're root, as the normal user (see below).
+        let mut args: Vec<String> = vec![
+            "-p".into(), req.prompt.clone(),
+            "--dangerously-skip-permissions".into(),
+            "--output-format".into(), "json".into(),
+            "--append-system-prompt".into(), system,
+        ];
         if let Some(m) = &model {
-            cmd.arg("--model").arg(m);
+            args.push("--model".into());
+            args.push(m.clone());
         }
+
+        // Claude Code auth lives in the USER's home (subscription), and it refuses
+        // to run under root. So by default, when CortexIntel runs as root, execute
+        // `claude` AS THE NORMAL USER via `sudo -u <user>` — that uses their real
+        // subscription and needs no sandbox hack. The user is CORTEX_CLAUDE_USER →
+        // SUDO_USER → the console owner. Opt out with CORTEX_CLAUDE_NO_DROP=1.
+        let run_as = if std::env::var_os("CORTEX_CLAUDE_NO_DROP").is_some() { None } else { run_as_user() };
+        let mut cmd = if let Some(user) = &run_as {
+            let mut c = Command::new("sudo");
+            c.arg("-u").arg(user).arg("-H").arg(&self.bin);
+            for a in &args { c.arg(a); }
+            c
+        } else {
+            let mut c = Command::new(&self.bin);
+            for a in &args { c.arg(a); }
+            // Still root but not dropping (opt-out): use Claude's sandbox escape.
+            if std::env::var_os("CORTEX_CLAUDE_NO_SANDBOX").is_none() {
+                c.env("IS_SANDBOX", "1");
+            }
+            c
+        };
 
         let output = cmd
             .output()
@@ -75,8 +88,9 @@ impl LlmProvider for ClaudeProvider {
             let msg = stderr.trim();
             if msg.contains("root") && msg.contains("sudo") {
                 return Err(anyhow!(
-                    "claude refused --dangerously-skip-permissions under root even with IS_SANDBOX=1. \
-                     Ensure CORTEX_CLAUDE_NO_SANDBOX is unset, or use `--provider codex` / `--offline`. ({msg})"
+                    "claude refused to run under root. CortexIntel runs it as the normal user by default \
+                     (sudo -u); set CORTEX_CLAUDE_USER=<user> if the user couldn't be detected, or use \
+                     `--provider codex` / `--offline`. ({msg})"
                 ));
             }
             return Err(anyhow!("claude exited with {}: {}", output.status, msg));
@@ -103,6 +117,36 @@ impl LlmProvider for ClaudeProvider {
             Err(anyhow!("claude --version failed"))
         }
     }
+}
+
+/// True if the process is running as root (uid 0).
+fn is_root() -> bool {
+    Command::new("id")
+        .arg("-u")
+        .output()
+        .ok()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim() == "0")
+        .unwrap_or(false)
+}
+
+/// The normal user to run Claude Code as when we're root: CORTEX_CLAUDE_USER →
+/// SUDO_USER → the macOS console owner. None if we're already a normal user (or
+/// can't determine one) — then Claude runs directly.
+fn run_as_user() -> Option<String> {
+    if let Ok(u) = std::env::var("CORTEX_CLAUDE_USER") {
+        if !u.trim().is_empty() { return Some(u.trim().to_string()); }
+    }
+    if let Ok(u) = std::env::var("SUDO_USER") {
+        if !u.trim().is_empty() && u != "root" { return Some(u.trim().to_string()); }
+    }
+    if is_root() {
+        // macOS: the GUI console owner is the human user whose Claude auth we want.
+        if let Ok(out) = Command::new("stat").args(["-f", "%Su", "/dev/console"]).output() {
+            let u = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if !u.is_empty() && u != "root" { return Some(u); }
+        }
+    }
+    None
 }
 
 /// Parse Claude Code's `--output-format json` envelope. Falls back to treating

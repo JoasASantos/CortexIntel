@@ -103,7 +103,7 @@ pub fn source_for_path(path: &Path, declared: Option<DataType>) -> Result<Box<dy
             declared,
             delimiter: if ext == "tsv" { b'\t' } else { b',' },
         })),
-        "json" | "ndjson" | "jsonl" => Ok(Box::new(JsonSource {
+        "json" | "ndjson" | "jsonl" | "geojson" => Ok(Box::new(JsonSource {
             path: path.to_path_buf(),
             declared,
             lines: ext == "ndjson" || ext == "jsonl",

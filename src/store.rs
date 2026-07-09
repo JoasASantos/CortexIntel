@@ -86,6 +86,12 @@ pub struct Settings {
     pub country: String, // "BR" | "US" | ""
     #[serde(default)]
     pub onboarded: bool,
+    /// Tenant name (company / business unit / team) set on first access.
+    #[serde(default)]
+    pub organization: String,
+    /// "company" | "business_unit" | "team".
+    #[serde(default)]
+    pub org_type: String,
 }
 
 pub fn get_settings() -> Settings {

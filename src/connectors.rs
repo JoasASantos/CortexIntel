@@ -8,9 +8,56 @@
 //! command line, and are never persisted with the saved connector config.
 
 use anyhow::{anyhow, Context, Result};
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::path::PathBuf;
 use std::process::Command;
+
+/// A discipline-tagged source template: a pre-shaped connector the operator fills
+/// with their own key/params. Consistent with the philosophy — it drives the
+/// operator's *authenticated* access to a source, it doesn't embed credentials.
+/// The `config` is a partial connector config; `{placeholders}` in it are the
+/// params the operator supplies. Everything routes through the normal
+/// test()/fetch() connectors (http/rest/postgres/datalake…).
+pub fn source_catalog() -> Value {
+    json!([
+      // ---- OSINT (open sources; operator supplies their API key) ----
+      {"id":"osint.crtsh","discipline":"OSINT","name":"crt.sh — Certificate Transparency","kind":"rest",
+       "description":"Subdomains/certs for a domain from public CT logs.","method":"GET",
+       "endpoint":"https://crt.sh/?q={domain}&output=json","params":["domain"],"auth":"none","records_path":""},
+      {"id":"osint.rdap","discipline":"OSINT","name":"RDAP — Domain registration","kind":"rest",
+       "description":"Registration/ownership for a domain (WHOIS successor).","method":"GET",
+       "endpoint":"https://rdap.org/domain/{domain}","params":["domain"],"auth":"none","records_path":""},
+      {"id":"osint.shodan","discipline":"OSINT","name":"Shodan — Host lookup","kind":"rest",
+       "description":"Open ports/services/banners for an IP (needs a Shodan key).","method":"GET",
+       "endpoint":"https://api.shodan.io/shodan/host/{ip}?key={api_key}","params":["ip","api_key"],"auth":"api_key","records_path":"data"},
+      {"id":"osint.rss","discipline":"OSINT","name":"News / RSS feed","kind":"rest",
+       "description":"Pull items from an RSS/Atom or JSON feed URL.","method":"GET",
+       "endpoint":"{feed_url}","params":["feed_url"],"auth":"none","records_path":"items"},
+      // ---- GEOINT (live geospatial feeds) ----
+      {"id":"geoint.opensky","discipline":"GEOINT","name":"OpenSky — Live aircraft","kind":"rest",
+       "description":"Live aircraft state vectors (lat/long/velocity) — plots on the map.","method":"GET",
+       "endpoint":"https://opensky-network.org/api/states/all","params":[],"auth":"none","records_path":"states"},
+      {"id":"geoint.overpass","discipline":"GEOINT","name":"Overpass — OSM features","kind":"rest",
+       "description":"Query OpenStreetMap features (facilities, infrastructure) by area.","method":"POST",
+       "endpoint":"https://overpass-api.de/api/interpreter","params":["query"],"body":"{query}","auth":"none","records_path":"elements"},
+      {"id":"geoint.geojson","discipline":"GEOINT","name":"GeoJSON file / layer","kind":"datalake",
+       "description":"Ingest a GeoJSON file (CCTV, air bases, units…) as a map layer.","provider":"local",
+       "params":["uri"],"auth":"none","records_path":"features"},
+      // ---- SIGINT (internal comms metadata; operator's own DB/exports) ----
+      {"id":"sigint.cdr","discipline":"SIGINT","name":"CDR / comms metadata (Postgres)","kind":"postgres",
+       "description":"Call/message detail records (metadata only) from your database.","params":["host","database","user","query"],"auth":"password","records_path":""},
+      {"id":"sigint.netflow","discipline":"SIGINT","name":"NetFlow / comms export (file)","kind":"datalake",
+       "description":"Ingest an exported NetFlow/comms-metadata CSV/JSON.","provider":"local","params":["uri"],"auth":"none","records_path":""},
+      // ---- HUMINT (source/report management; operator's own case system) ----
+      {"id":"humint.reports","discipline":"HUMINT","name":"Report intake (file)","kind":"datalake",
+       "description":"Ingest a report/source CSV/JSON (with reliability/credibility).","provider":"local","params":["uri"],"auth":"none","records_path":""},
+      {"id":"humint.casemgmt","discipline":"HUMINT","name":"Case management (Postgres)","kind":"postgres",
+       "description":"Pull reports/sources from a case-management database.","params":["host","database","user","query"],"auth":"password","records_path":""},
+      {"id":"humint.rest","discipline":"HUMINT","name":"Report API (REST + auth)","kind":"rest",
+       "description":"Pull reports from an internal REST API (JWT/token/API-key).","method":"GET",
+       "endpoint":"{endpoint}","params":["endpoint","token"],"auth":"token","records_path":""}
+    ])
+}
 
 fn s<'a>(cfg: &'a Value, key: &str) -> Option<&'a str> {
     cfg.get(key).and_then(|v| v.as_str()).filter(|s| !s.is_empty())
@@ -100,8 +147,13 @@ pub fn test(kind: &str, cfg: &Value) -> Result<String> {
             if !have_help("curl") {
                 return Err(anyhow!("`curl` not found on PATH"));
             }
-            let ep = s(cfg, "endpoint").ok_or_else(|| anyhow!("missing 'endpoint' URL"))?;
+            let ep_raw = s(cfg, "endpoint").ok_or_else(|| anyhow!("missing 'endpoint' URL"))?;
+            let ep = fill_placeholders(ep_raw, cfg);
             let auth = if s(cfg, "jwt").is_some() { " (JWT)" } else if s(cfg, "token").is_some() { " (token)" } else if s(cfg, "api_key").is_some() { " (API key)" } else { "" };
+            let missing: Vec<&str> = ep.split(['{', '}']).filter(|seg| ep.contains(&format!("{{{seg}}}"))).collect();
+            if !missing.is_empty() {
+                return Err(anyhow!("fill in: {}", missing.join(", ")));
+            }
             Ok(format!("ready to call {} {ep}{auth}", s(cfg, "method").unwrap_or("GET")))
         }
         other => Err(anyhow!("unknown connector kind '{other}'")),
@@ -208,8 +260,25 @@ pub fn fetch(kind: &str, cfg: &Value) -> Result<PathBuf> {
 ///
 /// Config keys: endpoint (required), method, headers {obj}, body (string|json),
 /// jwt | token [+ user for basic] | api_key [+ api_key_header].
+/// Substitute `{key}` placeholders in a string from the config's string fields.
+/// Lets a catalog template like `.../host/{ip}?key={api_key}` be filled from the
+/// operator-supplied params.
+fn fill_placeholders(template: &str, cfg: &Value) -> String {
+    let mut out = template.to_string();
+    if let Some(obj) = cfg.as_object() {
+        for (k, v) in obj {
+            if let Some(val) = v.as_str() {
+                out = out.replace(&format!("{{{k}}}"), val);
+            }
+        }
+    }
+    out
+}
+
 fn http_fetch(cfg: &Value) -> Result<PathBuf> {
-    let ep = s(cfg, "endpoint").ok_or_else(|| anyhow!("connector needs an 'endpoint' URL"))?;
+    let ep_raw = s(cfg, "endpoint").ok_or_else(|| anyhow!("connector needs an 'endpoint' URL"))?;
+    let ep_filled = fill_placeholders(ep_raw, cfg);
+    let ep: &str = &ep_filled;
     let path = tmp("json");
     let mut cmd = Command::new("curl");
     cmd.args(["-sS", "--fail-with-body", "--max-time", "120", "-o", path.to_str().unwrap()]);
@@ -233,7 +302,7 @@ fn http_fetch(cfg: &Value) -> Result<PathBuf> {
     // Request body for non-GET methods (webhook/POST integrations, ES queries…).
     if method != "GET" {
         if let Some(b) = cfg.get("body") {
-            let body = if b.is_string() { b.as_str().unwrap().to_string() } else { b.to_string() };
+            let body = if b.is_string() { fill_placeholders(b.as_str().unwrap(), cfg) } else { b.to_string() };
             cmd.args(["-H", "Content-Type: application/json", "--data-binary", &body]);
         }
     }

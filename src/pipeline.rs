@@ -219,6 +219,42 @@ pub fn run(
     );
     println!("      +{} correlation edges", (added + llm_added).to_string().green());
 
+    // GEOINT: geography as a correlation signal — link entities that are
+    // physically near each other (co_located_with), feeding risk/network/map.
+    let geo = crate::geoint::correlate_geo(&mut graph);
+    if geo.colocations > 0 {
+        audit.record(
+            Utc::now(),
+            "geo_correlation",
+            "geoint",
+            &format!("{} co-location links across {} geolocated entities", geo.colocations, geo.geolocated),
+            "geospatial correlation",
+            false,
+            false,
+            None,
+            None,
+        );
+        println!("      +{} co-location links ({} geolocated)", geo.colocations.to_string().green(), geo.geolocated);
+    }
+
+    // Intelligence-discipline signals (HUMINT reliability grading, SIGINT comms
+    // pattern, OSINT selector reuse) — deterministic, feed risk + the graph.
+    let disc = crate::disciplines::apply(&mut graph);
+    if disc.humint_graded + disc.sigint_links + disc.osint_links > 0 {
+        audit.record(
+            Utc::now(),
+            "discipline_signals",
+            "disciplines",
+            &format!("HUMINT graded {}, SIGINT {} comms links, OSINT {} selector links", disc.humint_graded, disc.sigint_links, disc.osint_links),
+            "discipline analysis",
+            false,
+            false,
+            None,
+            None,
+        );
+        println!("      disciplines: HUMINT {} graded · SIGINT +{} · OSINT +{}", disc.humint_graded.to_string().green(), disc.sigint_links, disc.osint_links);
+    }
+
     // Identity resolution (E): fold same-entity aliases into canonical nodes
     // before risk/assessment, so scoring/intelligence see one entity, not three.
     let resolution = crate::resolve::resolve(&mut graph);

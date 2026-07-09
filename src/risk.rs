@@ -62,6 +62,13 @@ fn signal_weights(domain: Domain) -> Vec<(&'static str, f32)> {
         Domain::Fraud => base.extend([("chargeback", 0.5), ("mule", 0.6), ("aml", 0.6)]),
         Domain::Health => base.extend([("adverse", 0.6), ("outbreak", 0.75)]),
         Domain::Logistics => base.extend([("delay", 0.4), ("disruption", 0.55)]),
+        // Customer Success / Commercial: churn & revenue-risk signals so "risk"
+        // reads as account risk (the same engine, a commercial lens).
+        Domain::Commerce => base.extend([
+            ("churn", 0.75), ("churned", 0.8), ("at_risk", 0.7), ("cancel", 0.7), ("cancelled", 0.75),
+            ("downgrade", 0.6), ("complaint", 0.55), ("detractor", 0.6), ("overdue", 0.6),
+            ("failed_payment", 0.65), ("inactive", 0.55), ("no_login", 0.5), ("escalation", 0.6),
+        ]),
         _ => {}
     }
     base

@@ -13,11 +13,15 @@ pub mod cli;
 pub mod config;
 pub mod connectors;
 pub mod correlation;
+pub mod disciplines;
+pub mod embed;
 pub mod enrich;
 pub mod extract;
+pub mod geoint;
 pub mod keys;
 pub mod linkpred;
 pub mod llm;
+pub mod monitor;
 pub mod netsci;
 pub mod ontology;
 pub mod pipeline;
@@ -25,6 +29,7 @@ pub mod plugins;
 pub mod profile;
 pub mod projects;
 pub mod prompts;
+pub mod redact;
 pub mod references;
 pub mod report;
 pub mod reportpdf;
@@ -208,6 +213,25 @@ pub mod api {
                 let n_ent = result.get("entities").and_then(|e| e.as_object())
                     .map(|o| o.values().filter_map(|v| v.as_array().map(|a| a.len())).sum::<usize>()).unwrap_or(0);
                 let n_rel = result.get("relationships").and_then(|r| r.as_array()).map(|a| a.len()).unwrap_or(0);
+                // Continuous intelligence: diff vs the previous result + evaluate
+                // the project's watchlist, before we overwrite last_result.
+                if let Ok(prev) = crate::projects::load(pid) {
+                    if let Some(prev_result) = &prev.last_result {
+                        let changes = crate::monitor::diff(prev_result, &result);
+                        let has_change = changes.get("new_entities").and_then(|v| v.as_array()).map(|a| !a.is_empty()).unwrap_or(false)
+                            || changes.get("risk_increased").and_then(|v| v.as_array()).map(|a| !a.is_empty()).unwrap_or(false);
+                        if has_change {
+                            let summary = changes.get("summary").and_then(|v| v.as_str()).unwrap_or("changed").to_string();
+                            let _ = crate::projects::add_activity(pid, "change", &summary, changes.clone());
+                        }
+                        let watch = serde_json::Value::Array(prev.watchlist.clone());
+                        for alert in crate::monitor::evaluate_watchlist(&result, &watch) {
+                            let rule = alert.get("rule").and_then(|v| v.as_str()).unwrap_or("watchlist");
+                            let cnt = alert.get("count").and_then(|v| v.as_u64()).unwrap_or(0);
+                            let _ = crate::projects::add_activity(pid, "watchlist", &format!("⚑ {rule}: {cnt} match(es)"), alert);
+                        }
+                    }
+                }
                 let _ = crate::projects::add_activity(pid, "run",
                     &format!("Analysis: {} entities, {} relationships ({})", n_ent, n_rel, params.domain),
                     serde_json::json!({"entities": n_ent, "relationships": n_rel}));
@@ -278,14 +302,21 @@ pub mod api {
     /// Instance config (country for locale-aware KYC + onboarding state).
     pub fn get_config() -> serde_json::Value {
         let s = crate::store::get_settings();
-        serde_json::json!({ "country": s.country, "onboarded": s.onboarded, "supported": ["BR", "US"] })
+        serde_json::json!({ "country": s.country, "onboarded": s.onboarded, "supported": ["BR", "US"],
+            "organization": s.organization, "org_type": s.org_type })
     }
 
     pub fn set_config(country: &str, onboarded: bool) -> Result<serde_json::Value> {
+        set_config_full(country, onboarded, None, None)
+    }
+
+    pub fn set_config_full(country: &str, onboarded: bool, organization: Option<&str>, org_type: Option<&str>) -> Result<serde_json::Value> {
         let mut s = crate::store::get_settings();
         if !country.is_empty() {
             s.country = country.to_uppercase();
         }
+        if let Some(o) = organization { if !o.trim().is_empty() { s.organization = o.trim().to_string(); } }
+        if let Some(t) = org_type { if !t.trim().is_empty() { s.org_type = t.trim().to_string(); } }
         s.onboarded = onboarded || s.onboarded;
         crate::store::save_settings(&s)?;
         Ok(get_config())
@@ -489,11 +520,18 @@ pub mod api {
     /// Render a project's consolidated analysis to a PDF (via Typst) and return
     /// the PDF path.
     pub fn report_pdf(project_id: &str) -> Result<serde_json::Value> {
+        report_pdf_opt(project_id, false)
+    }
+
+    /// Generate the PDF report; when `redact`, PII is masked (governance export).
+    pub fn report_pdf_opt(project_id: &str, redact: bool) -> Result<serde_json::Value> {
         let p = crate::projects::load(project_id)?;
         let c = p.last_result.ok_or_else(|| anyhow!("project has no analysis yet — run one first"))?;
+        let c = if redact { crate::redact::redact_case(&c) } else { c };
         let now = chrono::Utc::now().format("%Y-%m-%d %H:%M UTC").to_string();
-        let path = crate::reportpdf::to_pdf(&c, &p.name, &p.domain, &p.owner, &now)?;
-        Ok(serde_json::json!({ "path": path }))
+        let name = if redact { format!("{} (redacted)", p.name) } else { p.name.clone() };
+        let path = crate::reportpdf::to_pdf(&c, &name, &p.domain, &p.owner, &now)?;
+        Ok(serde_json::json!({ "path": path, "redacted": redact }))
     }
 
     /// Load a previously written graph.json from an output directory.

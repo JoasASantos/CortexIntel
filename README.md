@@ -79,7 +79,6 @@ Thresholds are data-dependent. `CORTEX_CALIBRATE=1 cortex run …` measures the 
 - [`docs/USAGE.md`](docs/USAGE.md) — commands, verticals, providers, calibration, env vars, integrations, `.cortex`.
 - [`docs/PLUGINS.md`](docs/PLUGINS.md) — write agents, plugins (`manifest.json`) and transforms.
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — what's next (incl. SIGINT / OSINT / HUMINT / GEOINT).
-- `DATA.md` / `DESIGN.md` — data model & UX design.
 
 ## Guardrails
 

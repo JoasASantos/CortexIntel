@@ -40,6 +40,11 @@ pub enum Command {
         /// Path to a csv/json/mcp source to inspect.
         path: PathBuf,
     },
+    /// Verify the chain of custody of an audit log (tamper-evidence).
+    Verify {
+        /// Path to an audit.log.jsonl (or its output directory).
+        path: PathBuf,
+    },
     /// Scaffold a sample dataset + MCP manifest to try the platform.
     Init {
         #[arg(long, default_value = "./cortex-demo")]
@@ -149,6 +154,7 @@ pub fn main() -> Result<()> {
         }
         Command::Doctor => doctor(),
         Command::Sources { path } => describe_source(path),
+        Command::Verify { path } => verify_audit(path),
         Command::Init { dir } => init_demo(dir),
         Command::Serve { port, open } => {
             banner();
@@ -180,6 +186,18 @@ fn load_cortex_manifest(args: &mut RunArgs) -> Result<()> {
     if let Some(o) = m.get("out").and_then(|v| v.as_str()) { args.out = PathBuf::from(o); }
     println!("{} loaded .cortex manifest ({} input(s), domain={})", "·".dimmed(), args.input.len(), args.domain);
     Ok(())
+}
+
+/// Verify an audit log's chain of custody.
+fn verify_audit(path: PathBuf) -> Result<()> {
+    let p = if path.is_dir() { path.join("audit.log.jsonl") } else { path };
+    let v = crate::audit::verify_chain(&p);
+    if v.ok {
+        println!("{} {}", "✓".green(), v.message);
+    } else {
+        println!("{} {}", "✗".red(), v.message.red());
+    }
+    if v.ok { Ok(()) } else { Err(anyhow!("chain of custody verification failed")) }
 }
 
 /// Launch the native Tauri app if present; otherwise serve + open the browser.

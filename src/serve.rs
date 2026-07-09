@@ -39,7 +39,7 @@ fn start_job(kind: String, payload: serde_json::Value) -> String {
             "ask" => api::ask(serde_json::from_value(payload)?),
             "run" => api::run_analysis(serde_json::from_value(payload)?),
             "connector_run" => api::connector_run(serde_json::from_value(payload)?),
-            "report_pdf" => api::report_pdf(payload.get("project_id").and_then(|v| v.as_str()).unwrap_or("")),
+            "report_pdf" => api::report_pdf_opt(payload.get("project_id").and_then(|v| v.as_str()).unwrap_or(""), payload.get("redact").and_then(|v| v.as_bool()).unwrap_or(false)),
             other => Err(anyhow!("unknown job kind '{other}'")),
         })();
         let mut map = jobs().lock().unwrap();
@@ -332,21 +332,54 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         },
         ("POST", "/api/report/pdf") => {
             let b: serde_json::Value = parse_body(&req.body)?;
-            finish(stream, api::report_pdf(b.get("project_id").and_then(|v| v.as_str()).unwrap_or("")))
+            finish(stream, api::report_pdf_opt(b.get("project_id").and_then(|v| v.as_str()).unwrap_or(""), b.get("redact").and_then(|v| v.as_bool()).unwrap_or(false)))
         }
+        // Governance: verify an audit log's chain of custody (tamper-evident).
+        ("GET", "/api/audit/verify") => match param(&req.query, "path") {
+            Some(path) if path.ends_with("audit.log.jsonl") => json_ok(stream, &crate::audit::verify_chain(std::path::Path::new(&path))),
+            _ => json_err(stream, "provide the path to an audit.log.jsonl"),
+        },
+        // Neural layer: is an embedder configured?
+        ("GET", "/api/embed/status") => json_ok(stream, &serde_json::json!({
+            "configured": crate::embed::is_configured(),
+            "hint": "set CORTEX_EMBED_CMD to a CLI that reads text on stdin and prints a JSON float array"
+        })),
         ("GET", "/api/report/download") => match param(&req.query, "path") {
             Some(path) if path.ends_with(".pdf") && path.contains("report-") => match std::fs::read(&path) {
-                Ok(bytes) => respond(stream, 200, "application/pdf", &bytes),
+                // Content-Disposition with a .pdf filename so the browser/WebView
+                // saves it WITH the extension (otherwise it lands as a nameless blob).
+                Ok(bytes) => {
+                    let name = param(&req.query, "name").filter(|n| n.ends_with(".pdf")).unwrap_or_else(|| "cortex-report.pdf".into());
+                    respond_download(stream, "application/pdf", &name, &bytes)
+                }
                 Err(e) => json_err(stream, &e.to_string()),
             },
             _ => json_err(stream, "invalid path"),
         },
         // Projects
-        ("GET", "/api/projects") => json_ok(stream, &projects::list()),
+        ("GET", "/api/projects") => json_ok(stream, &projects::list_for(&user.email, &user.role)),
         ("GET", "/api/projects/get") => match param(&req.query, "id") {
-            Some(id) => finish(stream, projects::load(&id)),
+            Some(id) => match projects::load(&id) {
+                Ok(p) if projects::can_access(&p, &user.email, &user.role) => json_ok(stream, &p),
+                Ok(_) => respond(stream, 403, "application/json; charset=utf-8", br#"{"error":"restricted case - no access (need-to-know)"}"#),
+                Err(e) => json_err(stream, &e.to_string()),
+            },
             None => json_err(stream, "missing id"),
         },
+        // Per-case RBAC: owner/admin set who can access a restricted case.
+        ("POST", "/api/projects/access") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let id = b.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            match projects::load(id) {
+                Ok(p) if p.owner.eq_ignore_ascii_case(&user.email) || user.role == "admin" => {
+                    let members: Vec<String> = b.get("members").and_then(|v| v.as_array())
+                        .map(|a| a.iter().filter_map(|x| x.as_str().map(String::from)).collect()).unwrap_or_default();
+                    finish(stream, projects::set_access(id, b.get("restricted").and_then(|v| v.as_bool()).unwrap_or(false), members).map(|_| serde_json::json!({"ok": true})))
+                }
+                Ok(_) => respond(stream, 403, "application/json; charset=utf-8", br#"{"error":"only the case owner or an admin can change access"}"#),
+                Err(e) => json_err(stream, &e.to_string()),
+            }
+        }
         ("POST", "/api/projects") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, projects::create(
@@ -360,6 +393,13 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("POST", "/api/projects/delete") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, projects::delete(b.get("id").and_then(|v| v.as_str()).unwrap_or("")).map(|_| serde_json::json!({"ok":true})))
+        }
+        // Continuous intelligence: standing watchlist rules per project.
+        ("POST", "/api/projects/watchlist") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let id = b.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let rules = b.get("rules").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+            finish(stream, projects::set_watchlist(id, rules).map(|_| serde_json::json!({"ok": true})))
         }
         // Record an activity/result on a project (agent runs persist here).
         ("POST", "/api/projects/activity") => {
@@ -380,6 +420,8 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             finish(stream, projects::import(&raw, &user.email))
         }
         // Connectors
+        // Discipline-tagged source templates (OSINT/GEOINT/SIGINT/HUMINT).
+        ("GET", "/api/connectors/catalog") => json_ok(stream, &connectors::source_catalog()),
         ("POST", "/api/connectors/test") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, connectors::test(
@@ -433,7 +475,12 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/api/config") => json_ok(stream, &api::get_config()),
         ("POST", "/api/config") => {
             let b: serde_json::Value = parse_body(&req.body)?;
-            finish(stream, api::set_config(b.get("country").and_then(|v| v.as_str()).unwrap_or(""), b.get("onboarded").and_then(|v| v.as_bool()).unwrap_or(false)))
+            finish(stream, api::set_config_full(
+                b.get("country").and_then(|v| v.as_str()).unwrap_or(""),
+                b.get("onboarded").and_then(|v| v.as_bool()).unwrap_or(false),
+                b.get("organization").and_then(|v| v.as_str()),
+                b.get("org_type").and_then(|v| v.as_str()),
+            ))
         }
         // File upload (browse a file from the PC → temp path for the pipeline)
         ("POST", "/api/upload") => {
@@ -525,6 +572,21 @@ fn respond(stream: &mut TcpStream, status: u16, content_type: &str, body: &[u8])
     // client reuse the socket reliably; handle() loops requests per connection.
     let head = format!(
         "HTTP/1.1 {status} {reason}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: keep-alive\r\nKeep-Alive: timeout=30\r\n\r\n",
+        body.len()
+    );
+    stream.write_all(head.as_bytes())?;
+    stream.write_all(body)?;
+    stream.flush()?;
+    Ok(())
+}
+
+/// Like `respond`, but sets `Content-Disposition: attachment` with a filename so
+/// the client saves the download with its proper extension.
+fn respond_download(stream: &mut TcpStream, content_type: &str, filename: &str, body: &[u8]) -> Result<()> {
+    let safe: String = filename.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')).collect();
+    let safe = if safe.is_empty() { "download.pdf".to_string() } else { safe };
+    let head = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Disposition: attachment; filename=\"{safe}\"\r\nContent-Length: {}\r\nCache-Control: no-store\r\nConnection: keep-alive\r\nKeep-Alive: timeout=30\r\n\r\n",
         body.len()
     );
     stream.write_all(head.as_bytes())?;

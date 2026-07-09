@@ -46,6 +46,12 @@ const FIELD_MAP: &[(&[&str], EntityKind)] = &[
     (&["provider_record_id", "provider_name"], EntityKind::Organization),
     (&["vulnerability", "cve"], EntityKind::Vulnerability),
     (&["incident_id", "network_event_id"], EntityKind::Incident),
+    // Discipline-specific kinds (v0.0.2).
+    (&["icao24", "callsign", "aircraft_id", "flight", "tail_number"], EntityKind::Aircraft),
+    (&["mmsi", "vessel_id", "vessel_name", "imo"], EntityKind::Vessel),
+    (&["facility_id", "facility", "asset_id", "site_id", "site", "base", "camera_id", "cctv_id"], EntityKind::Facility),
+    (&["sensor_id", "sensor", "feed_id"], EntityKind::Sensor),
+    (&["imei", "imsi", "msisdn", "selector", "phone_number"], EntityKind::Selector),
 ];
 
 /// Extract entities + relationships from a single record. `extra` carries
@@ -53,6 +59,27 @@ const FIELD_MAP: &[(&[&str], EntityKind)] = &[
 pub fn extract_record(rec: &Record, _dt: DataType, extra: &[(String, EntityKind)]) -> ExtractResult {
     let mut out = ExtractResult::default();
     let origin = format!("{}#{}", rec.origin, rec.index);
+
+    // 0) GeoJSON imagery/asset feature (GEOINT): a flattened feature has
+    // geometry.coordinates.0/.1. Make ONE geolocated asset entity (kind from
+    // properties.type, default Facility) and stop — don't let the generic mapper
+    // mangle GeoJSON scaffolding (type=Feature, geometry.type=Point).
+    let lon = rec.get_any(&["geometry.coordinates.0", "coordinates.0"]);
+    let lat = rec.get_any(&["geometry.coordinates.1", "coordinates.1"]);
+    if let (Some(lo), Some(la)) = (lon, lat) {
+        let ptype = rec.get_any(&["properties.type", "properties.category", "type"]).unwrap_or("");
+        let kind = match EntityKind::parse(ptype) { EntityKind::Unknown => EntityKind::Facility, k => k };
+        let label = rec.get_any(&["properties.name", "properties.id", "name"]).map(|s| s.to_string())
+            .unwrap_or_else(|| format!("{}:{:.4},{:.4}", kind.as_str(), la.parse::<f64>().unwrap_or(0.0), lo.parse::<f64>().unwrap_or(0.0)));
+        let mut e = Entity::new(kind, &safe_label(kind, &label)).with_source(&origin);
+        e.attributes.insert("latitude".into(), la.to_string());
+        e.attributes.insert("longitude".into(), lo.to_string());
+        for k in ["properties.type", "properties.category", "properties.operator", "properties.description"] {
+            if let Some(v) = rec.get_any(&[k]) { e.attributes.insert(k.trim_start_matches("properties.").to_string(), v.to_string()); }
+        }
+        out.entities.push(e);
+        return out;
+    }
 
     // 1) Map declared fields onto ontology entities.
     let mut by_kind: Vec<(EntityKind, String)> = Vec::new();
@@ -162,6 +189,11 @@ fn attach_attrs(e: &mut Entity, rec: &Record) {
         "transaction_type", "url_type", "group_type", "report_category",
         "student_type", "student type", "created_at", "created at", "role",
         "customer_type", "order_status", "product_category", "department",
+        // Monetary: needed so payments/wallets/accounts carry their value.
+        "amount", "value", "currency", "transaction_amount", "total", "balance",
+        // Discipline signals: HUMINT reliability grading reads these.
+        "source_reliability", "reliability", "credibility", "corroboration",
+        "source_grade", "info_grade", "reporter_type",
         // Geo / temporal / trajectory: needed by the map lens to plot entities
         // and draw movement paths. Coordinates are references, not raw content.
         "latitude", "longitude", "lat", "lon", "lng", "latitude_approx", "longitude_approx",
@@ -171,6 +203,22 @@ fn attach_attrs(e: &mut Entity, rec: &Record) {
     for k in SAFE {
         if let Some(v) = rec.get_any(&[k]) {
             e.attributes.insert((*k).to_string(), v.to_string());
+        }
+    }
+    // GeoJSON imagery/asset ingestion (GEOINT): a flattened GeoJSON Point feature
+    // has geometry.coordinates.0 = lon, .1 = lat. Lift those into latitude/
+    // longitude so the asset plots on the map, and carry properties.* through.
+    if !e.attributes.contains_key("latitude") {
+        let lon = rec.get_any(&["geometry.coordinates.0", "coordinates.0", "lon", "longitude"]);
+        let lat = rec.get_any(&["geometry.coordinates.1", "coordinates.1", "lat", "latitude"]);
+        if let (Some(lo), Some(la)) = (lon, lat) {
+            e.attributes.entry("longitude".into()).or_insert_with(|| lo.to_string());
+            e.attributes.entry("latitude".into()).or_insert_with(|| la.to_string());
+        }
+    }
+    for k in ["properties.name", "properties.type", "properties.category", "properties.operator", "properties.description"] {
+        if let Some(v) = rec.get_any(&[k]) {
+            e.attributes.entry(k.trim_start_matches("properties.").to_string()).or_insert_with(|| v.to_string());
         }
     }
 }
