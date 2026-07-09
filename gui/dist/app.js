@@ -2636,7 +2636,7 @@ async function exportReportPdf(){ const t=activeTab(); if(!t||!t.result){ toast(
     showView("reports"); renderReports();
   }catch(e){ setSync("err","failed"); toast("PDF: "+e.message,"err"); }
 }
-async function downloadReport(path,name){ try{ const resp=await fetch("/api/report/download?path="+encodeURIComponent(path),{headers:{Authorization:"Bearer "+TOKEN}}); if(!resp.ok)throw new Error("not found"); const blob=await resp.blob(); const a=el("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }catch(e){ toast("Download failed: "+e.message,"err"); } }
+async function downloadReport(path,name){ try{ const fn=(name&&name.endsWith(".pdf"))?name:"cortex-report.pdf"; const resp=await fetch("/api/report/download?path="+encodeURIComponent(path)+"&name="+encodeURIComponent(fn),{headers:{Authorization:"Bearer "+TOKEN}}); if(!resp.ok)throw new Error("not found"); const blob=await resp.blob(); const a=el("a"); a.href=URL.createObjectURL(blob); a.download=fn; a.rel="noopener"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }catch(e){ toast("Download failed: "+e.message,"err"); } }
 function renderReports(){ const w=$("#reportsList"); if(!w)return; const t=activeTab(); const reps=(t&&t.reports)||[];
   w.innerHTML=""; if(!reps.length){ w.innerHTML='<div class="empty">No reports generated yet — click "Generate PDF".</div>'; return; }
   reps.forEach(r=>{ const li=el("div","li"); const l=el("div","l"); l.innerHTML=svg("reports")+`<span class="label">${esc(r.name)}</span>`; li.appendChild(l);
