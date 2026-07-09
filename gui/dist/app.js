@@ -188,7 +188,9 @@ const KIND_COLOR = {
   person_alt:"#63B3FF", victim:"#F472B6", suspect:"#F87171",
   media:"#FB7185", evidence:"#FDA4AF", malware:"#EF4444",
   vulnerability:"#FB923C", incident:"#E879F9", service:"#5EEAD4",
-  repository:"#A3E635", unknown:"#94A3B8"
+  repository:"#A3E635",
+  aircraft:"#38BDF8", vessel:"#22D3EE", facility:"#FB923C", sensor:"#A78BFA", selector:"#F472B6",
+  unknown:"#94A3B8"
 };
 const kColor = k => KIND_COLOR[k] || KIND_COLOR.unknown;
 // Categorical palette for the network-science lens (colour by community).
@@ -235,6 +237,11 @@ const ENTITY_GLYPH = {
   report:'<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 16h4"/>',
   service:'<path d="M18 10a4 4 0 00-7.7-1.4A3.5 3.5 0 108.5 16H18a3 3 0 000-6z"/>',
   repository:'<circle cx="7" cy="6" r="2.2"/><circle cx="7" cy="18" r="2.2"/><circle cx="17" cy="8" r="2.2"/><path d="M7 8.2v7.6M17 10.2c0 3.5-4.5 2.8-6.5 4.3"/>',
+  aircraft:'<path d="M12 3l1.5 6L21 12l-7.5 1L12 21l-1.5-8L3 12l7.5-3z"/>',
+  vessel:'<path d="M3 14h18l-2 4H5z"/><path d="M12 3v8M6 11h12"/>',
+  facility:'<rect x="4" y="9" width="16" height="11" rx="1"/><path d="M4 9l8-5 8 5M9 20v-5h6v5"/>',
+  sensor:'<circle cx="12" cy="12" r="2.4"/><path d="M6 12a6 6 0 016-6M18 12a6 6 0 01-6 6M3 12a9 9 0 019-9"/>',
+  selector:'<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
   unknown:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 013.7 2.1c0 1.6-2.2 2-2.2 3.2M12 17.2h.01"/>',
 };
 // Uniform clean dark disc for every node; the glyph is drawn in the bright

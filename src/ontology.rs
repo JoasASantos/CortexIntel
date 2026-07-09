@@ -36,6 +36,12 @@ pub enum EntityKind {
     Incident,
     Service,
     Repository,
+    // Discipline-specific kinds (v0.0.2).
+    Aircraft,   // GEOINT — flight/air asset (ICAO24, callsign)
+    Vessel,     // GEOINT — ship/maritime asset (MMSI)
+    Facility,   // GEOINT — fixed asset/site (CCTV, air base, unit, sensor site)
+    Sensor,     // GEOINT — a sensor/camera feed
+    Selector,   // SIGINT — comms selector (phone/IMEI/IMSI/handle)
     Unknown,
 }
 
@@ -65,6 +71,11 @@ impl EntityKind {
             EntityKind::Incident => "incident",
             EntityKind::Service => "service",
             EntityKind::Repository => "repository",
+            EntityKind::Aircraft => "aircraft",
+            EntityKind::Vessel => "vessel",
+            EntityKind::Facility => "facility",
+            EntityKind::Sensor => "sensor",
+            EntityKind::Selector => "selector",
             EntityKind::Unknown => "unknown",
         }
     }
@@ -95,6 +106,11 @@ impl EntityKind {
             "incident" | "event" | "alert" => EntityKind::Incident,
             "service" | "cloud_service" | "saas" => EntityKind::Service,
             "repository" | "repo" | "github" => EntityKind::Repository,
+            "aircraft" | "flight" | "airplane" | "plane" | "uav" | "drone" => EntityKind::Aircraft,
+            "vessel" | "ship" | "boat" | "maritime" => EntityKind::Vessel,
+            "facility" | "asset" | "site" | "base" | "unit" | "installation" | "cctv" | "camera" => EntityKind::Facility,
+            "sensor" | "feed" | "camera_feed" => EntityKind::Sensor,
+            "selector" | "imei" | "imsi" | "msisdn" | "phone" => EntityKind::Selector,
             _ => EntityKind::Unknown,
         }
     }
