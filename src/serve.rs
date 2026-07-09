@@ -334,6 +334,16 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             let b: serde_json::Value = parse_body(&req.body)?;
             finish(stream, api::report_pdf(b.get("project_id").and_then(|v| v.as_str()).unwrap_or("")))
         }
+        // Governance: verify an audit log's chain of custody (tamper-evident).
+        ("GET", "/api/audit/verify") => match param(&req.query, "path") {
+            Some(path) if path.ends_with("audit.log.jsonl") => json_ok(stream, &crate::audit::verify_chain(std::path::Path::new(&path))),
+            _ => json_err(stream, "provide the path to an audit.log.jsonl"),
+        },
+        // Neural layer: is an embedder configured?
+        ("GET", "/api/embed/status") => json_ok(stream, &serde_json::json!({
+            "configured": crate::embed::is_configured(),
+            "hint": "set CORTEX_EMBED_CMD to a CLI that reads text on stdin and prints a JSON float array"
+        })),
         ("GET", "/api/report/download") => match param(&req.query, "path") {
             Some(path) if path.ends_with(".pdf") && path.contains("report-") => match std::fs::read(&path) {
                 // Content-Disposition with a .pdf filename so the browser/WebView

@@ -14,6 +14,7 @@ pub mod config;
 pub mod connectors;
 pub mod correlation;
 pub mod disciplines;
+pub mod embed;
 pub mod enrich;
 pub mod extract;
 pub mod geoint;
