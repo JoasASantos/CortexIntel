@@ -103,6 +103,8 @@ then nudges future risk scoring (shown as a `feedback:` factor). Stored in
 | `CORTEX_LLM_RETRIES` | `1` | Extra retries per LLM attempt (backoff). |
 | `CORTEX_MODEL_COMPLEX/STANDARD/SIMPLE` | claude-opus-4-8 / claude-sonnet-5 / gpt-5.5 | Model per complexity tier in `auto`. |
 | `CORTEX_CLAUDE_BIN` / `CORTEX_CODEX_BIN` | claude / codex | Override the CLI binary. |
+| `CORTEX_CLAUDE_USER` | auto (SUDO_USER → console owner) | When running as root, run Claude Code as this normal user (uses their subscription). |
+| `CORTEX_CLAUDE_NO_DROP` | — | `1` → don't drop to a user; run Claude directly (with the IS_SANDBOX escape). |
 
 ## Notes
 
