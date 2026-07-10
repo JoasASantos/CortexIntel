@@ -237,6 +237,15 @@ pub fn run(
         println!("      +{} co-location links ({} geolocated)", geo.colocations.to_string().green(), geo.geolocated);
     }
 
+    // Robustness for messy data: fuzzy near-duplicate + temporal correlation.
+    let fz = crate::fuzzy::apply(&mut graph);
+    if fz.similar_links + fz.temporal_links > 0 {
+        audit.record(Utc::now(), "fuzzy_correlation", "correlation",
+            &format!("{} fuzzy similar links, {} temporal links", fz.similar_links, fz.temporal_links),
+            "robust correlation", false, false, None, None);
+        println!("      +{} fuzzy · +{} temporal links", fz.similar_links.to_string().green(), fz.temporal_links);
+    }
+
     // Intelligence-discipline signals (HUMINT reliability grading, SIGINT comms
     // pattern, OSINT selector reuse) — deterministic, feed risk + the graph.
     let disc = crate::disciplines::apply(&mut graph);
@@ -351,6 +360,9 @@ pub fn run(
             e.risk_band = Some(RiskBand::from_score(a.risk_score));
         }
     }
+    // Composite Intelligence Score (0–100, explainable) blending risk + network +
+    // anomaly + connectivity + reference matches — one number with the "why".
+    crate::iscore::compute(&mut graph);
     // Automatic tags: derived, deterministic labels that make the graph filterable
     // (email provider, risk band, hub, isolated, sensitive) without manual work.
     let deg_all = graph.degree_centrality();
