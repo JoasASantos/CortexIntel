@@ -2639,6 +2639,20 @@ function pointInFeature(lon,lat,f){ const polys=f.geometry.type==="Polygon"?[f.g
 // the project's geolocated data: countries shade by aggregated severity
 // (choropleth), entities plot as markers, edges draw as connections, and layers
 // (by entity kind — CCTV, air base, unit… per project) toggle on/off. Pan + zoom.
+// Per-country centroid + area cache (computed once from the GeoJSON), used to
+// place country-name labels and scale their visibility by country size + zoom.
+let _countryMeta=null;
+function countryMeta(gj){
+  if(_countryMeta) return _countryMeta;
+  _countryMeta=gj.features.map(f=>{
+    const polys=f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates;
+    let cx=0,cy=0,n=0,minx=180,maxx=-180,miny=90,maxy=-90;
+    polys.forEach(poly=>{ const ring=poly[0]||[]; ring.forEach(c=>{ cx+=c[0];cy+=c[1];n++; if(c[0]<minx)minx=c[0]; if(c[0]>maxx)maxx=c[0]; if(c[1]<miny)miny=c[1]; if(c[1]>maxy)maxy=c[1]; }); });
+    return { name:f.properties.n||"", lon:n?cx/n:0, lat:n?cy/n:0, span:Math.max(maxx-minx,maxy-miny) };
+  });
+  return _countryMeta;
+}
+
 function renderWorldMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=$("#mapEmpty"); if(!cv||!t) return;
   const wrap=cv.parentElement; const W=wrap.clientWidth||900, H=wrap.clientHeight||600; const dpr=Math.min(2,window.devicePixelRatio||1);
   cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+"px"; cv.style.height=H+"px"; cv.hidden=false;
@@ -2647,36 +2661,76 @@ function renderWorldMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=
   if(!_mapView.init){ const s=Math.max(1,H/baseH); _mapView={scale:s, ox:0, oy:(H-baseH*s)/2, init:true}; }
   const sc=_mapView.scale;
   const proj=(lon,lat)=>({ x:((lon+180)/360*baseW)*sc+_mapView.ox, y:((90-lat)/180*baseH)*sc+_mapView.oy });
-  ctx.fillStyle="#0a0e14"; ctx.fillRect(0,0,W,H);                 // ocean
+  const inView=(x,y,m)=>x>=-(m||0)&&x<=W+(m||0)&&y>=-(m||0)&&y<=H+(m||0);
+  // Ocean with a subtle vertical gradient for depth.
+  const og=ctx.createLinearGradient(0,0,0,H); og.addColorStop(0,"#0b1220"); og.addColorStop(1,"#080c14"); ctx.fillStyle=og; ctx.fillRect(0,0,W,H);
   let pts=t.graph.nodes.map(n=>{ const g=geoOf(n); return g?{n,...g}:null; }).filter(Boolean);
   if(_mapLayers) pts=pts.filter(p=>_mapLayers.has(p.n.kind));
   const capped=pts.length>3000; if(capped) pts=pts.sort((a,b)=>(b.n.risk||0)-(a.n.risk||0)).slice(0,3000);
   loadWorld(gj=>{
+    // Graticule (lat/long grid) — denser as you zoom in.
+    const step = sc>4 ? 10 : (sc>2 ? 15 : 30);
+    ctx.strokeStyle="rgba(90,110,130,0.10)"; ctx.lineWidth=1;
+    for(let lon=-180;lon<=180;lon+=step){ const a=proj(lon,85),b=proj(lon,-85); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+    for(let lat=-80;lat<=80;lat+=step){ const a=proj(-180,lat),b=proj(180,lat); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+    // Equator emphasized.
+    ctx.strokeStyle="rgba(87,215,232,0.14)"; const e1=proj(-180,0),e2=proj(180,0); ctx.beginPath(); ctx.moveTo(e1.x,e1.y); ctx.lineTo(e2.x,e2.y); ctx.stroke();
+
     // Choropleth: max entity risk per country (assign each point to a country).
     const sevByFeat=new Map();
     if(_mapChoropleth && pts.length && gj){ pts.forEach(p=>{ for(let i=0;i<gj.features.length;i++){ if(pointInFeature(p.lon,p.lat,gj.features[i])){ sevByFeat.set(i,Math.max(sevByFeat.get(i)||0,p.n.risk||0)); break; } } }); }
     if(gj){ gj.features.forEach((f,idx)=>{ const polys=f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates;
       ctx.beginPath();
       polys.forEach(poly=>poly.forEach(ring=>{ ring.forEach((c,i)=>{ const p=proj(c[0],c[1]); if(i===0)ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); }); ctx.closePath(); }));
-      const sev=sevByFeat.get(idx); ctx.fillStyle=sev!=null?hexA(bandColor(bandOf(sev)),0.5):"rgba(28,38,54,0.75)"; ctx.fill();
-      ctx.lineWidth=0.5; ctx.strokeStyle="rgba(120,140,160,0.22)"; ctx.stroke();
+      const sev=sevByFeat.get(idx); ctx.fillStyle=sev!=null?hexA(bandColor(bandOf(sev)),0.5):"rgba(30,42,60,0.82)"; ctx.fill();
+      ctx.lineWidth=sc>3?0.8:0.5; ctx.strokeStyle="rgba(130,155,180,0.28)"; ctx.stroke();
     }); }
+
+    // Country names — at centroids, shown when the country is big enough on
+    // screen (larger countries at low zoom, all countries when zoomed in).
+    if(gj){ const meta=countryMeta(gj); ctx.textAlign="center"; ctx.textBaseline="middle";
+      meta.forEach((m,idx)=>{ if(!m.name) return; const onScreenSpan=m.span*(baseW/360)*sc;
+        if(onScreenSpan < 34) return;                     // too small to label at this zoom
+        const xy=proj(m.lon,m.lat); if(!inView(xy.x,xy.y,0)) return;
+        const fs=Math.max(8,Math.min(13, onScreenSpan/6));
+        const sev=sevByFeat.get(idx);
+        ctx.font=`${sev!=null?600:500} ${fs}px SF Mono, Menlo, monospace`;
+        ctx.fillStyle=sev!=null?"rgba(255,235,235,0.92)":"rgba(190,210,230,0.62)";
+        ctx.shadowColor="rgba(0,0,0,0.7)"; ctx.shadowBlur=3;
+        ctx.fillText(m.name.toUpperCase(), xy.x, xy.y); ctx.shadowBlur=0;
+      });
+    }
+
     // Connections between geolocated entities that share an edge.
     const byId={}; pts.forEach(p=>byId[p.n.id]=p);
-    ctx.setLineDash([5,4]); ctx.lineWidth=1.2; ctx.strokeStyle="rgba(245,158,11,0.55)";
+    ctx.setLineDash([5,4]); ctx.lineWidth=1.3; ctx.strokeStyle="rgba(245,158,11,0.6)";
     (t.graph.edges||[]).forEach(e=>{ const a=byId[e.source],b=byId[e.target]; if(a&&b){ const pa=proj(a.lon,a.lat),pb=proj(b.lon,b.lat); ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke(); } });
     ctx.setLineDash([]);
-    // Markers.
-    const screenPts=[];
-    pts.forEach(p=>{ const xy=proj(p.lon,p.lat); const r=4+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
+    // Markers (+ labels when zoomed in enough).
+    const screenPts=[]; const showLabels=sc>=2.2;
+    pts.forEach(p=>{ const xy=proj(p.lon,p.lat); if(!inView(xy.x,xy.y,40))return; const r=4+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
       const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+5,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.30)":"rgba(251,113,133,0.24)"); ctx.fill(); }
-      ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.7)"; ctx.stroke(); });
+      ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.75)"; ctx.stroke();
+      if(showLabels){ ctx.font="600 10px SF Mono, Menlo, monospace"; ctx.textAlign="center"; ctx.textBaseline="top"; ctx.shadowColor="rgba(0,0,0,0.8)"; ctx.shadowBlur=3; ctx.fillStyle="rgba(235,245,255,0.95)"; ctx.fillText(String(p.n.label).slice(0,22), xy.x, xy.y+r+3); ctx.shadowBlur=0; }
+    });
     _mapState={screenPts};
     if(empty) empty.hidden = !!gj || pts.length>0;
-    const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))}${capped?" · (top 3000)":""}`;
+    const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))} · ${Math.round(sc*100)}%${capped?" · (top 3000)":""}`;
     renderMapLayerLegend(t);
+    renderMapScaleHint();
   });
 }
+// A small "scroll to zoom · drag to pan" hint + zoom controls on the map.
+function renderMapScaleHint(){ const wrap=$(".graph-wrap"); if(!wrap)return; let h=$("#mapZoomCtl");
+  if(!h){ h=el("div"); h.id="mapZoomCtl"; h.style.cssText="position:absolute;left:14px;bottom:16px;z-index:6;display:flex;gap:6px;align-items:center";
+    const mk=(txt,f)=>{ const b=el("button","btn ghost"); b.textContent=txt; b.style.cssText="width:30px;height:30px;padding:0;font-size:16px"; b.addEventListener("click",f); return b; };
+    h.appendChild(mk("+",()=>mapZoomBy(1.3))); h.appendChild(mk("−",()=>mapZoomBy(1/1.3)));
+    const fit=el("button","btn ghost"); fit.textContent="⊡"; fit.title="Fit"; fit.style.cssText="width:30px;height:30px;padding:0;font-size:14px"; fit.addEventListener("click",()=>{ _mapView.init=false; renderWorldMap(); }); h.appendChild(fit);
+    wrap.appendChild(h); }
+  h.hidden = canvasMode!=="map";
+}
+function mapZoomBy(f){ const cv=$("#mapCanvas"); if(!cv)return; const r=cv.getBoundingClientRect(); const mx=r.width/2,my=r.height/2; const ns=Math.max(0.6,Math.min(14,_mapView.scale*f));
+  _mapView.ox=mx-(mx-_mapView.ox)*(ns/_mapView.scale); _mapView.oy=my-(my-_mapView.oy)*(ns/_mapView.scale); _mapView.scale=ns; renderWorldMap(); }
 // Layer panel: toggle the severity choropleth + each entity kind present on the
 // map (this is where CCTV / air-base / unit layers live — generic, per project).
 function renderMapLayerLegend(t){ const wrap=$(".graph-wrap"); if(!wrap)return; let box=$("#mapLayers");
