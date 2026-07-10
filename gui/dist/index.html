@@ -99,6 +99,7 @@
           <li data-view="dashboard" class="active"><span class="ni">▤</span><span data-i18n="nav.dashboard">Dashboard</span></li>
           <li data-view="graph"><span class="ni">◕</span><span data-i18n="nav.graph">Graph</span></li>
           <li data-view="intelligence"><span class="ni">✦</span><span data-i18n="nav.intelligence">Intelligence</span></li>
+          <li data-view="priority"><span class="ni">◎</span><span data-i18n="nav.priority">Priority</span></li>
           <li data-view="agents"><span class="ni">◈</span><span data-i18n="nav.agents">Agents</span></li>
           <li data-view="entities"><span class="ni">⬡</span><span data-i18n="nav.entities">Entities</span></li>
           <li data-view="timeline"><span class="ni">⧗</span><span data-i18n="nav.timeline">Timeline</span></li>
@@ -158,6 +159,7 @@
                   <button class="gmode" data-mode="timeline" title="By time" data-i18n="gmode.timeline">Timeline</button>
                   <button class="gmode" data-mode="full" title="Everything" data-i18n="gmode.full">Full</button>
                   <button class="gmode" data-mode="network" title="Broker &amp; communities" data-i18n="gmode.network">Network</button>
+                  <button class="gmode" data-mode="score" title="Intelligence Score heat" data-i18n="gmode.score">Score</button>
                 </div>
                 <span class="muted" id="graphStats">0 nodes · 0 edges</span>
               </div>
@@ -261,6 +263,16 @@
             <div class="dm-wrap"><table class="tbl dmtable" id="intelDecision"><thead><tr><th>Action</th><th>Impact</th><th>Confidence</th><th>Risk if wrong</th><th>Effort</th><th>Score</th><th>Route</th></tr></thead><tbody></tbody></table></div></div>
           <div class="card nba" id="intelNbaCard"><div class="card-head"><h3 data-i18n="card.nextBestAction">Next best action</h3></div><div id="intelNba"><div class="empty">Generate intelligence to get a recommended decision.</div></div></div>
           <div class="card"><div class="card-head"><h3 data-i18n="card.riskClusters">Risk clusters</h3></div><div id="intelClusters"><div class="empty">—</div></div></div>
+        </section>
+
+        <!-- Priority (ranked by Intelligence Score) -->
+        <section class="view" id="view-priority" hidden>
+          <div class="view-head"><h1 data-i18n="nav.priority">Priority</h1><p class="muted" data-i18n="view.priority.sub">Everything ranked by Intelligence Score — what to look at first, and why.</p></div>
+          <div class="intel-ask">
+            <select id="prioKind" class="select"></select>
+            <span class="intel-meta" id="prioMeta"></span>
+          </div>
+          <div class="list" id="priorityList"><div class="empty" data-i18n="prio.none">Run an analysis to rank entities by score.</div></div>
         </section>
 
         <!-- Agents -->

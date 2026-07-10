@@ -8,7 +8,7 @@
 const I18N = {
   en: {
     "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
-    "nav.agents":"Agents","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted",
+    "nav.agents":"Agents","nav.priority":"Priority","view.priority.sub":"Everything ranked by Intelligence Score — what to look at first, and why.","prio.none":"Run an analysis to rank entities by score.","prio.allkinds":"All kinds","prio.count":"{0} entities ranked","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted",
     "risk.adjust":"Adjust risk","risk.adjust.title":"Adjust risk","risk.new":"New risk","risk.just":"Justification (why)","risk.just.ph":"Why are you overriding the score? (required, recorded)","risk.just.req":"A justification is required","risk.apply":"Apply","risk.manual":"manual","risk.done":"Risk adjusted","iscore.label":"INTELLIGENCE SCORE","route.intel":"Open Intelligence","route.map":"Open Map","route.timeline":"Open Timeline","route.entities":"Open Entities","route.graph":"Show in graph","onb.title":"Welcome — set up your workspace","onb.sub":"First access: this creates your admin workspace. Name your tenant so cases stay organized by company / unit / team.","onb.org":"Company / business unit / team","onb.org.ph":"e.g. Acme Corp · Fraud Unit · Blue Team","onb.org.req":"Enter an organization name","onb.type":"Type","onb.type.company":"Company","onb.type.bu":"Business unit","onb.type.team":"Team","onb.region":"Region (for KYC / disclaimers)","onb.legal":"Person/identity data is regulated (LGPD/GDPR). This is decision-support, never a definitive ruling.","onb.continue":"Continue","onb.done":"Workspace ready",
     "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
     "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store","src.byDiscipline":"SOURCES BY DISCIPLINE","src.generic":"GENERIC CONNECTORS","src.noparams":"No parameters — click to pull.","src.testrun":"Test & pull","src.pulling":"Pulling from source…","src.pulled":"Source pulled & processed","src.opendemo":"Open a project first (test only in demo).","watch.manage":"Manage watchlist","watch.title":"Watchlist — standing rules","watch.none":"No rules yet. Add one — it alerts on each re-run.","watch.name":"Rule name","watch.name.req":"Enter a rule name","watch.kind":"Entity kind","watch.anykind":"any kind","watch.minrisk":"Minimum risk","watch.contains":"Label contains","watch.add":"Add rule","watch.saved":"Watchlist saved",
@@ -20,7 +20,7 @@ const I18N = {
     "sev.critical":"Critical","sev.high":"High","sev.medium":"Medium","sev.low":"Low","sev.none":"No severity",
     "sit.domain":"Vertical","sit.owner":"Owner","sit.jurisdiction":"Jurisdiction","sit.created":"Created","sit.updated":"Updated","sit.entities":"entities","sit.relationships":"relationships","sit.critical":"critical","sit.alerts":"alerts",
     "auth.signin":"Sign in","auth.register":"Create account",
-    "gmode.overview":"Overview","gmode.risk":"Risk","gmode.neighborhood":"Neighborhood","gmode.timeline":"Timeline","gmode.full":"Full","gmode.network":"Network","gmode.network.hint":"colour = community · size = broker (betweenness) · the largest node is the network's articulation point",
+    "gmode.overview":"Overview","gmode.risk":"Risk","gmode.neighborhood":"Neighborhood","gmode.timeline":"Timeline","gmode.full":"Full","gmode.network":"Network","gmode.network.hint":"colour = community · size = broker (betweenness) · the largest node is the network's articulation point","gmode.score":"Score","gmode.score.hint":"colour + size = Intelligence Score (0–100); red = act first",
     "gtool.entity":"Entity","gtool.fit":"Fit","gtool.path":"Path","gtool.connect":"Connect","gtool.reset":"Reset","gtool.ask":"Ask","edge.label.q":"Edge label (optional)","edge.pickSource":"Connect: click the source node (Esc to cancel)","edge.pickTarget":"Connect: click the target node (Esc to cancel)","edge.editTitle":"Edit connection","edge.delete":"Delete connection",
     "gf.all":"All","gf.crit":"Critical + High","gf.suspicious":"Suspicious/Malicious","gf.sensitive":"Sensitive",
     "view.entities":"Entity Registry","view.entities.sub":"Validate, resolve, enrich and prioritize the entities that feed your intelligence.",
@@ -40,7 +40,7 @@ const I18N = {
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
-    "nav.agents":"Agentes","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído",
+    "nav.agents":"Agentes","nav.priority":"Priorização","view.priority.sub":"Tudo ranqueado por Score de Inteligência — o que olhar primeiro, e por quê.","prio.none":"Execute uma análise para ranquear as entidades por score.","prio.allkinds":"Todos os tipos","prio.count":"{0} entidades ranqueadas","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído",
     "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado","iscore.label":"SCORE DE INTELIGÊNCIA","route.intel":"Abrir Inteligência","route.map":"Abrir Mapa","route.timeline":"Abrir Linha do tempo","route.entities":"Abrir Entidades","route.graph":"Ver no grafo","onb.title":"Bem-vindo — configure seu workspace","onb.sub":"Primeiro acesso: isto cria seu workspace admin. Nomeie o tenant para organizar os casos por empresa / unidade / time.","onb.org":"Empresa / unidade de negócio / time","onb.org.ph":"ex.: Acme Corp · Unidade Fraude · Blue Team","onb.org.req":"Informe o nome da organização","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidade de negócio","onb.type.team":"Time","onb.region":"Região (para KYC / avisos legais)","onb.legal":"Dados de pessoa/identidade são regulados (LGPD/GDPR). Isto é apoio à decisão, nunca um veredito definitivo.","onb.continue":"Continuar","onb.done":"Workspace pronto",
     "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
     "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms","src.byDiscipline":"FONTES POR DISCIPLINA","src.generic":"CONECTORES GENÉRICOS","src.noparams":"Sem parâmetros — clique para puxar.","src.testrun":"Testar e puxar","src.pulling":"Puxando da fonte…","src.pulled":"Fonte puxada e processada","src.opendemo":"Abra um projeto primeiro (teste só no demo).","watch.manage":"Gerenciar watchlist","watch.title":"Watchlist — regras permanentes","watch.none":"Nenhuma regra ainda. Adicione uma — ela alerta a cada re-execução.","watch.name":"Nome da regra","watch.name.req":"Informe um nome de regra","watch.kind":"Tipo de entidade","watch.anykind":"qualquer tipo","watch.minrisk":"Risco mínimo","watch.contains":"Rótulo contém","watch.add":"Adicionar regra","watch.saved":"Watchlist salva",
@@ -52,7 +52,7 @@ const I18N = {
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Médio","sev.low":"Baixo","sev.none":"Sem severidade",
     "sit.domain":"Vertical","sit.owner":"Responsável","sit.jurisdiction":"Jurisdição","sit.created":"Criado","sit.updated":"Atualizado","sit.entities":"entidades","sit.relationships":"relações","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Entrar","auth.register":"Criar conta",
-    "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Linha do tempo","gmode.full":"Completo","gmode.network":"Rede","gmode.network.hint":"cor = comunidade · tamanho = broker (intermediação) · o maior nó é o ponto de articulação da rede",
+    "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Linha do tempo","gmode.full":"Completo","gmode.network":"Rede","gmode.network.hint":"cor = comunidade · tamanho = broker (intermediação) · o maior nó é o ponto de articulação da rede","gmode.score":"Score","gmode.score.hint":"cor + tamanho = Score de Inteligência (0–100); vermelho = agir primeiro",
     "gtool.entity":"Entidade","gtool.fit":"Ajustar","gtool.path":"Caminho","gtool.connect":"Conectar","gtool.reset":"Redefinir","gtool.ask":"Perguntar","edge.label.q":"Rótulo da conexão (opcional)","edge.pickSource":"Conectar: clique no nó de origem (Esc para cancelar)","edge.pickTarget":"Conectar: clique no nó de destino (Esc para cancelar)","edge.editTitle":"Editar conexão","edge.delete":"Excluir conexão",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Suspeito/Malicioso","gf.sensitive":"Sensível",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valide, resolva, enriqueça e priorize as entidades que alimentam sua inteligência.",
@@ -72,7 +72,7 @@ const I18N = {
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
-    "nav.agents":"Agentes","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado",
+    "nav.agents":"Agentes","nav.priority":"Priorización","view.priority.sub":"Todo clasificado por Score de Inteligencia — qué mirar primero, y por qué.","prio.none":"Ejecuta un análisis para clasificar por score.","prio.allkinds":"Todos los tipos","prio.count":"{0} entidades clasificadas","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado",
     "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado","iscore.label":"SCORE DE INTELIGENCIA","route.intel":"Abrir Inteligencia","route.map":"Abrir Mapa","route.timeline":"Abrir Línea de tiempo","route.entities":"Abrir Entidades","route.graph":"Ver en el grafo","onb.title":"Bienvenido — configura tu espacio","onb.sub":"Primer acceso: esto crea tu espacio admin. Nombra el tenant para organizar los casos por empresa / unidad / equipo.","onb.org":"Empresa / unidad de negocio / equipo","onb.org.ph":"ej.: Acme Corp · Unidad Fraude · Blue Team","onb.org.req":"Ingresa el nombre de la organización","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidad de negocio","onb.type.team":"Equipo","onb.region":"Región (para KYC / avisos)","onb.legal":"Los datos de persona/identidad están regulados (LGPD/GDPR). Esto es apoyo a la decisión, nunca un veredicto definitivo.","onb.continue":"Continuar","onb.done":"Espacio listo",
     "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
     "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms","src.byDiscipline":"FUENTES POR DISCIPLINA","src.generic":"CONECTORES GENÉRICOS","src.noparams":"Sin parámetros — clic para extraer.","src.testrun":"Probar y extraer","src.pulling":"Extrayendo de la fuente…","src.pulled":"Fuente extraída y procesada","src.opendemo":"Abre un proyecto primero (prueba solo en demo).","watch.manage":"Gestionar watchlist","watch.title":"Watchlist — reglas permanentes","watch.none":"Aún no hay reglas. Añade una — alerta en cada re-ejecución.","watch.name":"Nombre de la regla","watch.name.req":"Ingresa un nombre de regla","watch.kind":"Tipo de entidad","watch.anykind":"cualquier tipo","watch.minrisk":"Riesgo mínimo","watch.contains":"La etiqueta contiene","watch.add":"Añadir regla","watch.saved":"Watchlist guardada",
@@ -84,7 +84,7 @@ const I18N = {
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Medio","sev.low":"Bajo","sev.none":"Sin severidad",
     "sit.domain":"Vertical","sit.owner":"Responsable","sit.jurisdiction":"Jurisdicción","sit.created":"Creado","sit.updated":"Actualizado","sit.entities":"entidades","sit.relationships":"relaciones","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Iniciar sesión","auth.register":"Crear cuenta",
-    "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Línea de tiempo","gmode.full":"Completo","gmode.network":"Red","gmode.network.hint":"color = comunidad · tamaño = broker (intermediación) · el nodo más grande es el punto de articulación de la red",
+    "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Línea de tiempo","gmode.full":"Completo","gmode.network":"Red","gmode.network.hint":"color = comunidad · tamaño = broker (intermediación) · el nodo más grande es el punto de articulación de la red","gmode.score":"Score","gmode.score.hint":"color + tamaño = Score de Inteligencia (0–100); rojo = actuar primero",
     "gtool.entity":"Entidad","gtool.fit":"Ajustar","gtool.path":"Ruta","gtool.connect":"Conectar","gtool.reset":"Restablecer","gtool.ask":"Preguntar","edge.label.q":"Etiqueta de la conexión (opcional)","edge.pickSource":"Conectar: haz clic en el nodo de origen (Esc para cancelar)","edge.pickTarget":"Conectar: haz clic en el nodo de destino (Esc para cancelar)","edge.editTitle":"Editar conexión","edge.delete":"Eliminar conexión",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Sospechoso/Malicioso","gf.sensitive":"Sensible",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valida, resuelve, enriquece y prioriza las entidades que alimentan tu inteligencia.",
@@ -801,10 +801,19 @@ function renderGraph() {
   // Network-science lens: ring colour = community, size = betweenness (broker),
   // and the top broker gets a bright highlight. Metrics come from netsci (backend).
   const netMode = (t.graphMode === "network");
+  const scoreMode = (t.graphMode === "score");
+  // Heat colour for the Intelligence-Score lens.
+  const scoreHeat=s=>s>=70?"#ef4444":s>=45?"#fb7185":s>=25?"#f59e0b":"#34d399";
   g.nodes.forEach(n=>{
     if(n.meta){ els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon("group",glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(bandOf(n.risk)), size: metaSize(n.count) }, classes:"metanode"+(perf?" plain":"") }); return; }
     const band = n.band||bandOf(n.risk);
     const hot = band==="critical"||band==="high";
+    if(scoreMode){
+      const sc=parseInt((n.attributes||{}).intel_score||0)||Math.round((n.risk||0)*100);
+      const col=scoreHeat(sc); const size=NODE_MIN+(sc/100)*(NODE_MAX-NODE_MIN);
+      els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(col)), kc:col, hc:col, size, bw:sc>=45?3.5:1.5, halo:(sc>=45&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+      return;
+    }
     if(netMode){
       const at=n.attributes||{};
       const bet=parseFloat(at.betweenness)||0;
@@ -2125,6 +2134,7 @@ function setGraphMode(mode, opts){ const t=activeTab(); if(!t||!t.graph.nodes.le
       modeHint(`<b>Neighborhood</b> — ${hops} hop(s) around "${nodeData(seedId).label}" · right-click another node → Neighborhood`); }
     else if(mode==="timeline"){ buildTimeline(t); }
     else if(mode==="network"){ renderGraph(); modeHint(`<b>${t2("gmode.network")}</b> — ${t2("gmode.network.hint")}`); setTimeout(()=>{ if(cy){ cy.resize(); cy.fit(cy.elements(),55); } },320); }
+    else if(mode==="score"){ renderGraph(); modeHint(`<b>${t2("gmode.score")}</b> — ${t2("gmode.score.hint")}`); setTimeout(()=>{ if(cy){ cy.resize(); cy.fit(cy.elements(),55); } },320); }
   }), delay);
 }
 function buildTimeline(t){ const withTs=t.graph.nodes.map(n=>({n,ts:parseTs(n)})).filter(x=>x.ts!=null);
@@ -2169,7 +2179,33 @@ $("#paletteInput").addEventListener("keydown",e=>{ const items=$("#paletteList")
 $("#paletteBackdrop").addEventListener("click",e=>{ if(e.target===$("#paletteBackdrop")) closePalette(); });
 
 // nav hooks that need lazy render
-$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="entities")renderEntities(); if(li.dataset.view==="agents")renderAgents(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
+$$('.nav li').forEach(li=>li.addEventListener("click",()=>{ if(li.dataset.view==="settings")openSettingsTab(currentSettingsTab); if(li.dataset.view==="intelligence")renderIntelligence(); if(li.dataset.view==="entities")renderEntities(); if(li.dataset.view==="agents")renderAgents(); if(li.dataset.view==="priority")renderPriority(); if(li.dataset.view==="reports"){renderReport();renderReports();} }));
+// Priority view — everything ranked by Intelligence Score (0–100) with the "why".
+let _prioKind="";
+function renderPriority(){ const t=activeTab(); const w=$("#priorityList"); const meta=$("#prioMeta"); const sel=$("#prioKind"); if(!w)return;
+  if(!t||!t.graph.nodes.length){ w.innerHTML=`<div class="empty">${esc(t2("prio.none"))}</div>`; if(meta)meta.textContent=""; return; }
+  const nodes=t.graph.nodes.map(n=>({n, s:parseInt((n.attributes||{}).intel_score||0)||Math.round((n.risk||0)*100)}));
+  if(sel){ const kinds=[...new Set(t.graph.nodes.map(n=>n.kind))].sort();
+    sel.innerHTML=`<option value="">${esc(t2("prio.allkinds"))}</option>`+kinds.map(k=>`<option value="${esc(k)}" ${_prioKind===k?"selected":""}>${esc(k)}</option>`).join("");
+    sel.onchange=()=>{ _prioKind=sel.value; renderPriority(); }; }
+  let list=nodes; if(_prioKind) list=list.filter(x=>x.n.kind===_prioKind);
+  list.sort((a,b)=>b.s-a.s);
+  if(meta) meta.textContent=t2("prio.count",list.length);
+  w.innerHTML="";
+  list.slice(0,100).forEach((x,i)=>{ const n=x.n; const at=n.attributes||{}; const band=n.band||bandOf(n.risk);
+    const col=x.s>=70?"#ef4444":x.s>=45?"#fb7185":x.s>=25?"#f59e0b":"#34d399";
+    const li=el("div","li"); li.style.cursor="pointer";
+    li.innerHTML=`<div class="l" style="align-items:center;gap:10px">`+
+      `<span style="font-size:11px;color:#667;width:22px;text-align:right">${i+1}</span>`+
+      `<span style="font-size:19px;font-weight:700;color:${col};width:34px;text-align:center">${x.s}</span>`+
+      `<span class="kdot" style="background:${kColor(n.kind)}"></span>`+
+      `<span><span class="label">${esc(n.label)}</span> <span class="conf muted" style="font-size:10px">${esc(n.kind)}</span>`+
+      (at.intel_breakdown?`<div class="muted" style="font-size:10px">${esc(at.intel_breakdown)}</div>`:"")+`</span></div>`+
+      `<span class="band ${band}">${band}</span>`;
+    li.addEventListener("click",()=>{ selectNode(n.id); });
+    w.appendChild(li);
+  });
+}
 { const s=$("#agentSearch"); if(s){ let _d; s.addEventListener("input",()=>{ clearTimeout(_d); _d=setTimeout(renderAgents,250); }); } const ab=$("#btnAgentAuto"); if(ab) ab.addEventListener("click",autoRunAgents); const an=$("#btnAgentNew"); if(an) an.addEventListener("click",()=>openAgentEditor(null)); }
 $("#profileBtn").addEventListener("click",()=>{showView("settings");openSettingsTab("account");});
 
