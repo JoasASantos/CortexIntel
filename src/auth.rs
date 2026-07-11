@@ -304,11 +304,13 @@ pub fn validate(token: &str) -> Option<AuthUser> {
         return None;
     }
     let db = load_db();
+    // Read the role from the user record, not the session snapshot — otherwise a
+    // role change (e.g. admin demoting a viewer) has no effect until re-login.
     db.users.iter().find(|u| u.id == s.user_id).map(|u| AuthUser {
         id: u.id.clone(),
         email: s.email.clone(),
         display_name: u.display_name.clone(),
-        role: s.role.clone(),
+        role: u.role.clone(),
     })
 }
 

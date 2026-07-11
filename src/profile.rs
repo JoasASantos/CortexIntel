@@ -82,7 +82,7 @@ impl SemanticType {
 fn header_semantic(h: &str) -> Option<SemanticType> {
     let h = h.to_lowercase();
     let any = |ks: &[&str]| ks.iter().any(|k| h.contains(k));
-    if any(&["city", "cidade", "country", "pais", "país", "state", "estado", "location", "local", "address", "endereço", "endereco", "region", "geo"]) {
+    if any(&["city", "cidade", "country", "pais", "país", "state", "estado", "location", "local", "address", "endereço", "endereco", "region", "geo", "origin", "destination", "origem", "destino"]) {
         return Some(SemanticType::Location);
     }
     if any(&["company", "empresa", "organization", "organização", "organizacao", "org", "carrier", "vendor", "merchant", "supplier", "employer", "institution"]) {

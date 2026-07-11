@@ -1788,26 +1788,31 @@ const CONNECTORS=[
   {kind:"looker",name:"Looker",desc:"Pull a Look/query result via the Looker API.",api:true},
   {kind:"webhook",name:"REST / Webhook / API",desc:"Pull JSON records from any REST endpoint.",api:true},
 ];
-async function renderConnectorCards(){ const w=$("#connectorCards"); if(!w)return; w.innerHTML="";
-  // Discipline-tagged source templates first (OSINT/GEOINT/SIGINT/HUMINT).
-  try{
-    const cat=await api("/api/connectors/catalog");
-    if(cat&&cat.length){
-      const groups={}; cat.forEach(c=>{ (groups[c.discipline]=groups[c.discipline]||[]).push(c); });
-      const wrap=el("div"); wrap.style.cssText="margin-bottom:14px";
-      wrap.appendChild(Object.assign(el("div"),{textContent:t2("src.byDiscipline"),style:"font-weight:600;color:#8fa8c0;letter-spacing:0.5px;font-size:11px;margin:2px 0 8px"}));
-      ["OSINT","GEOINT","SIGINT","HUMINT"].forEach(disc=>{ if(!groups[disc])return;
-        const row=el("div"); row.style.cssText="margin-bottom:8px";
-        row.appendChild(Object.assign(el("span","chip"),{textContent:disc,style:"margin-right:8px;color:#57D7E8;border-color:#57D7E8"}));
-        groups[disc].forEach(tpl=>{ const b=el("button","btn ghost"); b.style.cssText="margin:3px 4px 3px 0;padding:4px 10px;font-size:11px"; b.textContent=tpl.name; b.title=tpl.description;
-          b.addEventListener("click",()=>connectorFromTemplate(tpl)); row.appendChild(b); });
-        wrap.appendChild(row);
-      });
-      w.appendChild(wrap);
-      w.appendChild(Object.assign(el("div"),{textContent:t2("src.generic"),style:"font-weight:600;color:#8fa8c0;letter-spacing:0.5px;font-size:11px;margin:4px 0 8px"}));
-    }
-  }catch(e){}
-  CONNECTORS.forEach(c=>{ const card=el("div","card conn"); card.innerHTML=`<div class="ct">⇄ ${esc(c.name)}</div><div class="cd">${esc(c.desc)}</div>`; card.addEventListener("click",()=>connectorModal(c)); w.appendChild(card); }); }
+async function renderConnectorCards(){
+  const discW=$("#disciplineSources"), w=$("#connectorCards");
+  // Discipline-tagged source templates — their own block, full width, so a tall
+  // OSINT/GEOINT/SIGINT/HUMINT list never stretches the generic connector grid's
+  // row height (it used to share a 3-col grid with them, leaving a huge empty cell).
+  if(discW){ discW.innerHTML="";
+    try{
+      const cat=await api("/api/connectors/catalog");
+      if(cat&&cat.length){
+        const groups={}; cat.forEach(c=>{ (groups[c.discipline]=groups[c.discipline]||[]).push(c); });
+        discW.appendChild(Object.assign(el("div"),{textContent:t2("src.byDiscipline"),style:"font-weight:600;color:#8fa8c0;letter-spacing:0.5px;font-size:11px;margin:2px 0 8px"}));
+        ["OSINT","GEOINT","SIGINT","HUMINT"].forEach(disc=>{ if(!groups[disc])return;
+          const row=el("div"); row.style.cssText="margin-bottom:8px";
+          row.appendChild(Object.assign(el("span","chip"),{textContent:disc,style:"margin-right:8px;color:#57D7E8;border-color:#57D7E8"}));
+          groups[disc].forEach(tpl=>{ const b=el("button","btn ghost"); b.style.cssText="margin:3px 4px 3px 0;padding:4px 10px;font-size:11px"; b.textContent=tpl.name; b.title=tpl.description;
+            b.addEventListener("click",()=>connectorFromTemplate(tpl)); row.appendChild(b); });
+          discW.appendChild(row);
+        });
+      }
+    }catch(e){}
+  }
+  if(w){ w.innerHTML="";
+    CONNECTORS.forEach(c=>{ const card=el("div","card conn"); card.innerHTML=`<div class="ct">⇄ ${esc(c.name)}</div><div class="cd">${esc(c.desc)}</div>`; card.addEventListener("click",()=>connectorModal(c)); w.appendChild(card); });
+  }
+}
 // Open the connector form pre-shaped from a discipline template: the template's
 // kind + config, with an input per {placeholder} param the operator must fill.
 function connectorFromTemplate(tpl){

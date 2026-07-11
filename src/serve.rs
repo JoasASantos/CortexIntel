@@ -310,7 +310,11 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             Some(dir) => finish(stream, api::load_graph(&dir)),
             None => json_err(stream, "missing dir"),
         },
-        ("POST", "/api/run") => finish(stream, parse_body(&req.body).and_then(api::run_analysis)),
+        ("POST", "/api/run") => {
+            let params: api::RunParams = parse_body(&req.body)?;
+            if !check_project_opt(stream, &user, &params.project_id)? { return Ok(()); }
+            finish(stream, api::run_analysis(params))
+        }
         ("POST", "/api/ask") => finish(stream, parse_body(&req.body).and_then(api::ask)),
         // Async jobs (used by the UI for long LLM calls)
         ("POST", "/api/jobs") => {
@@ -320,6 +324,9 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             if !["ask", "run", "connector_run", "report_pdf"].contains(&kind.as_str()) {
                 return json_err(stream, "invalid job kind");
             }
+            let pid = payload.get("project_id").or_else(|| payload.get("projectId"))
+                .and_then(|v| v.as_str()).map(|s| s.to_string());
+            if !check_project_opt(stream, &user, &pid)? { return Ok(()); }
             let id = start_job(kind, payload);
             json_ok(stream, &serde_json::json!({ "job_id": id }))
         }
@@ -332,7 +339,9 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         },
         ("POST", "/api/report/pdf") => {
             let b: serde_json::Value = parse_body(&req.body)?;
-            finish(stream, api::report_pdf_opt(b.get("project_id").and_then(|v| v.as_str()).unwrap_or(""), b.get("redact").and_then(|v| v.as_bool()).unwrap_or(false)))
+            let pid = b.get("project_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if !check_project_opt(stream, &user, &Some(pid.clone()))? { return Ok(()); }
+            finish(stream, api::report_pdf_opt(&pid, b.get("redact").and_then(|v| v.as_bool()).unwrap_or(false)))
         }
         // Governance: verify an audit log's chain of custody (tamper-evident).
         ("GET", "/api/audit/verify") => match param(&req.query, "path") {
@@ -392,27 +401,35 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         }
         ("POST", "/api/projects/delete") => {
             let b: serde_json::Value = parse_body(&req.body)?;
-            finish(stream, projects::delete(b.get("id").and_then(|v| v.as_str()).unwrap_or("")).map(|_| serde_json::json!({"ok":true})))
+            let id = b.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if !check_project_opt(stream, &user, &Some(id.clone()))? { return Ok(()); }
+            finish(stream, projects::delete(&id).map(|_| serde_json::json!({"ok":true})))
         }
         // Continuous intelligence: standing watchlist rules per project.
         ("POST", "/api/projects/watchlist") => {
             let b: serde_json::Value = parse_body(&req.body)?;
-            let id = b.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let id = b.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
             let rules = b.get("rules").and_then(|v| v.as_array()).cloned().unwrap_or_default();
-            finish(stream, projects::set_watchlist(id, rules).map(|_| serde_json::json!({"ok": true})))
+            if !check_project_opt(stream, &user, &Some(id.clone()))? { return Ok(()); }
+            finish(stream, projects::set_watchlist(&id, rules).map(|_| serde_json::json!({"ok": true})))
         }
         // Record an activity/result on a project (agent runs persist here).
         ("POST", "/api/projects/activity") => {
             let b: serde_json::Value = parse_body(&req.body)?;
+            let id = b.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if !check_project_opt(stream, &user, &Some(id.clone()))? { return Ok(()); }
             finish(stream, projects::add_activity(
-                b.get("id").and_then(|v| v.as_str()).unwrap_or(""),
+                &id,
                 b.get("kind").and_then(|v| v.as_str()).unwrap_or("agent"),
                 b.get("summary").and_then(|v| v.as_str()).unwrap_or(""),
                 b.get("meta").cloned().unwrap_or(serde_json::json!({})),
             ).map(|_| serde_json::json!({"ok":true})))
         }
         ("GET", "/api/projects/export") => match param(&req.query, "id") {
-            Some(id) => match projects::export(&id) { Ok(s) => respond(stream, 200, "application/json; charset=utf-8", s.as_bytes()), Err(e) => json_err(stream, &e.to_string()) },
+            Some(id) => {
+                if !check_project_opt(stream, &user, &Some(id.clone()))? { return Ok(()); }
+                match projects::export(&id) { Ok(s) => respond(stream, 200, "application/json; charset=utf-8", s.as_bytes()), Err(e) => json_err(stream, &e.to_string()) }
+            }
             None => json_err(stream, "missing id"),
         },
         ("POST", "/api/projects/import") => {
@@ -429,7 +446,11 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
                 b.get("config").unwrap_or(&serde_json::Value::Null),
             ).map(|s| serde_json::json!({ "status": s })))
         }
-        ("POST", "/api/connectors/run") => finish(stream, parse_body(&req.body).and_then(api::connector_run)),
+        ("POST", "/api/connectors/run") => {
+            let params: api::ConnectorRunParams = parse_body(&req.body)?;
+            if !check_project_opt(stream, &user, &params.project_id)? { return Ok(()); }
+            finish(stream, api::connector_run(params))
+        }
         // Plugins
         ("GET", "/api/plugins") => json_ok(stream, &plugins::list()),
         ("POST", "/api/plugins/install") => {
@@ -493,16 +514,23 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         // Pre-ingest triage: profile a source (columns/volume) without ingesting.
         ("GET", "/api/profile") => finish(stream, api::profile_source(&param(&req.query, "path").unwrap_or_default())),
         // G2 — aggregated situation object (severity + metadata) for a project.
-        ("GET", "/api/situations/get") => finish(stream, api::situation_get(&param(&req.query, "id").unwrap_or_default())),
+        ("GET", "/api/situations/get") => {
+            let id = param(&req.query, "id").unwrap_or_default();
+            if !check_project_opt(stream, &user, &Some(id.clone()))? { return Ok(()); }
+            finish(stream, api::situation_get(&id))
+        }
         // G5 — per-object comments (collaboration, need-to-know).
-        ("GET", "/api/comments") => finish(stream, projects::list_comments(
-            &param(&req.query, "project").unwrap_or_default(),
-            param(&req.query, "object").as_deref(),
-        ).map(|c| serde_json::json!(c))),
+        ("GET", "/api/comments") => {
+            let pid = param(&req.query, "project").unwrap_or_default();
+            if !check_project_opt(stream, &user, &Some(pid.clone()))? { return Ok(()); }
+            finish(stream, projects::list_comments(&pid, param(&req.query, "object").as_deref()).map(|c| serde_json::json!(c)))
+        }
         ("POST", "/api/comments") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             let g = |k: &str| b.get(k).and_then(|v| v.as_str()).unwrap_or("").to_string();
-            finish(stream, projects::add_comment(&g("project"), &g("object_id"), &g("object_kind"), &user.email, &g("text")).map(|c| serde_json::json!(c)))
+            let pid = g("project");
+            if !check_project_opt(stream, &user, &Some(pid.clone()))? { return Ok(()); }
+            finish(stream, projects::add_comment(&pid, &g("object_id"), &g("object_kind"), &user.email, &g("text")).map(|c| serde_json::json!(c)))
         }
         // API keys (values never returned)
         ("GET", "/api/keys") => json_ok(stream, &keys::list_names()),
@@ -582,6 +610,26 @@ fn respond(stream: &mut TcpStream, status: u16, content_type: &str, body: &[u8])
 
 /// Like `respond`, but sets `Content-Disposition: attachment` with a filename so
 /// the client saves the download with its proper extension.
+/// 403 for a project a user can't access (owner/admin/member — see `projects::can_access`).
+fn respond_forbidden(stream: &mut TcpStream) -> Result<()> {
+    respond(stream, 403, "application/json; charset=utf-8", br#"{"error":"restricted case - no access (need-to-know)"}"#)
+}
+
+/// When `project_id` is set, deny the request unless the user can access that
+/// project — writing the response itself so callers can just bail on `false`.
+/// Returns `true` when the caller should proceed (no project tied to the
+/// request, or access granted).
+fn check_project_opt(stream: &mut TcpStream, user: &auth::AuthUser, project_id: &Option<String>) -> Result<bool> {
+    match project_id.as_deref().filter(|s| !s.is_empty()) {
+        None => Ok(true),
+        Some(pid) => match projects::load(pid) {
+            Ok(p) if projects::can_access(&p, &user.email, &user.role) => Ok(true),
+            Ok(_) => { respond_forbidden(stream)?; Ok(false) }
+            Err(e) => { json_err(stream, &e.to_string())?; Ok(false) }
+        },
+    }
+}
+
 fn respond_download(stream: &mut TcpStream, content_type: &str, filename: &str, body: &[u8]) -> Result<()> {
     let safe: String = filename.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')).collect();
     let safe = if safe.is_empty() { "download.pdf".to_string() } else { safe };

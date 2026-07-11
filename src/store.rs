@@ -102,22 +102,35 @@ pub fn save_settings(s: &Settings) -> Result<()> {
     write_json(&settings_file(), s)
 }
 
-/// Read a JSON file into a type, returning the default if it does not exist.
+/// Read a JSON file into a type, returning the default if it does not exist or
+/// fails to parse (logged — a swallowed parse error otherwise looks identical
+/// to "no data yet").
 pub fn read_json_or_default<T: serde::de::DeserializeOwned + Default>(path: &std::path::Path) -> T {
     match std::fs::read_to_string(path) {
-        Ok(s) => serde_json::from_str(&s).unwrap_or_default(),
+        Ok(s) => serde_json::from_str(&s).unwrap_or_else(|e| {
+            eprintln!("  · warning: {} has invalid JSON, using default ({e})", path.display());
+            T::default()
+        }),
         Err(_) => T::default(),
     }
 }
 
-/// Write a value as pretty JSON, creating parents and hardening perms.
+/// Write a value as pretty JSON, creating parents and hardening perms. Writes
+/// to a sibling temp file and renames it into place so a crash or interruption
+/// mid-write can never leave a truncated/corrupt file at `path`.
 pub fn write_json<T: serde::Serialize>(path: &std::path::Path, value: &T) -> Result<()> {
     if let Some(parent) = path.parent() {
         ensure_dir(parent)?;
     }
     let data = serde_json::to_string_pretty(value)?;
-    std::fs::write(path, data).with_context(|| format!("writing {}", path.display()))?;
-    harden(path);
+    let tmp = path.with_extension(format!(
+        "{}.tmp-{}",
+        path.extension().and_then(|e| e.to_str()).unwrap_or("json"),
+        uuid::Uuid::new_v4().simple()
+    ));
+    std::fs::write(&tmp, data).with_context(|| format!("writing {}", tmp.display()))?;
+    harden(&tmp);
+    std::fs::rename(&tmp, path).with_context(|| format!("renaming into {}", path.display()))?;
     Ok(())
 }
 
