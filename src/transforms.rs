@@ -277,7 +277,7 @@ pub fn catalog() -> Vec<Transform> {
             disclaimer:"GDPR/LGPD + KYC regulation: identity verification requires explicit lawful basis and provider agreement.".into(), enabled:false },
         Transform { id:"kyc.document-expand".into(), name:"Document → Expand Profile (API)".into(), category:"kyc".into(),
             description:"Take a CPF/RG/CNPJ/SSN/EIN off the entity and query a configurable lookup API (params.endpoint) for the full profile — name, phone, address, email. Since the returned entity shares the same document_id, it merges into the existing person instead of creating a duplicate.".into(), service:"document_lookup".into(),
-            requires_api_key:true, input_kinds:vec!["person".into()], runtime:"python".into(),
+            requires_api_key:true, input_kinds:vec!["person".into(),"selector".into()], runtime:"python".into(),
             entrypoint: PY_DOC_EXPAND.into(),
             disclaimer:"GDPR/LGPD/CCPA: bulk or automated document lookups require a lawful basis, a signed provider agreement and data-minimization — this only wires the plumbing, it does not grant that authorization.".into(), enabled:false },
         // ---- MEDIA INTELLIGENCE ----
@@ -515,6 +515,12 @@ d=json.load(sys.stdin); inp=d.get('input') or {}; attrs=inp.get('attributes') or
 key=d.get('api_key') or os.environ.get('TRANSFORM_API_KEY','')
 base=(d.get('params') or {}).get('endpoint','')
 doc=attrs.get('document_id') or attrs.get('cpf') or attrs.get('rg') or attrs.get('cnpj') or attrs.get('ssn') or attrs.get('ein') or ''
+if not doc:
+    # Run directly on the document/selector node itself (no document_id
+    # attribute to read) — its label IS the number when it looks like one.
+    lbl = inp.get('label', '')
+    if sum(c.isdigit() for c in lbl) >= 9:
+        doc = lbl
 out={'entities':[],'relationships':[]}
 try:
     if not base: raise Exception('set params.endpoint to your document-lookup provider URL')

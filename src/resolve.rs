@@ -80,17 +80,6 @@ fn neighbor_map(g: &KnowledgeGraph) -> HashMap<String, std::collections::HashSet
 
 /// Score a candidate pair of same-kind entities. Returns (confidence, signals).
 fn score_pair(a: &Entity, b: &Entity, nbrs: &HashMap<String, std::collections::HashSet<String>>) -> (f32, Vec<String>) {
-    // A differing national/company id (CPF/CNPJ/SSN/passport…) is a hard
-    // signal these are NOT the same identity — a shared full name is not a
-    // shared person. Checked first so it overrides every similarity signal
-    // below, including a perfect label match.
-    if let (Some(da), Some(db)) = (a.attributes.get("document_id"), b.attributes.get("document_id")) {
-        let (da, db) = (norm(da), norm(db));
-        if !da.is_empty() && !db.is_empty() && da != db {
-            return (0.0, Vec::new());
-        }
-    }
-
     let mut conf = 0.0f32;
     let mut signals = Vec::new();
 
@@ -127,6 +116,24 @@ fn score_pair(a: &Entity, b: &Entity, nbrs: &HashMap<String, std::collections::H
             if !va.is_empty() && norm(va) == norm(vb) {
                 conf = conf.max(0.85);
                 signals.push(format!("matching {key}"));
+            }
+        }
+    }
+
+    // A differing national/company id (CPF/CNPJ/SSN/passport…) is a hard
+    // veto against auto-merge — a shared full name is not a shared person.
+    // Checked last (not a short-circuit) so a genuine name collision still
+    // surfaces as a suggestion instead of vanishing silently: an analyst
+    // deserves to see "these looked identical but the document rules them
+    // distinct", not nothing.
+    if let (Some(da), Some(db)) = (a.attributes.get("document_id"), b.attributes.get("document_id")) {
+        let (da, db) = (norm(da), norm(db));
+        if !da.is_empty() && !db.is_empty() && da != db {
+            if conf > 0.0 {
+                signals.push(format!("different document_id ({da} vs {db}) — kept as distinct identities"));
+                conf = conf.min(AUTO - 0.01);
+            } else {
+                return (0.0, Vec::new());
             }
         }
     }
