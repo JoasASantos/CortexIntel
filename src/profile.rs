@@ -31,6 +31,7 @@ pub enum SemanticType {
     FreeText,
     Location,
     Organization,
+    NationalId,
     Empty,
 }
 
@@ -48,6 +49,10 @@ impl SemanticType {
             SemanticType::PersonName => Some(EntityKind::Person),
             SemanticType::Location => Some(EntityKind::Location),
             SemanticType::Organization => Some(EntityKind::Organization),
+            // A national/company id (CPF/CNPJ) is a document reference, not a
+            // phone/account — Selector already covers generic identifiers
+            // (IMEI/IMSI/MSISDN) and gets a document-style icon in the GUI.
+            SemanticType::NationalId => Some(EntityKind::Selector),
             // money/date/bool/number/id/categorical/free-text stay as attributes
             _ => None,
         }
@@ -72,6 +77,7 @@ impl SemanticType {
             SemanticType::FreeText => "free_text",
             SemanticType::Location => "location",
             SemanticType::Organization => "organization",
+            SemanticType::NationalId => "national_id",
             SemanticType::Empty => "empty",
         }
     }
@@ -152,6 +158,14 @@ fn classify_value(v: &str) -> SemanticType {
     }
     if is_email(t) {
         return SemanticType::Email;
+    }
+    // Checked before is_phone: a CPF/CNPJ ("123.456.789-01") is digit+dot+dash
+    // only — no parens/space/plus — which a real phone number almost always
+    // has. Order matters, otherwise is_phone's looser check (any of
+    // " +-()." with 8-15 digits) claims it first and it ends up labeled an
+    // Account instead of a document.
+    if is_national_id_like(t) {
+        return SemanticType::NationalId;
     }
     if is_phone(t) {
         return SemanticType::Phone;
@@ -294,6 +308,15 @@ fn is_phone(t: &str) -> bool {
     let digits = t.chars().filter(|c| c.is_ascii_digit()).count();
     let ok_chars = t.chars().all(|c| c.is_ascii_digit() || " +-().".contains(c));
     ok_chars && digits >= 8 && digits <= 15 && t.chars().any(|c| !c.is_ascii_digit() || true)
+}
+
+/// CPF (11 digits) or CNPJ (14 digits) shape: digits with ONLY dots/dashes as
+/// separators (no parens/space/plus, which real phone numbers almost always
+/// have) — e.g. "123.456.789-01" or "12.345.678/0001-90".
+fn is_national_id_like(t: &str) -> bool {
+    let digits = t.chars().filter(|c| c.is_ascii_digit()).count();
+    let ok_chars = t.chars().all(|c| c.is_ascii_digit() || ".-/".contains(c));
+    ok_chars && (digits == 11 || digits == 14) && (t.contains('.') || t.contains('-'))
 }
 
 fn is_money(t: &str) -> bool {

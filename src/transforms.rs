@@ -275,6 +275,11 @@ pub fn catalog() -> Vec<Transform> {
             requires_api_key:true, input_kinds:vec!["person".into()], runtime:"python".into(),
             entrypoint: PY_KYC.into(),
             disclaimer:"GDPR/LGPD + KYC regulation: identity verification requires explicit lawful basis and provider agreement.".into(), enabled:false },
+        Transform { id:"kyc.document-expand".into(), name:"Document → Expand Profile (API)".into(), category:"kyc".into(),
+            description:"Take a CPF/RG/CNPJ/SSN/EIN off the entity and query a configurable lookup API (params.endpoint) for the full profile — name, phone, address, email. Since the returned entity shares the same document_id, it merges into the existing person instead of creating a duplicate.".into(), service:"document_lookup".into(),
+            requires_api_key:true, input_kinds:vec!["person".into()], runtime:"python".into(),
+            entrypoint: PY_DOC_EXPAND.into(),
+            disclaimer:"GDPR/LGPD/CCPA: bulk or automated document lookups require a lawful basis, a signed provider agreement and data-minimization — this only wires the plumbing, it does not grant that authorization.".into(), enabled:false },
         // ---- MEDIA INTELLIGENCE ----
         Transform { id:"media.metadata".into(), name:"Media → Metadata (EXIF)".into(), category:"media".into(),
             description:"Extract EXIF/media metadata (camera, GPS, software) via local exiftool.".into(), service:"".into(),
@@ -493,6 +498,42 @@ try:
     out['entities']=[{'kind':'incident','label':lab,'attributes':{k:str(v) for k,v in j.items() if k in ('verdict','status','score','match')}}]
     out['relationships']=[{'source':inp.get('label',''),'type':'identity_verified','target':lab,'confidence':0.8}]
 except Exception as e: out['error']=str(e)
+print(json.dumps(out))
+"#;
+
+// Queries a configurable document-lookup provider (params.endpoint) with a
+// CPF/RG/CNPJ/SSN/EIN pulled off the seed entity, and maps back whatever
+// profile fields it returns (name/phone/address/email) onto a `person`
+// entity carrying the SAME document_id. Because extract.rs folds document_id
+// into the entity's dedup_key, upsert_entity merges this straight into the
+// original person instead of spawning a duplicate node — the "expand" the
+// operator asked for is just: this transform's output entity IS the original,
+// enriched.
+const PY_DOC_EXPAND: &str = r#"
+import sys, json, os, urllib.request, urllib.parse
+d=json.load(sys.stdin); inp=d.get('input') or {}; attrs=inp.get('attributes') or {}
+key=d.get('api_key') or os.environ.get('TRANSFORM_API_KEY','')
+base=(d.get('params') or {}).get('endpoint','')
+doc=attrs.get('document_id') or attrs.get('cpf') or attrs.get('rg') or attrs.get('cnpj') or attrs.get('ssn') or attrs.get('ein') or ''
+out={'entities':[],'relationships':[]}
+try:
+    if not base: raise Exception('set params.endpoint to your document-lookup provider URL')
+    if not doc: raise Exception('seed entity has no document_id/cpf/rg/cnpj/ssn/ein attribute to look up')
+    sep = '&' if '?' in base else '?'
+    url = base + sep + urllib.parse.urlencode({'document': doc})
+    req = urllib.request.Request(url, headers={'authorization': 'Bearer ' + key})
+    j = json.load(urllib.request.urlopen(req, timeout=25))
+    name = j.get('name') or j.get('full_name') or j.get('nome') or inp.get('label', '')
+    profile = {'document_id': doc}
+    for src, dst in [('phone','phone'),('telefone','phone'),('phone_number','phone'),
+                      ('address','address'),('endereco','address'),
+                      ('email','email'),('birth_date','birth_date'),('data_nascimento','birth_date'),
+                      ('city','city'),('cidade','city')]:
+        if j.get(src): profile[dst] = str(j[src])
+    out['entities'] = [{'kind':'person','label':name,'attributes':profile}]
+    out['relationships'] = [{'source':inp.get('label',''),'type':'expanded_from_document','target':name,'confidence':0.85}]
+except Exception as e:
+    out['error'] = str(e)
 print(json.dumps(out))
 "#;
 

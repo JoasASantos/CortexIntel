@@ -89,6 +89,20 @@ pub fn extract_record(rec: &Record, _dt: DataType, extra: &[(String, EntityKind)
             let mut e = Entity::new(*kind, &label).with_source(&origin);
             // Attach a few descriptive attributes if present.
             attach_attrs(&mut e, rec);
+            // A national/company id (CPF/CNPJ/SSN/passport…) distinguishes two
+            // entities that share a display label — a common full name, a
+            // generic company name — but are different real-world identities.
+            // Without this, upsert_entity would silently merge them: dedup
+            // only keys on (kind, normalized label), so "João da Silva Santos"
+            // from two different rows collapse into one node unless something
+            // else breaks the tie.
+            if let Some(doc) = rec.get_any(&["cpf", "rg", "cnpj", "ssn", "ein", "document_id", "national_id", "documento", "passport_number"]) {
+                let doc_norm: String = doc.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
+                if !doc_norm.is_empty() {
+                    e.attributes.entry("document_id".into()).or_insert_with(|| doc.trim().to_string());
+                    e.dedup_key = format!("{}::{}", e.dedup_key, doc_norm.to_lowercase());
+                }
+            }
             // Preserve the raw file hash (a one-way fingerprint, safe to keep and
             // to match against reference feeds) — the label itself is redacted.
             attach_hash(&mut e, val);
@@ -199,6 +213,10 @@ fn attach_attrs(e: &mut Entity, rec: &Record) {
         "latitude", "longitude", "lat", "lon", "lng", "latitude_approx", "longitude_approx",
         "gpslatitude", "gpslongitude", "city", "location", "trajectory", "track",
         "vessel", "subject", "timestamp", "first_seen_at", "observed_at", "received_at", "date",
+        // Contact/identity detail: shown on the entity but not otherwise
+        // structural (dedup disambiguation for cpf/cnpj/document_id happens
+        // separately in extract_record, right after this call).
+        "phone", "address", "cpf", "rg", "cnpj", "ssn", "ein", "document_id", "national_id",
     ];
     for k in SAFE {
         if let Some(v) = rec.get_any(&[k]) {
@@ -244,6 +262,7 @@ fn infer_links(by_kind: &[(EntityKind, String)]) -> Vec<LabelLink> {
     link(find(Case), "has_report", find(Report), 0.95);
     link(find(Case), "has_evidence", find(Evidence), 0.95);
     link(find(Person), "owns_account", find(Account), 0.8);
+    link(find(Person), "resides_in", find(Location), 0.6);
     link(find(Suspect), "uses_account", find(Account), 0.75);
     link(find(Account), "uses_device", find(Device), 0.7);
     link(find(Account), "logged_in_from_ip", find(Ip), 0.7);
