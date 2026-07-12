@@ -16,7 +16,7 @@ const I18N = {
     "btn.run":"Run","btn.askai":"Ask AI","btn.newProject":"New project","btn.fit":"Fit","btn.reset":"Reset","btn.path":"Path","btn.addEntity":"Entity",
     "launcher.open":"Open a recent project or start a new investigation.","launcher.new":"New project","launcher.import":"Import project","launcher.empty":"No projects yet — create your first investigation.",
     "decision.title":"Decision panel","decision.recommended":"Recommended","decision.feasible":"Feasible","decision.highrisk":"High risk","decision.viewGraph":"View in graph","decision.why":"Why","decision.attributedTo":"Analyzed by","decision.none":"Run an analysis to generate decision options.",
-    "ingest.title":"Prepare this source","ingest.relevant":"Ingest only what's relevant to this context","ingest.all":"Ingest everything","ingest.detected":"Detected columns","ingest.rows":"rows",
+    "ingest.title":"Prepare this source","ingest.relevant":"Ingest only what's relevant to this context","ingest.all":"Ingest everything","ingest.detected":"Detected columns","ingest.rows":"rows","ingest.playbookScan":"Scanning for a matching playbook…","ingest.playbookNone":"No playbook matched — plain run only.","ingest.playbookFound":"Suggested playbook","ingest.playbookBtn":"▶ Run + Playbook","ingest.playbookRunning":"Running suggested playbook…",
     "sev.critical":"Critical","sev.high":"High","sev.medium":"Medium","sev.low":"Low","sev.none":"No severity",
     "sit.domain":"Vertical","sit.owner":"Owner","sit.jurisdiction":"Jurisdiction","sit.created":"Created","sit.updated":"Updated","sit.entities":"entities","sit.relationships":"relationships","sit.critical":"critical","sit.alerts":"alerts",
     "auth.signin":"Sign in","auth.register":"Create account",
@@ -35,7 +35,7 @@ const I18N = {
     "band.critical":"critical","band.high":"high","band.medium":"medium","band.low":"low",
     "ready.ready":"Ready for decision","ready.needs-review":"Needs review","ready.insufficient":"Insufficient data","ready.conflicting":"Conflicting evidence",
     "rd.label":"Decision readiness","btn.genIntel":"Generate intelligence","btn.openGraph":"Open graph","decision.matrix.sub":"impact · confidence · risk · effort",
-    "canvas.graph":"Graph","canvas.map":"Map","map.none":"No geolocated entities in this view. Entities with latitude/longitude (or GPS/EXIF) plot here; the rest stay in the graph.","map.plotted":"{0} geolocated entities","map.trajectories":"{0} trajectories",
+    "canvas.graph":"Graph","canvas.map":"Map","map.none":"No geolocated entities in this view. Entities with latitude/longitude (or GPS/EXIF) plot here; the rest stay in the graph.","map.plotted":"{0} geolocated entities","map.trajectories":"{0} trajectories","map.zoomedTo":"Zoomed to","map.backToWorld":"click ⊡ to zoom back out","maps.open":"Open in Google Maps","map.addrTool":"Address → Maps","map.addrLabel":"Address","map.addrOpen":"Open in Google Maps","map.addrEmpty":"Type an address",
     "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h","cmt.title":"Comments","cmt.placeholder":"Add a comment…","cmt.post":"Post","cmt.empty":"No comments yet.","banner.disclaimer":"Decision-support — not a definitive ruling. Handle under applicable data-protection law.","banner.jurisdiction":"Jurisdiction","banner.vertical":"Vertical","banner.sev":"Severity", "ctx.expand":"Expand (AI)","ctx.edit":"Edit","ctx.connect":"Connect","ctx.isolate":"Isolate","ctx.neighbors":"Neighbors","ctx.alert":"Create alert","empty.title":"No graph yet","empty.sub":"Run an analysis, connect a source, or add entities manually (people, media, IPs…) to start building the graph.","hyp.supporting":"Supporting evidence","hyp.missing":"Missing evidence","hyp.next":"Next","hyp.lead":"lead","hyp.conf":"conf","hyp.none":"No competing hypotheses — add data or generate intelligence.","hyp.take":"Take this action","hyp.rankNone":"Run an analysis to rank next actions.","conf.low":"low","conf.medium":"medium","conf.high":"high","nba.uncertainty":"uncertainty","nba.effort":"effort","nba.priority":"priority","nba.impact":"impact","nba.confidence":"confidence","nba.riskWrong":"risk-if-wrong","nba.route":"route","nba.why":"Why","nba.residual":"Residual uncertainty ~{0} — this is decision support, not certainty.","nba.readyYes":"Data supports acting now.","nba.readyNo":"Consider resolving gaps first (see Data Quality).",
   },
   pt: {
@@ -48,7 +48,7 @@ const I18N = {
     "btn.run":"Executar","btn.askai":"Perguntar à IA","btn.newProject":"Novo projeto","btn.fit":"Ajustar","btn.reset":"Redefinir","btn.path":"Caminho","btn.addEntity":"Entidade",
     "launcher.open":"Abra um projeto recente ou inicie uma nova investigação.","launcher.new":"Novo projeto","launcher.import":"Importar projeto","launcher.empty":"Nenhum projeto ainda — crie sua primeira investigação.",
     "decision.title":"Painel de decisão","decision.recommended":"Recomendado","decision.feasible":"Viável","decision.highrisk":"Alto risco","decision.viewGraph":"Ver no grafo","decision.why":"Por quê","decision.attributedTo":"Analisado por","decision.none":"Execute uma análise para gerar opções de decisão.",
-    "ingest.title":"Preparar esta fonte","ingest.relevant":"Ingerir só o que é relevante para este contexto","ingest.all":"Ingerir tudo","ingest.detected":"Colunas detectadas","ingest.rows":"linhas",
+    "ingest.title":"Preparar esta fonte","ingest.relevant":"Ingerir só o que é relevante para este contexto","ingest.all":"Ingerir tudo","ingest.detected":"Colunas detectadas","ingest.rows":"linhas","ingest.playbookScan":"Procurando um playbook compatível…","ingest.playbookNone":"Nenhum playbook combinou — só o run comum.","ingest.playbookFound":"Playbook sugerido","ingest.playbookBtn":"▶ Rodar + Playbook","ingest.playbookRunning":"Rodando o playbook sugerido…",
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Médio","sev.low":"Baixo","sev.none":"Sem severidade",
     "sit.domain":"Vertical","sit.owner":"Responsável","sit.jurisdiction":"Jurisdição","sit.created":"Criado","sit.updated":"Atualizado","sit.entities":"entidades","sit.relationships":"relações","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Entrar","auth.register":"Criar conta",
@@ -67,7 +67,7 @@ const I18N = {
     "band.critical":"crítico","band.high":"alto","band.medium":"médio","band.low":"baixo",
     "ready.ready":"Pronto para decisão","ready.needs-review":"Precisa de revisão","ready.insufficient":"Dados insuficientes","ready.conflicting":"Evidências conflitantes",
     "rd.label":"Prontidão para decisão","btn.genIntel":"Gerar inteligência","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confiança · risco · esforço",
-    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias",
+    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias","map.zoomedTo":"Zoom em","map.backToWorld":"clique em ⊡ para ver o mundo todo","maps.open":"Abrir no Google Maps","map.addrTool":"Endereço → Maps","map.addrLabel":"Endereço","map.addrOpen":"Abrir no Google Maps","map.addrEmpty":"Digite um endereço",
     "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h","cmt.title":"Comentários","cmt.placeholder":"Adicionar um comentário…","cmt.post":"Enviar","cmt.empty":"Nenhum comentário ainda.","banner.disclaimer":"Apoio à decisão — não é um veredito definitivo. Trate conforme a lei de proteção de dados aplicável.","banner.jurisdiction":"Jurisdição","banner.vertical":"Vertical","banner.sev":"Severidade", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Isolar","ctx.neighbors":"Vizinhos","ctx.alert":"Criar alerta","empty.title":"Nenhum grafo ainda","empty.sub":"Execute uma análise, conecte uma fonte ou adicione entidades manualmente (pessoas, mídia, IPs…) para começar a construir o grafo.","hyp.supporting":"Evidências de apoio","hyp.missing":"Evidências faltantes","hyp.next":"Próximo","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sem hipóteses concorrentes — adicione dados ou gere inteligência.","hyp.take":"Executar esta ação","hyp.rankNone":"Execute uma análise para ranquear as próximas ações.","conf.low":"baixa","conf.medium":"média","conf.high":"alta","nba.uncertainty":"incerteza","nba.effort":"esforço","nba.priority":"prioridade","nba.impact":"impacto","nba.confidence":"confiança","nba.riskWrong":"risco-se-errado","nba.route":"rota","nba.why":"Por quê","nba.residual":"Incerteza residual ~{0} — isto é apoio à decisão, não certeza.","nba.readyYes":"Os dados sustentam agir agora.","nba.readyNo":"Considere resolver as lacunas primeiro (ver Qualidade dos dados).",
   },
   es: {
@@ -80,7 +80,7 @@ const I18N = {
     "btn.run":"Ejecutar","btn.askai":"Preguntar a la IA","btn.newProject":"Nuevo proyecto","btn.fit":"Ajustar","btn.reset":"Restablecer","btn.path":"Ruta","btn.addEntity":"Entidad",
     "launcher.open":"Abre un proyecto reciente o inicia una nueva investigación.","launcher.new":"Nuevo proyecto","launcher.import":"Importar proyecto","launcher.empty":"Aún no hay proyectos — crea tu primera investigación.",
     "decision.title":"Panel de decisión","decision.recommended":"Recomendado","decision.feasible":"Viable","decision.highrisk":"Alto riesgo","decision.viewGraph":"Ver en el grafo","decision.why":"Por qué","decision.attributedTo":"Analizado por","decision.none":"Ejecuta un análisis para generar opciones de decisión.",
-    "ingest.title":"Preparar esta fuente","ingest.relevant":"Ingerir solo lo relevante para este contexto","ingest.all":"Ingerir todo","ingest.detected":"Columnas detectadas","ingest.rows":"filas",
+    "ingest.title":"Preparar esta fuente","ingest.relevant":"Ingerir solo lo relevante para este contexto","ingest.all":"Ingerir todo","ingest.detected":"Columnas detectadas","ingest.rows":"filas","ingest.playbookScan":"Buscando un playbook compatible…","ingest.playbookNone":"Ningún playbook coincidió — solo el run normal.","ingest.playbookFound":"Playbook sugerido","ingest.playbookBtn":"▶ Ejecutar + Playbook","ingest.playbookRunning":"Ejecutando el playbook sugerido…",
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Medio","sev.low":"Bajo","sev.none":"Sin severidad",
     "sit.domain":"Vertical","sit.owner":"Responsable","sit.jurisdiction":"Jurisdicción","sit.created":"Creado","sit.updated":"Actualizado","sit.entities":"entidades","sit.relationships":"relaciones","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Iniciar sesión","auth.register":"Crear cuenta",
@@ -99,7 +99,7 @@ const I18N = {
     "band.critical":"crítico","band.high":"alto","band.medium":"medio","band.low":"bajo",
     "ready.ready":"Listo para decidir","ready.needs-review":"Necesita revisión","ready.insufficient":"Datos insuficientes","ready.conflicting":"Evidencia contradictoria",
     "rd.label":"Preparación para decidir","btn.genIntel":"Generar inteligencia","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confianza · riesgo · esfuerzo",
-    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias",
+    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias","map.zoomedTo":"Zoom en","map.backToWorld":"clic en ⊡ para volver al mundo completo","maps.open":"Abrir en Google Maps","map.addrTool":"Dirección → Maps","map.addrLabel":"Dirección","map.addrOpen":"Abrir en Google Maps","map.addrEmpty":"Escribe una dirección",
     "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h","cmt.title":"Comentarios","cmt.placeholder":"Añadir un comentario…","cmt.post":"Enviar","cmt.empty":"Aún no hay comentarios.","banner.disclaimer":"Apoyo a la decisión — no es un veredicto definitivo. Trátese conforme a la ley de protección de datos aplicable.","banner.jurisdiction":"Jurisdicción","banner.vertical":"Vertical","banner.sev":"Severidad", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Aislar","ctx.neighbors":"Vecinos","ctx.alert":"Crear alerta","empty.title":"Aún no hay grafo","empty.sub":"Ejecuta un análisis, conecta una fuente o añade entidades manualmente (personas, medios, IPs…) para empezar a construir el grafo.","hyp.supporting":"Evidencia de apoyo","hyp.missing":"Evidencia faltante","hyp.next":"Siguiente","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sin hipótesis en competencia — añade datos o genera inteligencia.","hyp.take":"Ejecutar esta acción","hyp.rankNone":"Ejecuta un análisis para clasificar las próximas acciones.","conf.low":"baja","conf.medium":"media","conf.high":"alta","nba.uncertainty":"incertidumbre","nba.effort":"esfuerzo","nba.priority":"prioridad","nba.impact":"impacto","nba.confidence":"confianza","nba.riskWrong":"riesgo-si-erróneo","nba.route":"ruta","nba.why":"Por qué","nba.residual":"Incertidumbre residual ~{0} — esto es apoyo a la decisión, no certeza.","nba.readyYes":"Los datos respaldan actuar ahora.","nba.readyNo":"Considera resolver las brechas primero (ver Calidad de datos).",
   },
 };
@@ -918,6 +918,11 @@ function selectNode(id) {
   const meta=$("#ctxMeta"); meta.innerHTML=""; const es=Object.entries(n.attributes||{});
   if(!es.length) meta.innerHTML='<div class="empty">no metadata</div>';
   es.slice(0,24).forEach(([k,v])=>{ const r=el("div","row"); r.appendChild(el("span","k",k)); r.appendChild(el("span","v",String(v))); meta.appendChild(r); });
+  // Precise Google Maps deep link from the entity's own lat/lon (opens externally).
+  const geo=geoOf(n);
+  if(geo){ const link=el("a","btn ghost"); link.href=`https://www.google.com/maps/search/?api=1&query=${geo.lat},${geo.lon}`;
+    link.target="_blank"; link.rel="noopener noreferrer"; link.style.cssText="display:inline-flex;margin-top:8px;padding:3px 10px;font-size:11px;text-decoration:none";
+    link.textContent="📍 "+t2("maps.open"); meta.appendChild(link); }
   const rels=$("#ctxRels"); rels.innerHTML="";
   const t=activeTab(); const related=(t?.graph.edges||[]).filter(e=>e.source===id||e.target===id);
   if(!related.length) rels.innerHTML='<div class="empty">no direct relations</div>';
@@ -1519,6 +1524,7 @@ function runModal(){
     ${MODE==="mock"?'<div class="modal-note">Preview mode: loads the embedded sample.</div>':''}
   `,[
     {label:"Cancel",cls:"ghost",act:closeModal},
+    {label:t2("ingest.playbookBtn"),cls:"ghost",act:doRunWithPlaybook},
     {label:"▶ Run",cls:"primary",act:doRun}
   ]);
   setTimeout(()=>{ const b=$("#rBrowse"); if(b) b.addEventListener("click",()=>pickServerPath(path=>{ const cur=$("#rInputs").value.trim(); $("#rInputs").value=(cur?cur+" ":"")+path; triageSource(path); }, {title:"Choose input (file or folder of media)", folders:true, accept:".csv,.tsv,.json,.jsonl,.ndjson,.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.mp3,.wav,.pdf"})); },40);
@@ -1528,8 +1534,13 @@ function runModal(){
 // G0 — pre-ingest triage: profile the picked source and offer a scope choice so
 // the user ingests only what's relevant instead of dumping everything and
 // freezing the graph. Sets the Max-records cap to match the chosen scope.
+// Also surfaces a "pre-intelligence" read (detected data type → recommended
+// playbook) BEFORE the pipeline runs, so a suggested agent can be queued to
+// run right after ingestion (see doRunWithPlaybook) instead of the plain run.
+let _suggestedPlaybook=null;
 async function triageSource(path){
   const w=$("#rTriage"); if(!w||MODE==="mock")return;
+  _suggestedPlaybook=null;
   w.hidden=false; w.innerHTML='<div class="empty">'+esc(t("ingest.title"))+'…</div>';
   let p; try{ p=await api("/api/profile?path="+encodeURIComponent(path)); }catch(e){ w.hidden=true; return; }
   if(p.kind==="media_folder"){
@@ -1548,19 +1559,33 @@ async function triageSource(path){
     <div class="field" style="margin-top:8px">Ingestion scope<select id="${scopeId}" class="select">
       <option value="relevant">${esc(t("ingest.relevant"))} (${keyCols.length} key columns, cap ${Math.min(4000,rows||4000)})</option>
       <option value="all">${esc(t("ingest.all"))} (${fmtNum(rows)} rows${rows>20000?' — heavy':''})</option>
-    </select></div>`;
+    </select></div>
+    <div id="rPlaybook" class="triage-row muted" style="margin-top:8px">${esc(t2("ingest.playbookScan"))}</div>`;
   const sel=$("#"+scopeId), max=$("#rMax");
   const applyScope=()=>{ if(!max)return; max.value = sel.value==="all" ? String(Math.max(rows,1)) : String(Math.min(4000, rows||4000)); };
   sel&&sel.addEventListener("change",applyScope); applyScope();
+  // Pre-intelligence: classify the data type from the columns actually detected
+  // (before any pipeline run) and recommend a playbook agent for it.
+  const kinds=[...new Set(cols.map(c=>c.entity_kind).filter(Boolean))];
+  const pbBox=$("#rPlaybook");
+  if(!kinds.length){ if(pbBox) pbBox.textContent=t2("ingest.playbookNone"); return; }
+  try{
+    const domain=($("#rDomain")||{}).value||"generic";
+    const rec=await api(`/api/agents/recommend?domain=${encodeURIComponent(domain)}&kinds=${encodeURIComponent(kinds.join(","))}`);
+    if(rec && rec.length){
+      const top=rec[0]; _suggestedPlaybook=top.id;
+      if(pbBox) pbBox.innerHTML=`✦ ${esc(t2("ingest.playbookFound"))}: <b>${esc(top.name)}</b> — ${esc(top.description||"")}`;
+    } else if(pbBox) pbBox.textContent=t2("ingest.playbookNone");
+  }catch(e){ if(pbBox) pbBox.textContent=t2("ingest.playbookNone"); }
 }
 async function doRun(){
-  const t=activeTab(); if(!t){ toast("Open a project first","err"); return; }
+  const t=activeTab(); if(!t){ toast("Open a project first","err"); return false; }
   const params={ inputs:$("#rInputs").value.split(/\s+/).filter(Boolean), domain:$("#rDomain").value,
     dataType:$("#rType").value||null, provider:$("#rProvider").value, maxRecords:parseInt($("#rMax").value)||4000,
     offline:$("#rProvider").value==="mock", projectId:t.project.id, lang:LANG };
   state.provider=params.provider; $("#providerPill").textContent="provider: "+state.provider;
   closeModal();
-  if(MODE!=="mock" && !params.inputs.length){ toast("Provide an input path","err"); return; }
+  if(MODE!=="mock" && !params.inputs.length){ toast("Provide an input path","err"); return false; }
   setSync("busy","running"); toast("Running pipeline…");
   try {
     const result = await runJob("run",params);
@@ -1570,7 +1595,15 @@ async function doRun(){
     pushNotif("run",`Analysis complete: ${t.graph.nodes.length} entities`);
     autoRunAgents(); // fire the auto-flagged agents on upload/run completion
     toast(`Done — ${t.graph.nodes.length} entities, ${t.graph.edges.length} relationships`,"ok");
-  } catch(e){ setSync("err","failed"); toast("Run failed: "+e.message,"err"); }
+    return true;
+  } catch(e){ setSync("err","failed"); toast("Run failed: "+e.message,"err"); return false; }
+}
+// Alternative to the plain run: ingest, then immediately dispatch the playbook
+// agent that pre-ingest triage recommended for this data's detected columns.
+async function doRunWithPlaybook(){
+  const agentId=_suggestedPlaybook;
+  const ok=await doRun();
+  if(ok && agentId){ toast(`✦ ${t2("ingest.playbookRunning")}`); await runAgentById(agentId); }
 }
 $("#btnRun").addEventListener("click",runModal);
 $("#btnRun2").addEventListener("click",runModal);
@@ -2713,9 +2746,33 @@ function countryMeta(gj){
     const polys=f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates;
     let cx=0,cy=0,n=0,minx=180,maxx=-180,miny=90,maxy=-90;
     polys.forEach(poly=>{ const ring=poly[0]||[]; ring.forEach(c=>{ cx+=c[0];cy+=c[1];n++; if(c[0]<minx)minx=c[0]; if(c[0]>maxx)maxx=c[0]; if(c[1]<miny)miny=c[1]; if(c[1]>maxy)maxy=c[1]; }); });
-    return { name:f.properties.n||"", lon:n?cx/n:0, lat:n?cy/n:0, span:Math.max(maxx-minx,maxy-miny) };
+    return { name:f.properties.n||"", lon:n?cx/n:0, lat:n?cy/n:0, span:Math.max(maxx-minx,maxy-miny), minx, maxx, miny, maxy };
   });
   return _countryMeta;
+}
+// Which country (if any) contains a lon/lat — used by the click-to-drill-down.
+function countryAt(lon,lat){
+  if(!_worldGeo) return null;
+  for(let i=0;i<_worldGeo.features.length;i++){ if(pointInFeature(lon,lat,_worldGeo.features[i])) return i; }
+  return null;
+}
+// Zoom/pan the flat map so a country's bounding box fills the canvas — the
+// "click a country → it expands to its cities" drill-down. The existing ⊡ Fit
+// button already zooms back out to the whole world, so no separate undo needed.
+function zoomToCountry(idx){
+  const cv=$("#mapCanvas"); if(!cv||!_worldGeo) return;
+  const meta=countryMeta(_worldGeo)[idx]; if(!meta) return;
+  const rect=cv.getBoundingClientRect(); const W=rect.width||900, H=rect.height||600;
+  const baseW=W, baseH=W/2;
+  const spanLon=Math.max(3,meta.maxx-meta.minx), spanLat=Math.max(3,meta.maxy-meta.miny);
+  const pad=0.72; // leave breathing room around the country's bbox
+  const scX=(W*pad)/((spanLon/360)*baseW), scY=(H*pad)/((spanLat/180)*baseH);
+  const ns=Math.max(0.6,Math.min(24,Math.min(scX,scY)));
+  const cxLon=(meta.minx+meta.maxx)/2, cyLat=(meta.miny+meta.maxy)/2;
+  const px=((cxLon+180)/360*baseW)*ns, py=((90-cyLat)/180*baseH)*ns;
+  _mapView={scale:ns, ox:W/2-px, oy:H/2-py, init:true};
+  renderWorldMap();
+  toast(`${t2("map.zoomedTo")||"Zoomed to"} ${meta.name} — ⊡ ${t2("map.backToWorld")||"to zoom back out"}`,"ok");
 }
 
 function renderWorldMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=$("#mapEmpty"); if(!cv||!t) return;
@@ -2773,17 +2830,54 @@ function renderWorldMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=
     ctx.setLineDash([]);
     // Markers (+ labels when zoomed in enough).
     const screenPts=[]; const showLabels=sc>=2.2;
+    // Greedy label declutter: entities that share (near-)identical coordinates —
+    // e.g. an IP/domain/organization all geo-tagged from the same source row —
+    // would otherwise stack illegible overlapping text at the same point.
+    const placedLabels=[];
+    ctx.font="600 10px SF Mono, Menlo, monospace";
     pts.forEach(p=>{ const xy=proj(p.lon,p.lat); if(!inView(xy.x,xy.y,40))return; const r=4+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
       const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+5,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.30)":"rgba(251,113,133,0.24)"); ctx.fill(); }
       ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.75)"; ctx.stroke();
-      if(showLabels){ ctx.font="600 10px SF Mono, Menlo, monospace"; ctx.textAlign="center"; ctx.textBaseline="top"; ctx.shadowColor="rgba(0,0,0,0.8)"; ctx.shadowBlur=3; ctx.fillStyle="rgba(235,245,255,0.95)"; ctx.fillText(String(p.n.label).slice(0,22), xy.x, xy.y+r+3); ctx.shadowBlur=0; }
+      if(showLabels){
+        const text=String(p.n.label).slice(0,22); const w=ctx.measureText(text).width, h=12;
+        const lx=xy.x-w/2, ly=xy.y+r+3;
+        const overlaps=placedLabels.some(b=>lx<b.x+b.w && lx+w>b.x && ly<b.y+b.h && ly+h>b.y);
+        if(!overlaps){
+          ctx.textAlign="center"; ctx.textBaseline="top"; ctx.shadowColor="rgba(0,0,0,0.8)"; ctx.shadowBlur=3; ctx.fillStyle="rgba(235,245,255,0.95)"; ctx.fillText(text, xy.x, ly); ctx.shadowBlur=0;
+          placedLabels.push({x:lx,y:ly,w,h});
+        }
+      }
     });
     _mapState={screenPts};
     if(empty) empty.hidden = !!gj || pts.length>0;
     const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))} · ${Math.round(sc*100)}%${capped?" · (top 3000)":""}`;
     renderMapLayerLegend(t);
     renderMapScaleHint();
+    renderMapAddressTool();
   });
+}
+// A floating button that opens a modal to type any address and jump straight to
+// it in Google Maps (external tab) — precise geolocation via Google's own
+// geocoding, no API key needed here.
+function renderMapAddressTool(){ const wrap=$(".graph-wrap"); if(!wrap)return; let b=$("#mapAddrBtn");
+  if(!b){ b=el("button","btn ghost"); b.id="mapAddrBtn"; b.style.cssText="position:absolute;right:14px;bottom:16px;z-index:6;padding:5px 10px;font-size:11px";
+    b.addEventListener("click",openAddressMapsModal);
+    wrap.appendChild(b);
+  }
+  b.textContent="🔗 "+t2("map.addrTool");
+  b.hidden = canvasMode!=="map";
+}
+function openAddressMapsModal(){
+  openModal(t2("map.addrTool"),
+    `<div class="field">${esc(t2("map.addrLabel"))}<input id="addrInput" placeholder="Av. Paulista 1000, São Paulo, SP" /></div>`,
+    [{label:"Cancel",cls:"ghost",act:closeModal},
+     {label:t2("map.addrOpen"),cls:"primary",act:()=>{
+        const v=(($("#addrInput")||{}).value||"").trim();
+        if(!v){ toast(t2("map.addrEmpty"),"err"); return; }
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v)}`,"_blank","noopener,noreferrer");
+        closeModal();
+     }}]);
+  setTimeout(()=>$("#addrInput")&&$("#addrInput").focus(),40);
 }
 // A small "scroll to zoom · drag to pan" hint + zoom controls on the map.
 function renderMapScaleHint(){ const wrap=$(".graph-wrap"); if(!wrap)return; let h=$("#mapZoomCtl");
@@ -2816,7 +2910,16 @@ function renderMapLayerLegend(t){ const wrap=$(".graph-wrap"); if(!wrap)return; 
 (function(){ const cv=$("#mapCanvas"); if(!cv)return; let drag=null;
   cv.addEventListener("mousedown",e=>{ drag={x:e.clientX,y:e.clientY,ox:_mapView.ox,oy:_mapView.oy,moved:false}; });
   window.addEventListener("mousemove",e=>{ if(!drag)return; const dx=e.clientX-drag.x,dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true; _mapView.ox=drag.ox+dx; _mapView.oy=drag.oy+dy; if(canvasMode==="map") renderWorldMap(); });
-  window.addEventListener("mouseup",e=>{ if(drag&&!drag.moved&&canvasMode==="map"){ const rect=cv.getBoundingClientRect(); const x=e.clientX-rect.left,y=e.clientY-rect.top; let best=null,bd=1e9; (_mapState?_mapState.screenPts:[]).forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} }); if(best) selectNode(best.n.id); } drag=null; });
+  window.addEventListener("mouseup",e=>{ if(drag&&!drag.moved&&canvasMode==="map"){ const rect=cv.getBoundingClientRect(); const x=e.clientX-rect.left,y=e.clientY-rect.top; let best=null,bd=1e9; (_mapState?_mapState.screenPts:[]).forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} });
+    if(best){ selectNode(best.n.id); }
+    else if(_worldGeo){ // no entity marker hit — drill down into the country under the click
+      const W=rect.width||900, baseW=W, baseH=W/2;
+      const lon=(x-_mapView.ox)/_mapView.scale/baseW*360-180;
+      const lat=90-(y-_mapView.oy)/_mapView.scale/baseH*180;
+      const idx=countryAt(lon,lat);
+      if(idx!=null) zoomToCountry(idx);
+    }
+  } drag=null; });
   cv.addEventListener("wheel",e=>{ if(canvasMode!=="map")return; e.preventDefault(); const rect=cv.getBoundingClientRect(); const mx=e.clientX-rect.left,my=e.clientY-rect.top; const f=e.deltaY<0?1.15:1/1.15; const ns=Math.max(0.6,Math.min(14,_mapView.scale*f));
     _mapView.ox=mx-(mx-_mapView.ox)*(ns/_mapView.scale); _mapView.oy=my-(my-_mapView.oy)*(ns/_mapView.scale); _mapView.scale=ns; renderWorldMap(); },{passive:false});
 })();

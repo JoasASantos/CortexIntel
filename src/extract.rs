@@ -259,6 +259,17 @@ fn infer_links(by_kind: &[(EntityKind, String)]) -> Vec<LabelLink> {
     link(find(Media), "part_of_case", find(Case), 0.8);
     link(find(Report), "references_account", find(Account), 0.6);
     link(find(Report), "references_url", find(Url), 0.6);
+    // Organization/Location/Payment co-occurrence — covers corporate/financial
+    // investigations (procurement fraud, corruption networks) that have no
+    // Person/Account backbone, which previously left these kinds fully
+    // disconnected even when a record clearly ties them together.
+    link(find(Case), "involves_organization", find(Organization), 0.7);
+    link(find(Case), "has_payment", find(Payment), 0.7);
+    link(find(Organization), "operates_in", find(Location), 0.6);
+    link(find(Organization), "involved_in_payment", find(Payment), 0.6);
+    link(find(Payment), "at_location", find(Location), 0.5);
+    link(find(Facility), "located_in", find(Location), 0.6);
+    link(find(Organization), "operates_facility", find(Facility), 0.55);
 
     links
 }
