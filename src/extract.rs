@@ -263,6 +263,11 @@ fn infer_links(by_kind: &[(EntityKind, String)]) -> Vec<LabelLink> {
     link(find(Case), "has_evidence", find(Evidence), 0.95);
     link(find(Person), "owns_account", find(Account), 0.8);
     link(find(Person), "resides_in", find(Location), 0.6);
+    // A CPF/RG/SSN/passport (Selector) is auto-materialized as its own node
+    // from the raw column value — without this it floats disconnected from
+    // the person it identifies, even though it's the very thing tying them
+    // together (see document_id in the dedup fix).
+    link(find(Person), "identified_by", find(Selector), 0.9);
     link(find(Suspect), "uses_account", find(Account), 0.75);
     link(find(Account), "uses_device", find(Device), 0.7);
     link(find(Account), "logged_in_from_ip", find(Ip), 0.7);
