@@ -253,6 +253,13 @@ function glyphColor(kc){ const h=(kc||"#94A3B8").replace("#",""); // brighten to
 function nodeIcon(kind, stroke){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
   const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${stroke||"#EAF2FC"}' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
   return "data:image/svg+xml;utf8,"+encodeURIComponent(s); }
+// If a media/evidence node references a local image file, return a URL the
+// server will stream back (so we can clip a small thumbnail onto the node and
+// preview it in the side panel). Non-image media (video/audio) → null (keep the icon).
+function mediaImgUrl(n){ if(!n||!["media","evidence"].includes(n.kind)) return null;
+  const p=(n.attributes||{}).path||""; if(!p) return null;
+  if(!/\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(p)) return null;
+  return "/api/file?path="+encodeURIComponent(p); }
 const bandOf = s => s>=0.85?"critical":s>=0.6?"high":s>=0.35?"medium":"low";
 const bandColor = b => ({low:"#34d399",medium:"#f59e0b",high:"#fb7185",critical:"#ef4444"}[b]||"#34d399");
 
@@ -379,8 +386,8 @@ async function logout() {
 // ● (connected) / ○ (no live backend) indicator.
 async function checkProviders(opts){
   const prov = state.provider || "auto";
-  const need = prov==="auto" ? ["claude","codex","custom"]
-    : (prov==="claude"||prov==="codex"||prov==="custom") ? [prov] : [];
+  const need = prov==="auto" ? ["claude","codex","gemini","custom"]
+    : (prov==="claude"||prov==="codex"||prov==="gemini"||prov==="custom") ? [prov] : [];
   let rows=[]; try{ rows = await api("/api/doctor"); }catch(e){ return null; }
   const by={}; rows.forEach(r=>by[r.name]=r);
   const live = need.filter(n=>by[n]&&by[n].ok);
@@ -628,6 +635,11 @@ function initCy() {
       { selector:"node[halo]", style:{ "border-color":"data(hc)", "border-opacity":1 }},
       // perf mode: solid coloured dot, no SVG icon
       { selector:"node.plain", style:{ "background-image":"none", "background-color":"data(kc)" }},
+      // media image node: clip the actual photo into the disc at normal node size
+      // (a small thumbnail, not a full-res dump). Full image shows in the side panel.
+      { selector:"node.imgnode", style:{ "background-image":"data(img)", "background-fit":"cover", "background-clip":"node",
+        "background-width":"100%", "background-height":"100%", "background-position-x":"50%", "background-position-y":"50%",
+        "border-width":2.5, "border-color":"data(kc)", "border-opacity":0.95 }},
       // ---- edges: discreet by default ----
       { selector:"edge", style:{
         "width":"data(w)", "line-color":"rgba(148,163,184,0.16)", "target-arrow-color":"rgba(148,163,184,0.24)",
@@ -824,8 +836,9 @@ function renderGraph() {
         kc, hc:"#E6EDF7", size, bw:isBroker?4.5:2, halo:(isBroker&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
       return;
     }
-    els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band),
-      size: NODE_UNIFORM, bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+    const imgU = perf?null:mediaImgUrl(n);
+    els.push({ data:{ id:n.id, label:n.label, icon:(perf||imgU)?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), img:imgU||undefined, kc:kColor(n.kind), hc:bandColor(band),
+      size: NODE_UNIFORM, bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"")+(imgU?" imgnode":"") });
   });
   g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, elabel:e.label||"", w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:(e.hypothesis?"hyp ":"")+(e.predicted?"predicted ":"")+(e.manual?"manual":"") }); });
   cy.elements().remove(); cy.add(els);
@@ -916,7 +929,15 @@ function selectNode(id) {
       [{label:"Cancel",cls:"ghost",act:closeModal},{label:"Add",cls:"primary",act:()=>{ const v=$("#newTag").value.trim().toLowerCase(); if(v){ n.tags=n.tags||[]; if(!n.tags.includes(v)){ n.tags.push(v); if(cy){const ne=cy.$id(id); if(ne&&ne.length&&!ne.hasClass("hyp")){}} } closeModal(); selectNode(id); renderGraphFilters&&renderGraphFilters(); pushNotif("entity","Tagged "+n.label+" · "+v); } else closeModal(); }}]);
     setTimeout(()=>$("#newTag")&&$("#newTag").focus(),40); }; }
   const meta=$("#ctxMeta"); meta.innerHTML=""; const es=Object.entries(n.attributes||{});
-  if(!es.length) meta.innerHTML='<div class="empty">no metadata</div>';
+  // Media preview: show the actual photo here in the panel (a ~3x4 thumbnail),
+  // click to open full size — keeps the graph clean while the image stays viewable.
+  const imgU=mediaImgUrl(n);
+  if(imgU){ const box=el("div","media-prev"); box.style.cssText="margin-bottom:10px;text-align:center";
+    const im=el("img"); im.src=imgU; im.alt=n.label;
+    im.style.cssText="max-width:100%;max-height:240px;border-radius:8px;border:1px solid rgba(120,140,160,0.3);cursor:zoom-in;object-fit:contain;background:#0b1119";
+    im.title="Click to open full size"; im.addEventListener("click",()=>window.open(imgU,"_blank"));
+    im.onerror=()=>{ box.remove(); }; box.appendChild(im); meta.appendChild(box); }
+  if(!es.length && !imgU) meta.innerHTML='<div class="empty">no metadata</div>';
   es.slice(0,24).forEach(([k,v])=>{ const r=el("div","row"); r.appendChild(el("span","k",k)); r.appendChild(el("span","v",String(v))); meta.appendChild(r); });
   // Precise Google Maps deep link from the entity's own lat/lon (opens externally).
   const geo=geoOf(n);
@@ -1051,6 +1072,7 @@ async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   add("graph","Find path from here…",()=>startPath(id));
   add("link","Connect to another node…",()=>startLink(id));
   add("alerts","Create alert",()=>{pushNotif("alert",`Alert on ${n.label}`);toast("Alert created");});
+  if(["media","evidence"].includes(n.kind) && (n.attributes||{}).path) add("spark","AI Geolocation (Gemini)",()=>{ cy.$(":selected").unselect(); cy.$id(id).select(); triggerGeminiGeoint(id); },true);
   add("trash","Remove node",()=>removeNode(id));
   // transforms submenu (installed, matching kind)
   let inst=[]; try{ inst=await api("/api/transforms"); }catch(e){}
@@ -1517,7 +1539,7 @@ function runModal(){
     <div class="field">Business vertical<select id="rDomain" class="select">${domainOpts}</select></div>
     <div class="field">Data type (category → type, or auto)<select id="rType" class="select">${typeOpts}</select></div>
     <div class="field">AI provider<select id="rProvider" class="select">
-      <option value="auto">Auto — smart routing (Opus/Sonnet ⇄ Codex)</option><option value="claude">Claude (Opus/Sonnet)</option><option value="codex">Codex (gpt-5.5)</option><option value="mock">Offline mock</option></select></div>
+      <option value="auto">Auto — smart routing (Opus/Sonnet ⇄ Codex ⇄ Gemini)</option><option value="claude">Claude (Opus/Sonnet)</option><option value="codex">Codex (gpt-5.5)</option><option value="gemini">Google Gemini (2.5 Pro)</option><option value="mock">Offline mock</option></select></div>
     <div class="field">Input source(s)<div style="display:flex;gap:8px"><input id="rInputs" placeholder="/path/to/data.csv or .json  (or Browse)" style="flex:1" /><button class="btn ghost" id="rBrowse">Browse…</button></div></div>
     <div id="rTriage" class="triage" hidden></div>
     <div class="field">Max records (graph cap)<input id="rMax" type="number" value="4000" /></div>
@@ -1990,7 +2012,7 @@ function makeSelect(id,options,value,onChange){ const root=$("#"+id); if(!root)r
   btn.addEventListener("click",e=>{e.stopPropagation(); const open=root.classList.contains("open"); closeAllSelects(); if(!open)root.classList.add("open");});
   api2.set(value); SELECTS[id]=api2; }
 function closeAllSelects(){ $$(".cselect.open").forEach(s=>s.classList.remove("open")); }
-function buildProviderSelect(){ const opts=[{value:"auto",label:"Auto — smart routing (Opus/Sonnet ⇄ Codex)"},{value:"claude",label:"Claude (Opus 4.8 / Sonnet)"},{value:"codex",label:"ChatGPT Codex (gpt-5.5)"},{value:"mock",label:"Offline mock"}];
+function buildProviderSelect(){ const opts=[{value:"auto",label:"Auto — smart routing (Opus/Sonnet ⇄ Codex ⇄ Gemini)"},{value:"claude",label:"Claude (Opus 4.8 / Sonnet)"},{value:"codex",label:"ChatGPT Codex (gpt-5.5)"},{value:"gemini",label:"Google Gemini (2.5 Pro)"},{value:"mock",label:"Offline mock"}];
   makeSelect("setProvider",opts,state.provider,v=>{ state.provider=v; $("#providerPill").textContent="provider: "+v; }); }
 
 // ---------- notifications ----------
@@ -2074,7 +2096,8 @@ function addEntityModal(){ const t=activeTab(); if(!t){ toast("Open or create a 
     <div class="field" id="aeMediaField" hidden>Media file (image / video / audio) — uploaded for metadata & authenticity analysis
       <div style="display:flex;gap:8px"><input id="aeFile" placeholder="no file selected" readonly style="flex:1"/><button class="btn ghost" id="aeBrowse">Browse…</button></div>
       <select id="aeMediaType" class="select" style="margin-top:8px"><option value="image">image</option><option value="video">video</option><option value="audio">audio</option><option value="document">document</option></select>
-      <div class="disclaimer" style="margin-top:8px">Media is referenced by path/hash. Sensitive material is gated; run the media transforms (metadata, deepfake, sensitive-content) to analyze.</div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:600;color:var(--accent,#33c2dd)"><input type="checkbox" id="aeGeminiAnalyze" checked /> AI Image Analysis (Gemini) — geolocation, landmarks, visual intel</label>
+      <div class="disclaimer" style="margin-top:8px">When checked, Gemini AI analyzes the image after adding — extracts geolocation, landmarks, environmental context. Requires gemini CLI installed.</div>
     </div>
     <div class="field">Attributes (key: value per line, optional)<textarea id="aeAttrs" rows="2" placeholder="source: hotline&#10;country: BR"></textarea></div>
   `,[
@@ -2091,9 +2114,26 @@ function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind
   if(["media","evidence"].includes(kind)){ attrs.media_type=$("#aeMediaType").value; if(aeUploadPath){ attrs.path=aeUploadPath; attrs.file=aeUploadPath.split("/").pop(); if(!label)label=aeUploadPath.split("/").pop(); } }
   if(!label) label=kind+" (manual)";
   const id="man-"+Math.abs(hashStr(kind+label+String(state.tabs.length)+Object.keys(attrs).join()));
+  const wantGemini=["media","evidence"].includes(kind) && aeUploadPath && ($("#aeGeminiAnalyze")||{}).checked;
   t.graph.nodes.push({ id, kind, label, risk:0.3, band:"low", attributes:attrs, tags:["manual"], sources:["manual"], sensitive:["media","evidence","victim","communication"].includes(kind) });
   closeModal(); renderGraph(); renderGraphFilters(); showView("graph"); setTimeout(()=>{ selectNode(id); if(cy){const e=cy.$id(id); if(e){e.addClass("fresh"); setTimeout(()=>e.removeClass("fresh"),1800);} } },250);
-  pushNotif("entity","Manual entity added: "+label); toast("Entity added — run transforms to analyze","ok");
+  pushNotif("entity","Manual entity added: "+label);
+  if(wantGemini){ toast("Entity added — running Gemini AI geolocation…","ok"); triggerGeminiGeoint(id); }
+  else { toast("Entity added — run transforms to analyze","ok"); }
+}
+async function triggerGeminiGeoint(entityId){ const t=activeTab(); if(!t)return; const n=t.graph.nodes.find(x=>x.id===entityId); if(!n)return;
+  // Ensure media.geoint-ai transform is installed
+  let inst=[]; try{ inst=await api("/api/transforms"); }catch(e){}
+  let tf=inst.find(x=>x.id==="media.geoint-ai" && x.enabled);
+  if(!tf){
+    try{ await api("/api/transforms/install",{method:"POST",body:{id:"media.geoint-ai"}}); inst=await api("/api/transforms"); tf=inst.find(x=>x.id==="media.geoint-ai"); }catch(e){}
+  }
+  if(!tf){ toast("Could not install Gemini GEOINT transform","err"); return; }
+  setSync("busy","gemini"); toast("Gemini AI analyzing image…");
+  try{ const res=await api("/api/transforms/run",{method:"POST",body:{id:tf.id,input:{kind:n.kind,label:n.label,attributes:n.attributes},params:{}}});
+    if(res.error){ toast("Gemini: "+res.error,"err"); setSync("err","failed"); return; }
+    mergeTransformResult(n, res); setSync("ok","complete"); pushNotif("transform",`Gemini GEOINT → ${(res.entities||[]).length} results`); toast(`AI geolocation complete — ${(res.entities||[]).length} entities found`,"ok");
+  }catch(e){ setSync("err","failed"); toast(e.message,"err"); }
 }
 $("#btnAddEntity")&&$("#btnAddEntity").addEventListener("click",addEntityModal);
 

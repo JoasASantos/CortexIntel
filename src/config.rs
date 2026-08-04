@@ -292,7 +292,9 @@ pub enum ProviderChoice {
     Claude,
     /// ChatGPT Codex CLI (`codex exec`).
     Codex,
-    /// Try Claude first, fall back to Codex on failure.
+    /// Google Gemini CLI (`gemini -p`).
+    Gemini,
+    /// Try Claude first, fall back to Codex/Gemini on failure.
     Auto,
     /// A generic CLI model set via `CORTEX_LLM_CMD` (Ollama, `llm`, any local or
     /// custom model that reads a prompt on stdin and writes the answer to stdout).
@@ -306,6 +308,7 @@ impl fmt::Display for ProviderChoice {
         let s = match self {
             ProviderChoice::Claude => "claude",
             ProviderChoice::Codex => "codex",
+            ProviderChoice::Gemini => "gemini",
             ProviderChoice::Auto => "auto",
             ProviderChoice::Custom => "custom",
             ProviderChoice::Mock => "mock",

@@ -195,6 +195,11 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/vendor/earth-blue.jpg") => return respond(stream, 200, "image/jpeg", V_EARTH),
         ("GET", "/vendor/earth-topology.png") => return respond(stream, 200, "image/png", V_EARTH_TOPO),
         ("GET", "/vendor/countries.min.json") => return respond(stream, 200, "application/json; charset=utf-8", V_COUNTRIES.as_bytes()),
+        // Serve a local media file (image/video/audio) inline so the GUI can
+        // preview an uploaded photo in the entity panel and clip a thumbnail onto
+        // the graph node. Public (an <img> tag can't send the bearer token) but
+        // restricted to media extensions + existing files — never arbitrary paths.
+        ("GET", "/api/file") => return serve_media_file(stream, param(&req.query, "path").as_deref().unwrap_or("")),
         ("OPTIONS", _) => return respond(stream, 204, "text/plain", b""),
         _ => {}
     }
@@ -641,6 +646,48 @@ fn respond_download(stream: &mut TcpStream, content_type: &str, filename: &str, 
     stream.write_all(body)?;
     stream.flush()?;
     Ok(())
+}
+
+/// Guess a media MIME type from a file extension. Only the image/video/audio
+/// types the GUI can preview are recognised — anything else is refused so this
+/// endpoint can never be used to read arbitrary files (e.g. source, keys).
+fn media_mime(ext: &str) -> Option<&'static str> {
+    Some(match ext.to_ascii_lowercase().as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "bmp" => "image/bmp",
+        "tif" | "tiff" => "image/tiff",
+        "svg" => "image/svg+xml",
+        "mp4" => "video/mp4",
+        "mov" => "video/quicktime",
+        "webm" => "video/webm",
+        "mp3" => "audio/mpeg",
+        "wav" => "audio/wav",
+        "m4a" => "audio/mp4",
+        _ => return None,
+    })
+}
+
+/// Read a local media file and stream it back inline. Refuses non-media
+/// extensions, missing files and anything that isn't a regular file so it can't
+/// be turned into an arbitrary-file-read primitive.
+fn serve_media_file(stream: &mut TcpStream, path: &str) -> Result<()> {
+    let pb = std::path::Path::new(path);
+    let ext = pb.extension().and_then(|e| e.to_str()).unwrap_or("");
+    let mime = match media_mime(ext) {
+        Some(m) => m,
+        None => return respond(stream, 404, "application/json; charset=utf-8", br#"{"error":"unsupported or non-media file"}"#),
+    };
+    match std::fs::metadata(pb) {
+        Ok(md) if md.is_file() => {}
+        _ => return respond(stream, 404, "application/json; charset=utf-8", br#"{"error":"file not found"}"#),
+    }
+    match std::fs::read(pb) {
+        Ok(bytes) => respond(stream, 200, mime, &bytes),
+        Err(_) => respond(stream, 404, "application/json; charset=utf-8", br#"{"error":"could not read file"}"#),
+    }
 }
 
 fn find(hay: &[u8], needle: &[u8]) -> Option<usize> {

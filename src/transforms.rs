@@ -281,6 +281,11 @@ pub fn catalog() -> Vec<Transform> {
             entrypoint: PY_DOC_EXPAND.into(),
             disclaimer:"GDPR/LGPD/CCPA: bulk or automated document lookups require a lawful basis, a signed provider agreement and data-minimization — this only wires the plumbing, it does not grant that authorization.".into(), enabled:false },
         // ---- MEDIA INTELLIGENCE ----
+        Transform { id:"media.geoint-ai".into(), name:"Image → AI Geolocation (Gemini)".into(), category:"media".into(),
+            description:"Analyze an image with Google Gemini AI to extract geolocation, landmarks, environmental context and visual intelligence. Uses the local gemini CLI (subscription).".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["media".into(),"evidence".into()], runtime:"python".into(),
+            entrypoint: PY_GEOINT_AI.into(),
+            disclaimer:"AI geolocation is probabilistic — a lead, not ground truth. Always cross-reference with EXIF and corroborating sources.".into(), enabled:false },
         Transform { id:"media.metadata".into(), name:"Media → Metadata (EXIF)".into(), category:"media".into(),
             description:"Extract EXIF/media metadata (camera, GPS, software) via local exiftool.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["media".into()], runtime:"python".into(),
@@ -296,6 +301,21 @@ pub fn catalog() -> Vec<Transform> {
             requires_api_key:true, input_kinds:vec!["media".into()], runtime:"python".into(),
             entrypoint: PY_MODERATION.into(),
             disclaimer:"Sensitive content must be handled under strict access controls; do not expose raw material.".into(), enabled:false },
+        Transform { id:"media.reverse-image".into(), name:"Image → Reverse image search".into(), category:"media".into(),
+            description:"Search where an image appears online via a configurable reverse-image API (SerpAPI Google Lens, TinEye, Bing Visual Search). Set params.endpoint and the API key. Returns the pages/URLs and any linked accounts where the same picture was found.".into(), service:"reverse_image".into(),
+            requires_api_key:true, input_kinds:vec!["media".into(),"evidence".into()], runtime:"python".into(),
+            entrypoint: PY_REVERSE_IMAGE.into(),
+            disclaimer:"Reverse-image hits are leads, not proof of identity. Corroborate before acting; respect each source's terms of use.".into(), enabled:false },
+        Transform { id:"media.face-search".into(), name:"Photo → Face search (social profiles)".into(), category:"media".into(),
+            description:"Take a person's photo and search face-recognition indexes (e.g. FaceCheck.ID / PimEyes-style) for matching social-media and web profiles. Set params.endpoint and the API key. Returns candidate profile URLs/accounts as new leads to expand.".into(), service:"face_search".into(),
+            requires_api_key:true, input_kinds:vec!["media".into(),"evidence".into(),"person".into()], runtime:"python".into(),
+            entrypoint: PY_FACE_SEARCH.into(),
+            disclaimer:"BIOMETRIC / FACIAL RECOGNITION: highly regulated (GDPR/LGPD/BIPA). Requires an explicit lawful basis and, in many jurisdictions, consent. Matches are probabilistic — never treat a hit as a confirmed identity. Authorized investigations only.".into(), enabled:false },
+        Transform { id:"osint.social-profiles".into(), name:"Username / Name → Social profiles".into(), category:"investigative".into(),
+            description:"Enumerate accounts a username or person may hold across social networks. Uses the local `sherlock` CLI when installed; otherwise queries a configurable WhatsMyName-style endpoint (params.endpoint). Returns account entities linked back to the person.".into(), service:"social_enum".into(),
+            requires_api_key:false, input_kinds:vec!["person".into(),"account".into(),"selector".into()], runtime:"python".into(),
+            entrypoint: PY_SOCIAL_PROFILES.into(),
+            disclaimer:"Name/handle collisions are common — a found profile is a candidate, not a confirmed match. Verify before attributing to a real person.".into(), enabled:false },
     ]
 }
 
@@ -540,6 +560,241 @@ try:
     out['relationships'] = [{'source':inp.get('label',''),'type':'expanded_from_document','target':name,'confidence':0.85}]
 except Exception as e:
     out['error'] = str(e)
+print(json.dumps(out))
+"#;
+
+const PY_GEOINT_AI: &str = r#"
+import sys, json, subprocess, shutil, os, base64, re
+d=json.load(sys.stdin); inp=d.get('input') or {}; attrs=inp.get('attributes') or {}
+path=attrs.get('path') or inp.get('label','')
+out={'entities':[],'relationships':[]}
+
+if not shutil.which('gemini'):
+    out['error']='gemini CLI not found — install: npm install -g @anthropic-ai/gemini-cli or see https://github.com/google-gemini/gemini-cli'
+    print(json.dumps(out)); sys.exit(0)
+
+if not path or not os.path.isfile(path):
+    out['error']='image file not found (set attributes.path to the image location)'
+    print(json.dumps(out)); sys.exit(0)
+
+ext=os.path.splitext(path)[1].lower()
+if ext not in ('.png','.jpg','.jpeg','.gif','.webp','.bmp','.tiff','.tif'):
+    out['error']=f'unsupported image format: {ext}'
+    print(json.dumps(out)); sys.exit(0)
+
+prompt=f"""Analyze the image file at the absolute path below for geolocation intelligence (GEOINT).
+
+Image path: {path}
+
+Read the file and examine it visually. Identify ALL possible geolocation signals:
+- GPS coordinates from EXIF metadata if present
+- Visible landmarks, buildings, monuments, signs
+- Language on signs, billboards, license plates
+- Architecture style (European, Asian, Latin American, etc.)
+- Vegetation type, climate indicators, terrain
+- Road markings, traffic signs, driving side
+- Sun position / shadow analysis if visible
+- Brand names, store chains, utility companies
+- Vehicle types, license plate formats
+- Cultural indicators (clothing, flags, symbols)
+
+Return ONLY a single valid JSON object with these fields (no markdown, no prose):
+{{"latitude": <float or null>, "longitude": <float or null>, "confidence": <0.0 to 1.0>, "location_name": "<best guess location name>", "country": "<country name or null>", "country_code": "<ISO 2-letter or null>", "city": "<city or null>", "region": "<state/province or null>", "landmarks": ["<identified landmark 1>", ...], "environmental_clues": ["<clue 1>", ...], "reasoning": "<brief reasoning chain>", "image_description": "<what the image shows>"}}
+"""
+
+try:
+    r=subprocess.run(['gemini',prompt],capture_output=True,text=True,timeout=120,
+                      cwd=os.path.dirname(path) or '/')
+    raw=r.stdout.strip()
+    if not raw:
+        raw=r.stderr.strip()
+    if not raw:
+        out['error']='gemini returned empty output'
+        print(json.dumps(out)); sys.exit(0)
+
+    # Extract JSON from possible markdown fences or prose
+    m=re.search(r'```(?:json)?\s*(\{.*?\})\s*```', raw, re.DOTALL)
+    if m: raw=m.group(1)
+    else:
+        m=re.search(r'(\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\})', raw, re.DOTALL)
+        if m: raw=m.group(1)
+
+    j=json.loads(raw)
+    lat=j.get('latitude'); lon=j.get('longitude')
+    conf=float(j.get('confidence') or 0.5)
+    loc_name=j.get('location_name') or 'Unknown location'
+    country=j.get('country') or ''
+    city=j.get('city') or ''
+    region=j.get('region') or ''
+    reasoning=j.get('reasoning') or ''
+    desc=j.get('image_description') or ''
+
+    # Evidence entity with full analysis
+    ev_attrs={'analysis_provider':'gemini','confidence':str(conf),'reasoning':reasoning,'image_description':desc}
+    if lat is not None: ev_attrs['latitude']=str(lat)
+    if lon is not None: ev_attrs['longitude']=str(lon)
+    if country: ev_attrs['country']=country
+    if j.get('country_code'): ev_attrs['country_code']=j['country_code']
+    if city: ev_attrs['city']=city
+    if region: ev_attrs['region']=region
+    if j.get('landmarks'): ev_attrs['landmarks']=', '.join(j['landmarks'])
+    if j.get('environmental_clues'): ev_attrs['environmental_clues']=', '.join(j['environmental_clues'])
+
+    ev_label='geoint:'+os.path.basename(path)
+    out['entities'].append({'kind':'evidence','label':ev_label,'attributes':ev_attrs})
+    out['relationships'].append({'source':inp.get('label',''),'type':'ai_geolocation','target':ev_label,'confidence':conf})
+
+    # Location entity if coordinates found
+    if lat is not None and lon is not None:
+        loc_label=loc_name if loc_name!='Unknown location' else f'{lat:.4f},{lon:.4f}'
+        loc_attrs={'latitude':str(lat),'longitude':str(lon),'source':'gemini_geoint','confidence':str(conf)}
+        if country: loc_attrs['country']=country
+        if city: loc_attrs['city']=city
+        if region: loc_attrs['region']=region
+        out['entities'].append({'kind':'location','label':loc_label,'attributes':loc_attrs})
+        out['relationships'].append({'source':ev_label,'type':'located_at','target':loc_label,'confidence':conf})
+
+    # Landmark entities
+    for lm in (j.get('landmarks') or [])[:5]:
+        if lm and lm.strip():
+            out['entities'].append({'kind':'location','label':lm.strip(),'attributes':{'type':'landmark','source':'gemini_geoint'}})
+            out['relationships'].append({'source':ev_label,'type':'near_landmark','target':lm.strip(),'confidence':conf*0.8})
+except json.JSONDecodeError:
+    out['error']='gemini output was not valid JSON: '+raw[:300]
+except subprocess.TimeoutExpired:
+    out['error']='gemini analysis timed out (120s)'
+except Exception as e:
+    out['error']=str(e)
+print(json.dumps(out))
+"#;
+
+const PY_REVERSE_IMAGE: &str = r#"
+import sys, json, os, base64, urllib.request, re
+d=json.load(sys.stdin); inp=d.get('input') or {}; attrs=inp.get('attributes') or {}
+params=d.get('params') or {}; key=d.get('api_key') or os.environ.get('TRANSFORM_API_KEY','')
+path=attrs.get('path') or inp.get('label',''); endpoint=params.get('endpoint','')
+out={'entities':[],'relationships':[]}
+if not endpoint:
+    out['error']='set params.endpoint to a reverse-image API (SerpAPI Google Lens, TinEye, Bing Visual Search)'
+    print(json.dumps(out)); sys.exit(0)
+if not path or not os.path.isfile(path):
+    out['error']='image file not found (set attributes.path to the image location)'
+    print(json.dumps(out)); sys.exit(0)
+try:
+    with open(path,'rb') as f: b64=base64.b64encode(f.read()).decode()
+    body=json.dumps({'image_b64':b64,'api_key':key,'filename':os.path.basename(path)}).encode()
+    req=urllib.request.Request(endpoint,data=body,headers={'Content-Type':'application/json','Authorization':'Bearer '+key})
+    j=json.load(urllib.request.urlopen(req,timeout=45))
+    # Tolerant walk: collect any dicts that carry a url/link + optional title/source.
+    hits=[]
+    def walk(x):
+        if isinstance(x,dict):
+            u=x.get('url') or x.get('link') or x.get('source_url')
+            if u: hits.append({'url':u,'title':x.get('title') or x.get('name') or '','source':x.get('source') or x.get('domain') or ''})
+            for v in x.values(): walk(v)
+        elif isinstance(x,list):
+            for v in x: walk(v)
+    walk(j)
+    seen=set()
+    for h in hits[:30]:
+        u=h['url']
+        if u in seen: continue
+        seen.add(u)
+        dom=re.sub(r'^https?://','',u).split('/')[0]
+        lab=(h['title'] or dom)[:80]
+        out['entities'].append({'kind':'url','label':u,'attributes':{'title':lab,'source':h['source'] or 'reverse_image','found_via':'reverse_image'}})
+        out['relationships'].append({'source':inp.get('label',''),'type':'image_appears_at','target':u,'confidence':0.5})
+    if not hits: out['error']='no matches returned by endpoint'
+except Exception as e:
+    out['error']=str(e)
+print(json.dumps(out))
+"#;
+
+const PY_FACE_SEARCH: &str = r#"
+import sys, json, os, base64, urllib.request, re
+d=json.load(sys.stdin); inp=d.get('input') or {}; attrs=inp.get('attributes') or {}
+params=d.get('params') or {}; key=d.get('api_key') or os.environ.get('TRANSFORM_API_KEY','')
+path=attrs.get('path') or ''; endpoint=params.get('endpoint','')
+out={'entities':[],'relationships':[]}
+if not endpoint:
+    out['error']='set params.endpoint to a face-search API (FaceCheck.ID / PimEyes-style)'
+    print(json.dumps(out)); sys.exit(0)
+if not path or not os.path.isfile(path):
+    out['error']='face image not found (set attributes.path to the photo of the person)'
+    print(json.dumps(out)); sys.exit(0)
+try:
+    with open(path,'rb') as f: b64=base64.b64encode(f.read()).decode()
+    body=json.dumps({'image_b64':b64,'api_key':key}).encode()
+    req=urllib.request.Request(endpoint,data=body,headers={'Content-Type':'application/json','Authorization':'Bearer '+key})
+    j=json.load(urllib.request.urlopen(req,timeout=60))
+    SOCIAL=('instagram','facebook','twitter','x.com','tiktok','linkedin','vk.com','youtube','telegram','threads','pinterest','reddit')
+    hits=[]
+    def walk(x):
+        if isinstance(x,dict):
+            u=x.get('url') or x.get('link') or x.get('profile')
+            if u: hits.append({'url':u,'score':x.get('score') or x.get('confidence') or 0})
+            for v in x.values(): walk(v)
+        elif isinstance(x,list):
+            for v in x: walk(v)
+    walk(j)
+    seen=set()
+    for h in hits[:25]:
+        u=h['url']
+        if u in seen: continue
+        seen.add(u)
+        try: conf=min(1.0,float(h['score'])/(100.0 if float(h['score'])>1 else 1.0))
+        except Exception: conf=0.4
+        dom=re.sub(r'^https?://','',u).split('/')[0].lower()
+        is_social=any(s in dom for s in SOCIAL)
+        kind='account' if is_social else 'url'
+        out['entities'].append({'kind':kind,'label':u,'attributes':{'platform':dom,'source':'face_search','match_confidence':str(round(conf,2))}})
+        out['relationships'].append({'source':inp.get('label',''),'type':'possible_profile','target':u,'confidence':conf})
+    if not hits: out['error']='no face matches returned by endpoint'
+except Exception as e:
+    out['error']=str(e)
+print(json.dumps(out))
+"#;
+
+const PY_SOCIAL_PROFILES: &str = r#"
+import sys, json, os, subprocess, shutil, urllib.request, urllib.parse, re
+d=json.load(sys.stdin); inp=d.get('input') or {}; params=d.get('params') or {}
+name=inp.get('label',''); endpoint=params.get('endpoint','')
+out={'entities':[],'relationships':[]}
+# Derive a username: explicit handle wins, else slug the name.
+handle=(inp.get('attributes') or {}).get('username') or params.get('username') or name
+handle=re.sub(r'[^A-Za-z0-9_.-]','',handle.strip().replace(' ','')) or name
+urls=[]
+if shutil.which('sherlock') and handle:
+    try:
+        r=subprocess.run(['sherlock',handle,'--print-found','--timeout','10','--no-color'],capture_output=True,text=True,timeout=180)
+        for line in (r.stdout or '').splitlines():
+            m=re.search(r'(https?://\S+)',line)
+            if m: urls.append(m.group(1).rstrip('.,'))
+    except Exception as e:
+        out['error']='sherlock failed: '+str(e)
+elif endpoint and handle:
+    try:
+        u=endpoint+('&' if '?' in endpoint else '?')+'username='+urllib.parse.quote(handle)
+        j=json.load(urllib.request.urlopen(u,timeout=45))
+        def walk(x):
+            if isinstance(x,dict):
+                v=x.get('url') or x.get('link')
+                if v: urls.append(v)
+                for w in x.values(): walk(w)
+            elif isinstance(x,list):
+                for w in x: walk(w)
+        walk(j)
+    except Exception as e:
+        out['error']=str(e)
+else:
+    out['error']='install the `sherlock` CLI (pip install sherlock-project) or set params.endpoint to a WhatsMyName-style API'
+seen=set()
+for u in urls[:40]:
+    if u in seen: continue
+    seen.add(u)
+    dom=re.sub(r'^https?://','',u).split('/')[0].lower()
+    out['entities'].append({'kind':'account','label':u,'attributes':{'platform':dom,'username':handle,'source':'social_enum'}})
+    out['relationships'].append({'source':name,'type':'possible_account','target':u,'confidence':0.45})
 print(json.dumps(out))
 "#;
 
