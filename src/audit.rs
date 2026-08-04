@@ -126,10 +126,16 @@ impl AuditLog {
         );
         ev.hash = chain_hash(&ev.prev_hash, &content);
         self.last_hash = ev.hash.clone();
-        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&self.path) {
-            if let Ok(line) = serde_json::to_string(&ev) {
-                let _ = writeln!(f, "{line}");
-            }
+        match std::fs::OpenOptions::new().create(true).append(true).open(&self.path) {
+            Ok(mut f) => match serde_json::to_string(&ev) {
+                Ok(line) => {
+                    if let Err(e) = writeln!(f, "{line}") {
+                        eprintln!("  · warning: failed writing audit event to {}: {e}", self.path.display());
+                    }
+                }
+                Err(e) => eprintln!("  · warning: failed serializing audit event: {e}"),
+            },
+            Err(e) => eprintln!("  · warning: failed opening audit log {}: {e}", self.path.display()),
         }
         self.events.push(ev);
     }

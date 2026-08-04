@@ -8,7 +8,7 @@
 const I18N = {
   en: {
     "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
-    "nav.agents":"Agents","nav.priority":"Priority","nav.sources":"Sources","view.priority.sub":"Everything ranked by Intelligence Score — what to look at first, and why.","prio.none":"Run an analysis to rank entities by score.","prio.allkinds":"All kinds","prio.count":"{0} entities ranked","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted",
+    "nav.agents":"Agents","nav.priority":"Priority","nav.sources":"Sources","view.priority.sub":"Everything ranked by Intelligence Score — what to look at first, and why.","prio.none":"Run an analysis to rank entities by score.","prio.allkinds":"All kinds","prio.count":"{0} entities ranked","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted","transforms.configure":"configure","transforms.endpointUrl":"Provider endpoint URL","transforms.webhookUrl":"Webhook URL","transforms.run":"Run","transforms.urlRequired":"URL is required",
     "risk.adjust":"Adjust risk","risk.adjust.title":"Adjust risk","risk.new":"New risk","risk.just":"Justification (why)","risk.just.ph":"Why are you overriding the score? (required, recorded)","risk.just.req":"A justification is required","risk.apply":"Apply","risk.manual":"manual","risk.done":"Risk adjusted","iscore.label":"INTELLIGENCE SCORE","route.intel":"Open Intelligence","route.map":"Open Map","route.timeline":"Open Timeline","route.entities":"Open Entities","route.graph":"Show in graph","onb.title":"Welcome — set up your workspace","onb.sub":"First access: this creates your admin workspace. Name your tenant so cases stay organized by company / unit / team.","onb.org":"Company / business unit / team","onb.org.ph":"e.g. Acme Corp · Fraud Unit · Blue Team","onb.org.req":"Enter an organization name","onb.type":"Type","onb.type.company":"Company","onb.type.bu":"Business unit","onb.type.team":"Team","onb.region":"Region (for KYC / disclaimers)","onb.legal":"Person/identity data is regulated (LGPD/GDPR). This is decision-support, never a definitive ruling.","onb.continue":"Continue","onb.done":"Workspace ready",
     "nav.timeline":"Timeline","nav.alerts":"Alerts","nav.reports":"Reports","nav.settings":"Settings",
     "set.account":"Account","set.providers":"Providers & Routing","set.datasources":"Data Sources","set.transforms":"Transforms Store","src.byDiscipline":"SOURCES BY DISCIPLINE","src.generic":"GENERIC CONNECTORS","src.noparams":"No parameters — click to pull.","src.testrun":"Test & pull","src.pulling":"Pulling from source…","src.pulled":"Source pulled & processed","src.opendemo":"Open a project first (test only in demo).","watch.manage":"Manage watchlist","watch.title":"Watchlist — standing rules","watch.none":"No rules yet. Add one — it alerts on each re-run.","watch.name":"Rule name","watch.name.req":"Enter a rule name","watch.kind":"Entity kind","watch.anykind":"any kind","watch.minrisk":"Minimum risk","watch.contains":"Label contains","watch.add":"Add rule","watch.saved":"Watchlist saved",
@@ -16,7 +16,7 @@ const I18N = {
     "btn.run":"Run","btn.askai":"Ask AI","btn.newProject":"New project","btn.fit":"Fit","btn.reset":"Reset","btn.path":"Path","btn.addEntity":"Entity",
     "launcher.open":"Open a recent project or start a new investigation.","launcher.new":"New project","launcher.import":"Import project","launcher.empty":"No projects yet — create your first investigation.",
     "decision.title":"Decision panel","decision.recommended":"Recommended","decision.feasible":"Feasible","decision.highrisk":"High risk","decision.viewGraph":"View in graph","decision.why":"Why","decision.attributedTo":"Analyzed by","decision.none":"Run an analysis to generate decision options.",
-    "ingest.title":"Prepare this source","ingest.relevant":"Ingest only what's relevant to this context","ingest.all":"Ingest everything","ingest.detected":"Detected columns","ingest.rows":"rows",
+    "ingest.title":"Prepare this source","ingest.relevant":"Ingest only what's relevant to this context","ingest.all":"Ingest everything","ingest.detected":"Detected columns","ingest.rows":"rows","ingest.playbookScan":"Scanning for a matching playbook…","ingest.playbookNone":"No playbook matched — plain run only.","ingest.playbookFound":"Suggested playbook","ingest.playbookBtn":"▶ Run + Playbook","ingest.playbookRunning":"Running suggested playbook…",
     "sev.critical":"Critical","sev.high":"High","sev.medium":"Medium","sev.low":"Low","sev.none":"No severity",
     "sit.domain":"Vertical","sit.owner":"Owner","sit.jurisdiction":"Jurisdiction","sit.created":"Created","sit.updated":"Updated","sit.entities":"entities","sit.relationships":"relationships","sit.critical":"critical","sit.alerts":"alerts",
     "auth.signin":"Sign in","auth.register":"Create account",
@@ -35,12 +35,12 @@ const I18N = {
     "band.critical":"critical","band.high":"high","band.medium":"medium","band.low":"low",
     "ready.ready":"Ready for decision","ready.needs-review":"Needs review","ready.insufficient":"Insufficient data","ready.conflicting":"Conflicting evidence",
     "rd.label":"Decision readiness","btn.genIntel":"Generate intelligence","btn.openGraph":"Open graph","decision.matrix.sub":"impact · confidence · risk · effort",
-    "canvas.graph":"Graph","canvas.map":"Map","map.none":"No geolocated entities in this view. Entities with latitude/longitude (or GPS/EXIF) plot here; the rest stay in the graph.","map.plotted":"{0} geolocated entities","map.trajectories":"{0} trajectories",
+    "canvas.graph":"Graph","canvas.map":"Map","map.none":"No geolocated entities in this view. Entities with latitude/longitude (or GPS/EXIF) plot here; the rest stay in the graph.","map.plotted":"{0} geolocated entities","map.trajectories":"{0} trajectories","map.zoomedTo":"Zoomed to","map.backToWorld":"click ⊡ to zoom back out","maps.open":"Open in Google Maps","map.addrTool":"Address → Maps","map.addrLabel":"Address","map.addrOpen":"Open in Google Maps","map.addrEmpty":"Type an address",
     "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h","cmt.title":"Comments","cmt.placeholder":"Add a comment…","cmt.post":"Post","cmt.empty":"No comments yet.","banner.disclaimer":"Decision-support — not a definitive ruling. Handle under applicable data-protection law.","banner.jurisdiction":"Jurisdiction","banner.vertical":"Vertical","banner.sev":"Severity", "ctx.expand":"Expand (AI)","ctx.edit":"Edit","ctx.connect":"Connect","ctx.isolate":"Isolate","ctx.neighbors":"Neighbors","ctx.alert":"Create alert","empty.title":"No graph yet","empty.sub":"Run an analysis, connect a source, or add entities manually (people, media, IPs…) to start building the graph.","hyp.supporting":"Supporting evidence","hyp.missing":"Missing evidence","hyp.next":"Next","hyp.lead":"lead","hyp.conf":"conf","hyp.none":"No competing hypotheses — add data or generate intelligence.","hyp.take":"Take this action","hyp.rankNone":"Run an analysis to rank next actions.","conf.low":"low","conf.medium":"medium","conf.high":"high","nba.uncertainty":"uncertainty","nba.effort":"effort","nba.priority":"priority","nba.impact":"impact","nba.confidence":"confidence","nba.riskWrong":"risk-if-wrong","nba.route":"route","nba.why":"Why","nba.residual":"Residual uncertainty ~{0} — this is decision support, not certainty.","nba.readyYes":"Data supports acting now.","nba.readyNo":"Consider resolving gaps first (see Data Quality).",
   },
   pt: {
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
-    "nav.agents":"Agentes","nav.priority":"Priorização","nav.sources":"Fontes","view.priority.sub":"Tudo ranqueado por Score de Inteligência — o que olhar primeiro, e por quê.","prio.none":"Execute uma análise para ranquear as entidades por score.","prio.allkinds":"Todos os tipos","prio.count":"{0} entidades ranqueadas","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído",
+    "nav.agents":"Agentes","nav.priority":"Priorização","nav.sources":"Fontes","view.priority.sub":"Tudo ranqueado por Score de Inteligência — o que olhar primeiro, e por quê.","prio.none":"Execute uma análise para ranquear as entidades por score.","prio.allkinds":"Todos os tipos","prio.count":"{0} entidades ranqueadas","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído","transforms.configure":"configurar","transforms.endpointUrl":"URL do provedor","transforms.webhookUrl":"URL do webhook","transforms.run":"Rodar","transforms.urlRequired":"URL é obrigatória",
     "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado","iscore.label":"SCORE DE INTELIGÊNCIA","route.intel":"Abrir Inteligência","route.map":"Abrir Mapa","route.timeline":"Abrir Linha do tempo","route.entities":"Abrir Entidades","route.graph":"Ver no grafo","onb.title":"Bem-vindo — configure seu workspace","onb.sub":"Primeiro acesso: isto cria seu workspace admin. Nomeie o tenant para organizar os casos por empresa / unidade / time.","onb.org":"Empresa / unidade de negócio / time","onb.org.ph":"ex.: Acme Corp · Unidade Fraude · Blue Team","onb.org.req":"Informe o nome da organização","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidade de negócio","onb.type.team":"Time","onb.region":"Região (para KYC / avisos legais)","onb.legal":"Dados de pessoa/identidade são regulados (LGPD/GDPR). Isto é apoio à decisão, nunca um veredito definitivo.","onb.continue":"Continuar","onb.done":"Workspace pronto",
     "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
     "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms","src.byDiscipline":"FONTES POR DISCIPLINA","src.generic":"CONECTORES GENÉRICOS","src.noparams":"Sem parâmetros — clique para puxar.","src.testrun":"Testar e puxar","src.pulling":"Puxando da fonte…","src.pulled":"Fonte puxada e processada","src.opendemo":"Abra um projeto primeiro (teste só no demo).","watch.manage":"Gerenciar watchlist","watch.title":"Watchlist — regras permanentes","watch.none":"Nenhuma regra ainda. Adicione uma — ela alerta a cada re-execução.","watch.name":"Nome da regra","watch.name.req":"Informe um nome de regra","watch.kind":"Tipo de entidade","watch.anykind":"qualquer tipo","watch.minrisk":"Risco mínimo","watch.contains":"Rótulo contém","watch.add":"Adicionar regra","watch.saved":"Watchlist salva",
@@ -48,7 +48,7 @@ const I18N = {
     "btn.run":"Executar","btn.askai":"Perguntar à IA","btn.newProject":"Novo projeto","btn.fit":"Ajustar","btn.reset":"Redefinir","btn.path":"Caminho","btn.addEntity":"Entidade",
     "launcher.open":"Abra um projeto recente ou inicie uma nova investigação.","launcher.new":"Novo projeto","launcher.import":"Importar projeto","launcher.empty":"Nenhum projeto ainda — crie sua primeira investigação.",
     "decision.title":"Painel de decisão","decision.recommended":"Recomendado","decision.feasible":"Viável","decision.highrisk":"Alto risco","decision.viewGraph":"Ver no grafo","decision.why":"Por quê","decision.attributedTo":"Analisado por","decision.none":"Execute uma análise para gerar opções de decisão.",
-    "ingest.title":"Preparar esta fonte","ingest.relevant":"Ingerir só o que é relevante para este contexto","ingest.all":"Ingerir tudo","ingest.detected":"Colunas detectadas","ingest.rows":"linhas",
+    "ingest.title":"Preparar esta fonte","ingest.relevant":"Ingerir só o que é relevante para este contexto","ingest.all":"Ingerir tudo","ingest.detected":"Colunas detectadas","ingest.rows":"linhas","ingest.playbookScan":"Procurando um playbook compatível…","ingest.playbookNone":"Nenhum playbook combinou — só o run comum.","ingest.playbookFound":"Playbook sugerido","ingest.playbookBtn":"▶ Rodar + Playbook","ingest.playbookRunning":"Rodando o playbook sugerido…",
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Médio","sev.low":"Baixo","sev.none":"Sem severidade",
     "sit.domain":"Vertical","sit.owner":"Responsável","sit.jurisdiction":"Jurisdição","sit.created":"Criado","sit.updated":"Atualizado","sit.entities":"entidades","sit.relationships":"relações","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Entrar","auth.register":"Criar conta",
@@ -67,12 +67,12 @@ const I18N = {
     "band.critical":"crítico","band.high":"alto","band.medium":"médio","band.low":"baixo",
     "ready.ready":"Pronto para decisão","ready.needs-review":"Precisa de revisão","ready.insufficient":"Dados insuficientes","ready.conflicting":"Evidências conflitantes",
     "rd.label":"Prontidão para decisão","btn.genIntel":"Gerar inteligência","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confiança · risco · esforço",
-    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias",
+    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias","map.zoomedTo":"Zoom em","map.backToWorld":"clique em ⊡ para ver o mundo todo","maps.open":"Abrir no Google Maps","map.addrTool":"Endereço → Maps","map.addrLabel":"Endereço","map.addrOpen":"Abrir no Google Maps","map.addrEmpty":"Digite um endereço",
     "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h","cmt.title":"Comentários","cmt.placeholder":"Adicionar um comentário…","cmt.post":"Enviar","cmt.empty":"Nenhum comentário ainda.","banner.disclaimer":"Apoio à decisão — não é um veredito definitivo. Trate conforme a lei de proteção de dados aplicável.","banner.jurisdiction":"Jurisdição","banner.vertical":"Vertical","banner.sev":"Severidade", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Isolar","ctx.neighbors":"Vizinhos","ctx.alert":"Criar alerta","empty.title":"Nenhum grafo ainda","empty.sub":"Execute uma análise, conecte uma fonte ou adicione entidades manualmente (pessoas, mídia, IPs…) para começar a construir o grafo.","hyp.supporting":"Evidências de apoio","hyp.missing":"Evidências faltantes","hyp.next":"Próximo","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sem hipóteses concorrentes — adicione dados ou gere inteligência.","hyp.take":"Executar esta ação","hyp.rankNone":"Execute uma análise para ranquear as próximas ações.","conf.low":"baixa","conf.medium":"média","conf.high":"alta","nba.uncertainty":"incerteza","nba.effort":"esforço","nba.priority":"prioridade","nba.impact":"impacto","nba.confidence":"confiança","nba.riskWrong":"risco-se-errado","nba.route":"rota","nba.why":"Por quê","nba.residual":"Incerteza residual ~{0} — isto é apoio à decisão, não certeza.","nba.readyYes":"Os dados sustentam agir agora.","nba.readyNo":"Considere resolver as lacunas primeiro (ver Qualidade dos dados).",
   },
   es: {
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
-    "nav.agents":"Agentes","nav.priority":"Priorización","nav.sources":"Fuentes","view.priority.sub":"Todo clasificado por Score de Inteligencia — qué mirar primero, y por qué.","prio.none":"Ejecuta un análisis para clasificar por score.","prio.allkinds":"Todos los tipos","prio.count":"{0} entidades clasificadas","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado",
+    "nav.agents":"Agentes","nav.priority":"Priorización","nav.sources":"Fuentes","view.priority.sub":"Todo clasificado por Score de Inteligencia — qué mirar primero, y por qué.","prio.none":"Ejecuta un análisis para clasificar por score.","prio.allkinds":"Todos los tipos","prio.count":"{0} entidades clasificadas","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado","transforms.configure":"configurar","transforms.endpointUrl":"URL del proveedor","transforms.webhookUrl":"URL del webhook","transforms.run":"Ejecutar","transforms.urlRequired":"La URL es obligatoria",
     "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado","iscore.label":"SCORE DE INTELIGENCIA","route.intel":"Abrir Inteligencia","route.map":"Abrir Mapa","route.timeline":"Abrir Línea de tiempo","route.entities":"Abrir Entidades","route.graph":"Ver en el grafo","onb.title":"Bienvenido — configura tu espacio","onb.sub":"Primer acceso: esto crea tu espacio admin. Nombra el tenant para organizar los casos por empresa / unidad / equipo.","onb.org":"Empresa / unidad de negocio / equipo","onb.org.ph":"ej.: Acme Corp · Unidad Fraude · Blue Team","onb.org.req":"Ingresa el nombre de la organización","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidad de negocio","onb.type.team":"Equipo","onb.region":"Región (para KYC / avisos)","onb.legal":"Los datos de persona/identidad están regulados (LGPD/GDPR). Esto es apoyo a la decisión, nunca un veredicto definitivo.","onb.continue":"Continuar","onb.done":"Espacio listo",
     "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
     "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms","src.byDiscipline":"FUENTES POR DISCIPLINA","src.generic":"CONECTORES GENÉRICOS","src.noparams":"Sin parámetros — clic para extraer.","src.testrun":"Probar y extraer","src.pulling":"Extrayendo de la fuente…","src.pulled":"Fuente extraída y procesada","src.opendemo":"Abre un proyecto primero (prueba solo en demo).","watch.manage":"Gestionar watchlist","watch.title":"Watchlist — reglas permanentes","watch.none":"Aún no hay reglas. Añade una — alerta en cada re-ejecución.","watch.name":"Nombre de la regla","watch.name.req":"Ingresa un nombre de regla","watch.kind":"Tipo de entidad","watch.anykind":"cualquier tipo","watch.minrisk":"Riesgo mínimo","watch.contains":"La etiqueta contiene","watch.add":"Añadir regla","watch.saved":"Watchlist guardada",
@@ -80,7 +80,7 @@ const I18N = {
     "btn.run":"Ejecutar","btn.askai":"Preguntar a la IA","btn.newProject":"Nuevo proyecto","btn.fit":"Ajustar","btn.reset":"Restablecer","btn.path":"Ruta","btn.addEntity":"Entidad",
     "launcher.open":"Abre un proyecto reciente o inicia una nueva investigación.","launcher.new":"Nuevo proyecto","launcher.import":"Importar proyecto","launcher.empty":"Aún no hay proyectos — crea tu primera investigación.",
     "decision.title":"Panel de decisión","decision.recommended":"Recomendado","decision.feasible":"Viable","decision.highrisk":"Alto riesgo","decision.viewGraph":"Ver en el grafo","decision.why":"Por qué","decision.attributedTo":"Analizado por","decision.none":"Ejecuta un análisis para generar opciones de decisión.",
-    "ingest.title":"Preparar esta fuente","ingest.relevant":"Ingerir solo lo relevante para este contexto","ingest.all":"Ingerir todo","ingest.detected":"Columnas detectadas","ingest.rows":"filas",
+    "ingest.title":"Preparar esta fuente","ingest.relevant":"Ingerir solo lo relevante para este contexto","ingest.all":"Ingerir todo","ingest.detected":"Columnas detectadas","ingest.rows":"filas","ingest.playbookScan":"Buscando un playbook compatible…","ingest.playbookNone":"Ningún playbook coincidió — solo el run normal.","ingest.playbookFound":"Playbook sugerido","ingest.playbookBtn":"▶ Ejecutar + Playbook","ingest.playbookRunning":"Ejecutando el playbook sugerido…",
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Medio","sev.low":"Bajo","sev.none":"Sin severidad",
     "sit.domain":"Vertical","sit.owner":"Responsable","sit.jurisdiction":"Jurisdicción","sit.created":"Creado","sit.updated":"Actualizado","sit.entities":"entidades","sit.relationships":"relaciones","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Iniciar sesión","auth.register":"Crear cuenta",
@@ -99,7 +99,7 @@ const I18N = {
     "band.critical":"crítico","band.high":"alto","band.medium":"medio","band.low":"bajo",
     "ready.ready":"Listo para decidir","ready.needs-review":"Necesita revisión","ready.insufficient":"Datos insuficientes","ready.conflicting":"Evidencia contradictoria",
     "rd.label":"Preparación para decidir","btn.genIntel":"Generar inteligencia","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confianza · riesgo · esfuerzo",
-    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias",
+    "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias","map.zoomedTo":"Zoom en","map.backToWorld":"clic en ⊡ para volver al mundo completo","maps.open":"Abrir en Google Maps","map.addrTool":"Dirección → Maps","map.addrLabel":"Dirección","map.addrOpen":"Abrir en Google Maps","map.addrEmpty":"Escribe una dirección",
     "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h","cmt.title":"Comentarios","cmt.placeholder":"Añadir un comentario…","cmt.post":"Enviar","cmt.empty":"Aún no hay comentarios.","banner.disclaimer":"Apoyo a la decisión — no es un veredicto definitivo. Trátese conforme a la ley de protección de datos aplicable.","banner.jurisdiction":"Jurisdicción","banner.vertical":"Vertical","banner.sev":"Severidad", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Aislar","ctx.neighbors":"Vecinos","ctx.alert":"Crear alerta","empty.title":"Aún no hay grafo","empty.sub":"Ejecuta un análisis, conecta una fuente o añade entidades manualmente (personas, medios, IPs…) para empezar a construir el grafo.","hyp.supporting":"Evidencia de apoyo","hyp.missing":"Evidencia faltante","hyp.next":"Siguiente","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sin hipótesis en competencia — añade datos o genera inteligencia.","hyp.take":"Ejecutar esta acción","hyp.rankNone":"Ejecuta un análisis para clasificar las próximas acciones.","conf.low":"baja","conf.medium":"media","conf.high":"alta","nba.uncertainty":"incertidumbre","nba.effort":"esfuerzo","nba.priority":"prioridad","nba.impact":"impacto","nba.confidence":"confianza","nba.riskWrong":"riesgo-si-erróneo","nba.route":"ruta","nba.why":"Por qué","nba.residual":"Incertidumbre residual ~{0} — esto es apoyo a la decisión, no certeza.","nba.readyYes":"Los datos respaldan actuar ahora.","nba.readyNo":"Considera resolver las brechas primero (ver Calidad de datos).",
   },
 };
@@ -253,6 +253,13 @@ function glyphColor(kc){ const h=(kc||"#94A3B8").replace("#",""); // brighten to
 function nodeIcon(kind, stroke){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
   const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${stroke||"#EAF2FC"}' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
   return "data:image/svg+xml;utf8,"+encodeURIComponent(s); }
+// If a media/evidence node references a local image file, return a URL the
+// server will stream back (so we can clip a small thumbnail onto the node and
+// preview it in the side panel). Non-image media (video/audio) → null (keep the icon).
+function mediaImgUrl(n){ if(!n||!["media","evidence"].includes(n.kind)) return null;
+  const p=(n.attributes||{}).path||""; if(!p) return null;
+  if(!/\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(p)) return null;
+  return "/api/file?path="+encodeURIComponent(p); }
 const bandOf = s => s>=0.85?"critical":s>=0.6?"high":s>=0.35?"medium":"low";
 const bandColor = b => ({low:"#34d399",medium:"#f59e0b",high:"#fb7185",critical:"#ef4444"}[b]||"#34d399");
 
@@ -379,8 +386,8 @@ async function logout() {
 // ● (connected) / ○ (no live backend) indicator.
 async function checkProviders(opts){
   const prov = state.provider || "auto";
-  const need = prov==="auto" ? ["claude","codex","custom"]
-    : (prov==="claude"||prov==="codex"||prov==="custom") ? [prov] : [];
+  const need = prov==="auto" ? ["claude","codex","gemini","custom"]
+    : (prov==="claude"||prov==="codex"||prov==="gemini"||prov==="custom") ? [prov] : [];
   let rows=[]; try{ rows = await api("/api/doctor"); }catch(e){ return null; }
   const by={}; rows.forEach(r=>by[r.name]=r);
   const live = need.filter(n=>by[n]&&by[n].ok);
@@ -628,6 +635,11 @@ function initCy() {
       { selector:"node[halo]", style:{ "border-color":"data(hc)", "border-opacity":1 }},
       // perf mode: solid coloured dot, no SVG icon
       { selector:"node.plain", style:{ "background-image":"none", "background-color":"data(kc)" }},
+      // media image node: clip the actual photo into the disc at normal node size
+      // (a small thumbnail, not a full-res dump). Full image shows in the side panel.
+      { selector:"node.imgnode", style:{ "background-image":"data(img)", "background-fit":"cover", "background-clip":"node",
+        "background-width":"100%", "background-height":"100%", "background-position-x":"50%", "background-position-y":"50%",
+        "border-width":2.5, "border-color":"data(kc)", "border-opacity":0.95 }},
       // ---- edges: discreet by default ----
       { selector:"edge", style:{
         "width":"data(w)", "line-color":"rgba(148,163,184,0.16)", "target-arrow-color":"rgba(148,163,184,0.24)",
@@ -824,8 +836,9 @@ function renderGraph() {
         kc, hc:"#E6EDF7", size, bw:isBroker?4.5:2, halo:(isBroker&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
       return;
     }
-    els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band),
-      size: NODE_UNIFORM, bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+    const imgU = perf?null:mediaImgUrl(n);
+    els.push({ data:{ id:n.id, label:n.label, icon:(perf||imgU)?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), img:imgU||undefined, kc:kColor(n.kind), hc:bandColor(band),
+      size: NODE_UNIFORM, bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"")+(imgU?" imgnode":"") });
   });
   g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, elabel:e.label||"", w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:(e.hypothesis?"hyp ":"")+(e.predicted?"predicted ":"")+(e.manual?"manual":"") }); });
   cy.elements().remove(); cy.add(els);
@@ -916,8 +929,21 @@ function selectNode(id) {
       [{label:"Cancel",cls:"ghost",act:closeModal},{label:"Add",cls:"primary",act:()=>{ const v=$("#newTag").value.trim().toLowerCase(); if(v){ n.tags=n.tags||[]; if(!n.tags.includes(v)){ n.tags.push(v); if(cy){const ne=cy.$id(id); if(ne&&ne.length&&!ne.hasClass("hyp")){}} } closeModal(); selectNode(id); renderGraphFilters&&renderGraphFilters(); pushNotif("entity","Tagged "+n.label+" · "+v); } else closeModal(); }}]);
     setTimeout(()=>$("#newTag")&&$("#newTag").focus(),40); }; }
   const meta=$("#ctxMeta"); meta.innerHTML=""; const es=Object.entries(n.attributes||{});
-  if(!es.length) meta.innerHTML='<div class="empty">no metadata</div>';
+  // Media preview: show the actual photo here in the panel (a ~3x4 thumbnail),
+  // click to open full size — keeps the graph clean while the image stays viewable.
+  const imgU=mediaImgUrl(n);
+  if(imgU){ const box=el("div","media-prev"); box.style.cssText="margin-bottom:10px;text-align:center";
+    const im=el("img"); im.src=imgU; im.alt=n.label;
+    im.style.cssText="max-width:100%;max-height:240px;border-radius:8px;border:1px solid rgba(120,140,160,0.3);cursor:zoom-in;object-fit:contain;background:#0b1119";
+    im.title="Click to open full size"; im.addEventListener("click",()=>window.open(imgU,"_blank"));
+    im.onerror=()=>{ box.remove(); }; box.appendChild(im); meta.appendChild(box); }
+  if(!es.length && !imgU) meta.innerHTML='<div class="empty">no metadata</div>';
   es.slice(0,24).forEach(([k,v])=>{ const r=el("div","row"); r.appendChild(el("span","k",k)); r.appendChild(el("span","v",String(v))); meta.appendChild(r); });
+  // Precise Google Maps deep link from the entity's own lat/lon (opens externally).
+  const geo=geoOf(n);
+  if(geo){ const link=el("a","btn ghost"); link.href=`https://www.google.com/maps/search/?api=1&query=${geo.lat},${geo.lon}`;
+    link.target="_blank"; link.rel="noopener noreferrer"; link.style.cssText="display:inline-flex;margin-top:8px;padding:3px 10px;font-size:11px;text-decoration:none";
+    link.textContent="📍 "+t2("maps.open"); meta.appendChild(link); }
   const rels=$("#ctxRels"); rels.innerHTML="";
   const t=activeTab(); const related=(t?.graph.edges||[]).filter(e=>e.source===id||e.target===id);
   if(!related.length) rels.innerHTML='<div class="empty">no direct relations</div>';
@@ -1046,6 +1072,7 @@ async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   add("graph","Find path from here…",()=>startPath(id));
   add("link","Connect to another node…",()=>startLink(id));
   add("alerts","Create alert",()=>{pushNotif("alert",`Alert on ${n.label}`);toast("Alert created");});
+  if(["media","evidence"].includes(n.kind) && (n.attributes||{}).path) add("spark","AI Geolocation (Gemini)",()=>{ cy.$(":selected").unselect(); cy.$id(id).select(); triggerGeminiGeoint(id); },true);
   add("trash","Remove node",()=>removeNode(id));
   // transforms submenu (installed, matching kind)
   let inst=[]; try{ inst=await api("/api/transforms"); }catch(e){}
@@ -1512,13 +1539,14 @@ function runModal(){
     <div class="field">Business vertical<select id="rDomain" class="select">${domainOpts}</select></div>
     <div class="field">Data type (category → type, or auto)<select id="rType" class="select">${typeOpts}</select></div>
     <div class="field">AI provider<select id="rProvider" class="select">
-      <option value="auto">Auto — smart routing (Opus/Sonnet ⇄ Codex)</option><option value="claude">Claude (Opus/Sonnet)</option><option value="codex">Codex (gpt-5.5)</option><option value="mock">Offline mock</option></select></div>
+      <option value="auto">Auto — smart routing (Opus/Sonnet ⇄ Codex ⇄ Gemini)</option><option value="claude">Claude (Opus/Sonnet)</option><option value="codex">Codex (gpt-5.5)</option><option value="gemini">Google Gemini (2.5 Pro)</option><option value="mock">Offline mock</option></select></div>
     <div class="field">Input source(s)<div style="display:flex;gap:8px"><input id="rInputs" placeholder="/path/to/data.csv or .json  (or Browse)" style="flex:1" /><button class="btn ghost" id="rBrowse">Browse…</button></div></div>
     <div id="rTriage" class="triage" hidden></div>
     <div class="field">Max records (graph cap)<input id="rMax" type="number" value="4000" /></div>
     ${MODE==="mock"?'<div class="modal-note">Preview mode: loads the embedded sample.</div>':''}
   `,[
     {label:"Cancel",cls:"ghost",act:closeModal},
+    {label:t2("ingest.playbookBtn"),cls:"ghost",act:doRunWithPlaybook},
     {label:"▶ Run",cls:"primary",act:doRun}
   ]);
   setTimeout(()=>{ const b=$("#rBrowse"); if(b) b.addEventListener("click",()=>pickServerPath(path=>{ const cur=$("#rInputs").value.trim(); $("#rInputs").value=(cur?cur+" ":"")+path; triageSource(path); }, {title:"Choose input (file or folder of media)", folders:true, accept:".csv,.tsv,.json,.jsonl,.ndjson,.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.mp3,.wav,.pdf"})); },40);
@@ -1528,8 +1556,13 @@ function runModal(){
 // G0 — pre-ingest triage: profile the picked source and offer a scope choice so
 // the user ingests only what's relevant instead of dumping everything and
 // freezing the graph. Sets the Max-records cap to match the chosen scope.
+// Also surfaces a "pre-intelligence" read (detected data type → recommended
+// playbook) BEFORE the pipeline runs, so a suggested agent can be queued to
+// run right after ingestion (see doRunWithPlaybook) instead of the plain run.
+let _suggestedPlaybook=null;
 async function triageSource(path){
   const w=$("#rTriage"); if(!w||MODE==="mock")return;
+  _suggestedPlaybook=null;
   w.hidden=false; w.innerHTML='<div class="empty">'+esc(t("ingest.title"))+'…</div>';
   let p; try{ p=await api("/api/profile?path="+encodeURIComponent(path)); }catch(e){ w.hidden=true; return; }
   if(p.kind==="media_folder"){
@@ -1548,19 +1581,33 @@ async function triageSource(path){
     <div class="field" style="margin-top:8px">Ingestion scope<select id="${scopeId}" class="select">
       <option value="relevant">${esc(t("ingest.relevant"))} (${keyCols.length} key columns, cap ${Math.min(4000,rows||4000)})</option>
       <option value="all">${esc(t("ingest.all"))} (${fmtNum(rows)} rows${rows>20000?' — heavy':''})</option>
-    </select></div>`;
+    </select></div>
+    <div id="rPlaybook" class="triage-row muted" style="margin-top:8px">${esc(t2("ingest.playbookScan"))}</div>`;
   const sel=$("#"+scopeId), max=$("#rMax");
   const applyScope=()=>{ if(!max)return; max.value = sel.value==="all" ? String(Math.max(rows,1)) : String(Math.min(4000, rows||4000)); };
   sel&&sel.addEventListener("change",applyScope); applyScope();
+  // Pre-intelligence: classify the data type from the columns actually detected
+  // (before any pipeline run) and recommend a playbook agent for it.
+  const kinds=[...new Set(cols.map(c=>c.entity_kind).filter(Boolean))];
+  const pbBox=$("#rPlaybook");
+  if(!kinds.length){ if(pbBox) pbBox.textContent=t2("ingest.playbookNone"); return; }
+  try{
+    const domain=($("#rDomain")||{}).value||"generic";
+    const rec=await api(`/api/agents/recommend?domain=${encodeURIComponent(domain)}&kinds=${encodeURIComponent(kinds.join(","))}`);
+    if(rec && rec.length){
+      const top=rec[0]; _suggestedPlaybook=top.id;
+      if(pbBox) pbBox.innerHTML=`✦ ${esc(t2("ingest.playbookFound"))}: <b>${esc(top.name)}</b> — ${esc(top.description||"")}`;
+    } else if(pbBox) pbBox.textContent=t2("ingest.playbookNone");
+  }catch(e){ if(pbBox) pbBox.textContent=t2("ingest.playbookNone"); }
 }
 async function doRun(){
-  const t=activeTab(); if(!t){ toast("Open a project first","err"); return; }
+  const t=activeTab(); if(!t){ toast("Open a project first","err"); return false; }
   const params={ inputs:$("#rInputs").value.split(/\s+/).filter(Boolean), domain:$("#rDomain").value,
     dataType:$("#rType").value||null, provider:$("#rProvider").value, maxRecords:parseInt($("#rMax").value)||4000,
     offline:$("#rProvider").value==="mock", projectId:t.project.id, lang:LANG };
   state.provider=params.provider; $("#providerPill").textContent="provider: "+state.provider;
   closeModal();
-  if(MODE!=="mock" && !params.inputs.length){ toast("Provide an input path","err"); return; }
+  if(MODE!=="mock" && !params.inputs.length){ toast("Provide an input path","err"); return false; }
   setSync("busy","running"); toast("Running pipeline…");
   try {
     const result = await runJob("run",params);
@@ -1570,7 +1617,15 @@ async function doRun(){
     pushNotif("run",`Analysis complete: ${t.graph.nodes.length} entities`);
     autoRunAgents(); // fire the auto-flagged agents on upload/run completion
     toast(`Done — ${t.graph.nodes.length} entities, ${t.graph.edges.length} relationships`,"ok");
-  } catch(e){ setSync("err","failed"); toast("Run failed: "+e.message,"err"); }
+    return true;
+  } catch(e){ setSync("err","failed"); toast("Run failed: "+e.message,"err"); return false; }
+}
+// Alternative to the plain run: ingest, then immediately dispatch the playbook
+// agent that pre-ingest triage recommended for this data's detected columns.
+async function doRunWithPlaybook(){
+  const agentId=_suggestedPlaybook;
+  const ok=await doRun();
+  if(ok && agentId){ toast(`✦ ${t2("ingest.playbookRunning")}`); await runAgentById(agentId); }
 }
 $("#btnRun").addEventListener("click",runModal);
 $("#btnRun2").addEventListener("click",runModal);
@@ -1788,26 +1843,31 @@ const CONNECTORS=[
   {kind:"looker",name:"Looker",desc:"Pull a Look/query result via the Looker API.",api:true},
   {kind:"webhook",name:"REST / Webhook / API",desc:"Pull JSON records from any REST endpoint.",api:true},
 ];
-async function renderConnectorCards(){ const w=$("#connectorCards"); if(!w)return; w.innerHTML="";
-  // Discipline-tagged source templates first (OSINT/GEOINT/SIGINT/HUMINT).
-  try{
-    const cat=await api("/api/connectors/catalog");
-    if(cat&&cat.length){
-      const groups={}; cat.forEach(c=>{ (groups[c.discipline]=groups[c.discipline]||[]).push(c); });
-      const wrap=el("div"); wrap.style.cssText="margin-bottom:14px";
-      wrap.appendChild(Object.assign(el("div"),{textContent:t2("src.byDiscipline"),style:"font-weight:600;color:#8fa8c0;letter-spacing:0.5px;font-size:11px;margin:2px 0 8px"}));
-      ["OSINT","GEOINT","SIGINT","HUMINT"].forEach(disc=>{ if(!groups[disc])return;
-        const row=el("div"); row.style.cssText="margin-bottom:8px";
-        row.appendChild(Object.assign(el("span","chip"),{textContent:disc,style:"margin-right:8px;color:#57D7E8;border-color:#57D7E8"}));
-        groups[disc].forEach(tpl=>{ const b=el("button","btn ghost"); b.style.cssText="margin:3px 4px 3px 0;padding:4px 10px;font-size:11px"; b.textContent=tpl.name; b.title=tpl.description;
-          b.addEventListener("click",()=>connectorFromTemplate(tpl)); row.appendChild(b); });
-        wrap.appendChild(row);
-      });
-      w.appendChild(wrap);
-      w.appendChild(Object.assign(el("div"),{textContent:t2("src.generic"),style:"font-weight:600;color:#8fa8c0;letter-spacing:0.5px;font-size:11px;margin:4px 0 8px"}));
-    }
-  }catch(e){}
-  CONNECTORS.forEach(c=>{ const card=el("div","card conn"); card.innerHTML=`<div class="ct">⇄ ${esc(c.name)}</div><div class="cd">${esc(c.desc)}</div>`; card.addEventListener("click",()=>connectorModal(c)); w.appendChild(card); }); }
+async function renderConnectorCards(){
+  const discW=$("#disciplineSources"), w=$("#connectorCards");
+  // Discipline-tagged source templates — their own block, full width, so a tall
+  // OSINT/GEOINT/SIGINT/HUMINT list never stretches the generic connector grid's
+  // row height (it used to share a 3-col grid with them, leaving a huge empty cell).
+  if(discW){ discW.innerHTML="";
+    try{
+      const cat=await api("/api/connectors/catalog");
+      if(cat&&cat.length){
+        const groups={}; cat.forEach(c=>{ (groups[c.discipline]=groups[c.discipline]||[]).push(c); });
+        discW.appendChild(Object.assign(el("div"),{textContent:t2("src.byDiscipline"),style:"font-weight:600;color:#8fa8c0;letter-spacing:0.5px;font-size:11px;margin:2px 0 8px"}));
+        ["OSINT","GEOINT","SIGINT","HUMINT"].forEach(disc=>{ if(!groups[disc])return;
+          const row=el("div"); row.style.cssText="margin-bottom:8px";
+          row.appendChild(Object.assign(el("span","chip"),{textContent:disc,style:"margin-right:8px;color:#57D7E8;border-color:#57D7E8"}));
+          groups[disc].forEach(tpl=>{ const b=el("button","btn ghost"); b.style.cssText="margin:3px 4px 3px 0;padding:4px 10px;font-size:11px"; b.textContent=tpl.name; b.title=tpl.description;
+            b.addEventListener("click",()=>connectorFromTemplate(tpl)); row.appendChild(b); });
+          discW.appendChild(row);
+        });
+      }
+    }catch(e){}
+  }
+  if(w){ w.innerHTML="";
+    CONNECTORS.forEach(c=>{ const card=el("div","card conn"); card.innerHTML=`<div class="ct">⇄ ${esc(c.name)}</div><div class="cd">${esc(c.desc)}</div>`; card.addEventListener("click",()=>connectorModal(c)); w.appendChild(card); });
+  }
+}
 // Open the connector form pre-shaped from a discipline template: the template's
 // kind + config, with an input per {placeholder} param the operator must fill.
 function connectorFromTemplate(tpl){
@@ -1952,7 +2012,7 @@ function makeSelect(id,options,value,onChange){ const root=$("#"+id); if(!root)r
   btn.addEventListener("click",e=>{e.stopPropagation(); const open=root.classList.contains("open"); closeAllSelects(); if(!open)root.classList.add("open");});
   api2.set(value); SELECTS[id]=api2; }
 function closeAllSelects(){ $$(".cselect.open").forEach(s=>s.classList.remove("open")); }
-function buildProviderSelect(){ const opts=[{value:"auto",label:"Auto — smart routing (Opus/Sonnet ⇄ Codex)"},{value:"claude",label:"Claude (Opus 4.8 / Sonnet)"},{value:"codex",label:"ChatGPT Codex (gpt-5.5)"},{value:"mock",label:"Offline mock"}];
+function buildProviderSelect(){ const opts=[{value:"auto",label:"Auto — smart routing (Opus/Sonnet ⇄ Codex ⇄ Gemini)"},{value:"claude",label:"Claude (Opus 4.8 / Sonnet)"},{value:"codex",label:"ChatGPT Codex (gpt-5.5)"},{value:"gemini",label:"Google Gemini (2.5 Pro)"},{value:"mock",label:"Offline mock"}];
   makeSelect("setProvider",opts,state.provider,v=>{ state.provider=v; $("#providerPill").textContent="provider: "+v; }); }
 
 // ---------- notifications ----------
@@ -2036,7 +2096,8 @@ function addEntityModal(){ const t=activeTab(); if(!t){ toast("Open or create a 
     <div class="field" id="aeMediaField" hidden>Media file (image / video / audio) — uploaded for metadata & authenticity analysis
       <div style="display:flex;gap:8px"><input id="aeFile" placeholder="no file selected" readonly style="flex:1"/><button class="btn ghost" id="aeBrowse">Browse…</button></div>
       <select id="aeMediaType" class="select" style="margin-top:8px"><option value="image">image</option><option value="video">video</option><option value="audio">audio</option><option value="document">document</option></select>
-      <div class="disclaimer" style="margin-top:8px">Media is referenced by path/hash. Sensitive material is gated; run the media transforms (metadata, deepfake, sensitive-content) to analyze.</div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:600;color:var(--accent,#33c2dd)"><input type="checkbox" id="aeGeminiAnalyze" checked /> AI Image Analysis (Gemini) — geolocation, landmarks, visual intel</label>
+      <div class="disclaimer" style="margin-top:8px">When checked, Gemini AI analyzes the image after adding — extracts geolocation, landmarks, environmental context. Requires gemini CLI installed.</div>
     </div>
     <div class="field">Attributes (key: value per line, optional)<textarea id="aeAttrs" rows="2" placeholder="source: hotline&#10;country: BR"></textarea></div>
   `,[
@@ -2053,9 +2114,26 @@ function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind
   if(["media","evidence"].includes(kind)){ attrs.media_type=$("#aeMediaType").value; if(aeUploadPath){ attrs.path=aeUploadPath; attrs.file=aeUploadPath.split("/").pop(); if(!label)label=aeUploadPath.split("/").pop(); } }
   if(!label) label=kind+" (manual)";
   const id="man-"+Math.abs(hashStr(kind+label+String(state.tabs.length)+Object.keys(attrs).join()));
+  const wantGemini=["media","evidence"].includes(kind) && aeUploadPath && ($("#aeGeminiAnalyze")||{}).checked;
   t.graph.nodes.push({ id, kind, label, risk:0.3, band:"low", attributes:attrs, tags:["manual"], sources:["manual"], sensitive:["media","evidence","victim","communication"].includes(kind) });
   closeModal(); renderGraph(); renderGraphFilters(); showView("graph"); setTimeout(()=>{ selectNode(id); if(cy){const e=cy.$id(id); if(e){e.addClass("fresh"); setTimeout(()=>e.removeClass("fresh"),1800);} } },250);
-  pushNotif("entity","Manual entity added: "+label); toast("Entity added — run transforms to analyze","ok");
+  pushNotif("entity","Manual entity added: "+label);
+  if(wantGemini){ toast("Entity added — running Gemini AI geolocation…","ok"); triggerGeminiGeoint(id); }
+  else { toast("Entity added — run transforms to analyze","ok"); }
+}
+async function triggerGeminiGeoint(entityId){ const t=activeTab(); if(!t)return; const n=t.graph.nodes.find(x=>x.id===entityId); if(!n)return;
+  // Ensure media.geoint-ai transform is installed
+  let inst=[]; try{ inst=await api("/api/transforms"); }catch(e){}
+  let tf=inst.find(x=>x.id==="media.geoint-ai" && x.enabled);
+  if(!tf){
+    try{ await api("/api/transforms/install",{method:"POST",body:{id:"media.geoint-ai"}}); inst=await api("/api/transforms"); tf=inst.find(x=>x.id==="media.geoint-ai"); }catch(e){}
+  }
+  if(!tf){ toast("Could not install Gemini GEOINT transform","err"); return; }
+  setSync("busy","gemini"); toast("Gemini AI analyzing image…");
+  try{ const res=await api("/api/transforms/run",{method:"POST",body:{id:tf.id,input:{kind:n.kind,label:n.label,attributes:n.attributes},params:{}}});
+    if(res.error){ toast("Gemini: "+res.error,"err"); setSync("err","failed"); return; }
+    mergeTransformResult(n, res); setSync("ok","complete"); pushNotif("transform",`Gemini GEOINT → ${(res.entities||[]).length} results`); toast(`AI geolocation complete — ${(res.entities||[]).length} entities found`,"ok");
+  }catch(e){ setSync("err","failed"); toast(e.message,"err"); }
 }
 $("#btnAddEntity")&&$("#btnAddEntity").addEventListener("click",addEntityModal);
 
@@ -2330,8 +2408,26 @@ async function renderCtxTransforms(kind){ const w=$("#ctxTransforms"); if(!w)ret
   match.forEach(t=>{ const r=el("div","rel"); r.innerHTML=`<span class="rt">${t.runtime}</span> ${esc(t.name)}`; r.addEventListener("click",()=>runTransformOnSelected(t)); w.appendChild(r); });
 }
 async function runTransformOnSelected(t){ const id=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; const n=id?nodeData(id):null; if(!n){toast("Select an entity","err");return;}
+  const doRunTransform=(params)=>runTransformNow(t,n,params||{});
+  // Some transforms (webhook, document-expand…) read a per-run endpoint/url
+  // from params instead of a fixed service — detect that from the entrypoint
+  // source (already in hand from the /api/transforms list) and prompt for it,
+  // instead of letting the run fail with "set params.endpoint".
+  const m=/\.get\(\s*['"](endpoint|url)['"]/.exec(t.entrypoint||"");
+  if(m){
+    const key=m[1];
+    openModal(`${t.name} — ${t2("transforms.configure")}`,
+      `<div class="field">${key==="url"?t2("transforms.webhookUrl"):t2("transforms.endpointUrl")}<input id="tfParamVal" placeholder="https://api.example.com/lookup" /></div>`,
+      [{label:"Cancel",cls:"ghost",act:closeModal},
+       {label:t2("transforms.run"),cls:"primary",act:()=>{ const v=(($("#tfParamVal")||{}).value||"").trim(); if(!v){toast(t2("transforms.urlRequired"),"err");return;} closeModal(); doRunTransform({[key]:v}); }}]);
+    setTimeout(()=>$("#tfParamVal")&&$("#tfParamVal").focus(),40);
+    return;
+  }
+  doRunTransform({});
+}
+async function runTransformNow(t,n,params){
   toast("Running "+t.name+"…"); setSync("busy","transform");
-  try{ const res=await api("/api/transforms/run",{method:"POST",body:{id:t.id,input:{kind:n.kind,label:n.label,attributes:n.attributes}}});
+  try{ const res=await api("/api/transforms/run",{method:"POST",body:{id:t.id,input:{kind:n.kind,label:n.label,attributes:n.attributes},params}});
     if(res.error){ toast("Transform: "+res.error,"err"); setSync("err","failed"); return; }
     mergeTransformResult(n, res); setSync("ok","complete"); pushNotif("transform",`${t.name} → ${(res.entities||[]).length} new`); toast(`+${(res.entities||[]).length} entities`,"ok");
   }catch(e){ setSync("err","failed"); toast(e.message,"err"); }
@@ -2708,9 +2804,33 @@ function countryMeta(gj){
     const polys=f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates;
     let cx=0,cy=0,n=0,minx=180,maxx=-180,miny=90,maxy=-90;
     polys.forEach(poly=>{ const ring=poly[0]||[]; ring.forEach(c=>{ cx+=c[0];cy+=c[1];n++; if(c[0]<minx)minx=c[0]; if(c[0]>maxx)maxx=c[0]; if(c[1]<miny)miny=c[1]; if(c[1]>maxy)maxy=c[1]; }); });
-    return { name:f.properties.n||"", lon:n?cx/n:0, lat:n?cy/n:0, span:Math.max(maxx-minx,maxy-miny) };
+    return { name:f.properties.n||"", lon:n?cx/n:0, lat:n?cy/n:0, span:Math.max(maxx-minx,maxy-miny), minx, maxx, miny, maxy };
   });
   return _countryMeta;
+}
+// Which country (if any) contains a lon/lat — used by the click-to-drill-down.
+function countryAt(lon,lat){
+  if(!_worldGeo) return null;
+  for(let i=0;i<_worldGeo.features.length;i++){ if(pointInFeature(lon,lat,_worldGeo.features[i])) return i; }
+  return null;
+}
+// Zoom/pan the flat map so a country's bounding box fills the canvas — the
+// "click a country → it expands to its cities" drill-down. The existing ⊡ Fit
+// button already zooms back out to the whole world, so no separate undo needed.
+function zoomToCountry(idx){
+  const cv=$("#mapCanvas"); if(!cv||!_worldGeo) return;
+  const meta=countryMeta(_worldGeo)[idx]; if(!meta) return;
+  const rect=cv.getBoundingClientRect(); const W=rect.width||900, H=rect.height||600;
+  const baseW=W, baseH=W/2;
+  const spanLon=Math.max(3,meta.maxx-meta.minx), spanLat=Math.max(3,meta.maxy-meta.miny);
+  const pad=0.72; // leave breathing room around the country's bbox
+  const scX=(W*pad)/((spanLon/360)*baseW), scY=(H*pad)/((spanLat/180)*baseH);
+  const ns=Math.max(0.6,Math.min(24,Math.min(scX,scY)));
+  const cxLon=(meta.minx+meta.maxx)/2, cyLat=(meta.miny+meta.maxy)/2;
+  const px=((cxLon+180)/360*baseW)*ns, py=((90-cyLat)/180*baseH)*ns;
+  _mapView={scale:ns, ox:W/2-px, oy:H/2-py, init:true};
+  renderWorldMap();
+  toast(`${t2("map.zoomedTo")||"Zoomed to"} ${meta.name} — ⊡ ${t2("map.backToWorld")||"to zoom back out"}`,"ok");
 }
 
 function renderWorldMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=$("#mapEmpty"); if(!cv||!t) return;
@@ -2768,17 +2888,54 @@ function renderWorldMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=
     ctx.setLineDash([]);
     // Markers (+ labels when zoomed in enough).
     const screenPts=[]; const showLabels=sc>=2.2;
+    // Greedy label declutter: entities that share (near-)identical coordinates —
+    // e.g. an IP/domain/organization all geo-tagged from the same source row —
+    // would otherwise stack illegible overlapping text at the same point.
+    const placedLabels=[];
+    ctx.font="600 10px SF Mono, Menlo, monospace";
     pts.forEach(p=>{ const xy=proj(p.lon,p.lat); if(!inView(xy.x,xy.y,40))return; const r=4+Math.sqrt(Math.max(0,p.n.risk||0))*7; screenPts.push({...p,sx:xy.x,sy:xy.y,r});
       const band=p.n.band||bandOf(p.n.risk); if(band==="critical"||band==="high"){ ctx.beginPath(); ctx.arc(xy.x,xy.y,r+5,0,7); ctx.fillStyle=(band==="critical"?"rgba(239,68,68,0.30)":"rgba(251,113,133,0.24)"); ctx.fill(); }
       ctx.beginPath(); ctx.arc(xy.x,xy.y,r,0,7); ctx.fillStyle=kColor(p.n.kind); ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle="rgba(255,255,255,0.75)"; ctx.stroke();
-      if(showLabels){ ctx.font="600 10px SF Mono, Menlo, monospace"; ctx.textAlign="center"; ctx.textBaseline="top"; ctx.shadowColor="rgba(0,0,0,0.8)"; ctx.shadowBlur=3; ctx.fillStyle="rgba(235,245,255,0.95)"; ctx.fillText(String(p.n.label).slice(0,22), xy.x, xy.y+r+3); ctx.shadowBlur=0; }
+      if(showLabels){
+        const text=String(p.n.label).slice(0,22); const w=ctx.measureText(text).width, h=12;
+        const lx=xy.x-w/2, ly=xy.y+r+3;
+        const overlaps=placedLabels.some(b=>lx<b.x+b.w && lx+w>b.x && ly<b.y+b.h && ly+h>b.y);
+        if(!overlaps){
+          ctx.textAlign="center"; ctx.textBaseline="top"; ctx.shadowColor="rgba(0,0,0,0.8)"; ctx.shadowBlur=3; ctx.fillStyle="rgba(235,245,255,0.95)"; ctx.fillText(text, xy.x, ly); ctx.shadowBlur=0;
+          placedLabels.push({x:lx,y:ly,w,h});
+        }
+      }
     });
     _mapState={screenPts};
     if(empty) empty.hidden = !!gj || pts.length>0;
     const stats=$("#graphStats"); if(stats) stats.textContent=`${t2("map.plotted",fmtNum(pts.length))} · ${Math.round(sc*100)}%${capped?" · (top 3000)":""}`;
     renderMapLayerLegend(t);
     renderMapScaleHint();
+    renderMapAddressTool();
   });
+}
+// A floating button that opens a modal to type any address and jump straight to
+// it in Google Maps (external tab) — precise geolocation via Google's own
+// geocoding, no API key needed here.
+function renderMapAddressTool(){ const wrap=$(".graph-wrap"); if(!wrap)return; let b=$("#mapAddrBtn");
+  if(!b){ b=el("button","btn ghost"); b.id="mapAddrBtn"; b.style.cssText="position:absolute;right:14px;bottom:16px;z-index:6;padding:5px 10px;font-size:11px";
+    b.addEventListener("click",openAddressMapsModal);
+    wrap.appendChild(b);
+  }
+  b.textContent="🔗 "+t2("map.addrTool");
+  b.hidden = canvasMode!=="map";
+}
+function openAddressMapsModal(){
+  openModal(t2("map.addrTool"),
+    `<div class="field">${esc(t2("map.addrLabel"))}<input id="addrInput" placeholder="Av. Paulista 1000, São Paulo, SP" /></div>`,
+    [{label:"Cancel",cls:"ghost",act:closeModal},
+     {label:t2("map.addrOpen"),cls:"primary",act:()=>{
+        const v=(($("#addrInput")||{}).value||"").trim();
+        if(!v){ toast(t2("map.addrEmpty"),"err"); return; }
+        window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(v)}`,"_blank","noopener,noreferrer");
+        closeModal();
+     }}]);
+  setTimeout(()=>$("#addrInput")&&$("#addrInput").focus(),40);
 }
 // A small "scroll to zoom · drag to pan" hint + zoom controls on the map.
 function renderMapScaleHint(){ const wrap=$(".graph-wrap"); if(!wrap)return; let h=$("#mapZoomCtl");
@@ -2811,7 +2968,16 @@ function renderMapLayerLegend(t){ const wrap=$(".graph-wrap"); if(!wrap)return; 
 (function(){ const cv=$("#mapCanvas"); if(!cv)return; let drag=null;
   cv.addEventListener("mousedown",e=>{ drag={x:e.clientX,y:e.clientY,ox:_mapView.ox,oy:_mapView.oy,moved:false}; });
   window.addEventListener("mousemove",e=>{ if(!drag)return; const dx=e.clientX-drag.x,dy=e.clientY-drag.y; if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true; _mapView.ox=drag.ox+dx; _mapView.oy=drag.oy+dy; if(canvasMode==="map") renderWorldMap(); });
-  window.addEventListener("mouseup",e=>{ if(drag&&!drag.moved&&canvasMode==="map"){ const rect=cv.getBoundingClientRect(); const x=e.clientX-rect.left,y=e.clientY-rect.top; let best=null,bd=1e9; (_mapState?_mapState.screenPts:[]).forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} }); if(best) selectNode(best.n.id); } drag=null; });
+  window.addEventListener("mouseup",e=>{ if(drag&&!drag.moved&&canvasMode==="map"){ const rect=cv.getBoundingClientRect(); const x=e.clientX-rect.left,y=e.clientY-rect.top; let best=null,bd=1e9; (_mapState?_mapState.screenPts:[]).forEach(p=>{ const d=Math.hypot(p.sx-x,p.sy-y); if(d<bd&&d<Math.max(10,p.r+6)){bd=d;best=p;} });
+    if(best){ selectNode(best.n.id); }
+    else if(_worldGeo){ // no entity marker hit — drill down into the country under the click
+      const W=rect.width||900, baseW=W, baseH=W/2;
+      const lon=(x-_mapView.ox)/_mapView.scale/baseW*360-180;
+      const lat=90-(y-_mapView.oy)/_mapView.scale/baseH*180;
+      const idx=countryAt(lon,lat);
+      if(idx!=null) zoomToCountry(idx);
+    }
+  } drag=null; });
   cv.addEventListener("wheel",e=>{ if(canvasMode!=="map")return; e.preventDefault(); const rect=cv.getBoundingClientRect(); const mx=e.clientX-rect.left,my=e.clientY-rect.top; const f=e.deltaY<0?1.15:1/1.15; const ns=Math.max(0.6,Math.min(14,_mapView.scale*f));
     _mapView.ox=mx-(mx-_mapView.ox)*(ns/_mapView.scale); _mapView.oy=my-(my-_mapView.oy)*(ns/_mapView.scale); _mapView.scale=ns; renderWorldMap(); },{passive:false});
 })();

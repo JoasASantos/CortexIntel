@@ -68,6 +68,21 @@ fn str_sim(a: &str, b: &str) -> f32 {
     1.0 - (dist as f32 / la.max(lb) as f32)
 }
 
+fn digits_only(s: &str) -> String {
+    s.chars().filter(|c| c.is_ascii_digit()).collect()
+}
+
+/// A phone/account-number-shaped label: mostly digits. Levenshtein similarity
+/// is a poor same-identity signal for these — two DIFFERENT phone numbers in
+/// the same format ("(11) 97777-1001" vs "(11) 97777-2002") are ~90%+
+/// "similar" as text while being completely unrelated, unlike a person's name
+/// where a couple of edited characters usually IS a typo of the same name.
+fn is_numeric_id_like(s: &str) -> bool {
+    let total = s.chars().filter(|c| !c.is_whitespace()).count();
+    let digits = s.chars().filter(|c| c.is_ascii_digit()).count();
+    total > 0 && (digits as f32 / total as f32) > 0.5
+}
+
 /// Neighbors of each entity id (shared-infra detection).
 fn neighbor_map(g: &KnowledgeGraph) -> HashMap<String, std::collections::HashSet<String>> {
     let mut m: HashMap<String, std::collections::HashSet<String>> = HashMap::new();
@@ -83,9 +98,12 @@ fn score_pair(a: &Entity, b: &Entity, nbrs: &HashMap<String, std::collections::H
     let mut conf = 0.0f32;
     let mut signals = Vec::new();
 
-    // 1) String similarity of the label (name/handle).
+    // 1) String similarity of the label (name/handle) — skipped for
+    // phone/account-number-shaped labels that merely format-match (see
+    // is_numeric_id_like); those need an exact digit match, not "close enough".
     let sim = str_sim(&a.label, &b.label);
-    if sim >= 0.86 {
+    let numeric_mismatch = is_numeric_id_like(&a.label) && is_numeric_id_like(&b.label) && digits_only(&a.label) != digits_only(&b.label);
+    if sim >= 0.86 && !numeric_mismatch {
         conf = conf.max(sim);
         signals.push(format!("label similarity {:.0}%", sim * 100.0));
     }
@@ -110,12 +128,32 @@ fn score_pair(a: &Entity, b: &Entity, nbrs: &HashMap<String, std::collections::H
         }
     }
 
-    // 4) Matching normalized identifiers in attributes (phone/doc hashes).
-    for key in ["phone", "phone_hash", "document_reference", "device_identifier_hash", "wallet_address"] {
+    // 4) Matching normalized identifiers in attributes (phone/doc hashes/
+    // address) — e.g. a mule ring: different name and document, same
+    // contact channel or drop address.
+    for key in ["phone", "phone_hash", "address", "document_reference", "device_identifier_hash", "wallet_address"] {
         if let (Some(va), Some(vb)) = (a.attributes.get(key), b.attributes.get(key)) {
             if !va.is_empty() && norm(va) == norm(vb) {
                 conf = conf.max(0.85);
                 signals.push(format!("matching {key}"));
+            }
+        }
+    }
+
+    // A differing national/company id (CPF/CNPJ/SSN/passport…) is a hard
+    // veto against auto-merge — a shared full name is not a shared person.
+    // Checked last (not a short-circuit) so a genuine name collision still
+    // surfaces as a suggestion instead of vanishing silently: an analyst
+    // deserves to see "these looked identical but the document rules them
+    // distinct", not nothing.
+    if let (Some(da), Some(db)) = (a.attributes.get("document_id"), b.attributes.get("document_id")) {
+        let (da, db) = (norm(da), norm(db));
+        if !da.is_empty() && !db.is_empty() && da != db {
+            if conf > 0.0 {
+                signals.push(format!("different document_id ({da} vs {db}) — kept as distinct identities"));
+                conf = conf.min(AUTO - 0.01);
+            } else {
+                return (0.0, Vec::new());
             }
         }
     }

@@ -10,11 +10,13 @@
 
 mod claude;
 mod codex;
+mod gemini;
 mod generic;
 mod mock;
 
 pub use claude::ClaudeProvider;
 pub use codex::CodexProvider;
+pub use gemini::GeminiProvider;
 pub use generic::GenericProvider;
 pub use mock::MockProvider;
 
@@ -127,6 +129,7 @@ struct Attempt {
 fn model_complex() -> String { std::env::var("CORTEX_MODEL_COMPLEX").unwrap_or_else(|_| "claude-opus-4-8".into()) }
 fn model_standard() -> String { std::env::var("CORTEX_MODEL_STANDARD").unwrap_or_else(|_| "claude-sonnet-5".into()) }
 fn model_simple() -> String { std::env::var("CORTEX_MODEL_SIMPLE").unwrap_or_else(|_| "gpt-5.5".into()) }
+fn model_gemini() -> String { std::env::var("CORTEX_MODEL_GEMINI").unwrap_or_else(|_| "gemini-2.5-pro".into()) }
 
 /// Ordered provider/model attempts for a complexity tier (first is preferred,
 /// rest are fallbacks). Critical/high-density → Claude Opus then Sonnet; simple
@@ -137,14 +140,17 @@ fn route_plan(c: Complexity) -> Vec<Attempt> {
             Attempt { provider: "claude", model: model_complex() },
             Attempt { provider: "claude", model: model_standard() },
             Attempt { provider: "codex", model: model_simple() },
+            Attempt { provider: "gemini", model: model_gemini() },
         ],
         Complexity::Standard => vec![
             Attempt { provider: "claude", model: model_standard() },
             Attempt { provider: "codex", model: model_simple() },
+            Attempt { provider: "gemini", model: model_gemini() },
         ],
         Complexity::Simple => vec![
             Attempt { provider: "codex", model: model_simple() },
             Attempt { provider: "claude", model: model_standard() },
+            Attempt { provider: "gemini", model: model_gemini() },
         ],
     }
 }
@@ -179,6 +185,7 @@ pub struct LlmRouter {
     choice: ProviderChoice,
     claude: ClaudeProvider,
     codex: CodexProvider,
+    gemini: GeminiProvider,
     generic: GenericProvider,
     mock: MockProvider,
     verbose: bool,
@@ -195,6 +202,7 @@ impl LlmRouter {
             choice,
             claude: ClaudeProvider::new(claude_model),
             codex: CodexProvider::new(codex_model),
+            gemini: GeminiProvider::new(None),
             generic: GenericProvider::new(),
             mock: MockProvider::default(),
             verbose,
@@ -207,6 +215,7 @@ impl LlmRouter {
             choice: ProviderChoice::Mock,
             claude: ClaudeProvider::new(None),
             codex: CodexProvider::new(None),
+            gemini: GeminiProvider::new(None),
             generic: GenericProvider::new(),
             mock: MockProvider::default(),
             verbose,
@@ -239,6 +248,11 @@ impl LlmRouter {
                 if r.model.is_none() { r.model = Some(model_simple()); }
                 self.codex.complete(&r)
             }
+            ProviderChoice::Gemini => {
+                let mut r = req.clone();
+                if r.model.is_none() { r.model = Some(model_gemini()); }
+                self.gemini.complete(&r)
+            }
             ProviderChoice::Custom => with_retry(|| self.generic.complete(req)),
             ProviderChoice::Auto => self.route_auto(req),
         }
@@ -262,6 +276,7 @@ impl LlmRouter {
             }
             let res = with_retry(|| match attempt.provider {
                 "claude" => self.claude.complete(&r),
+                "gemini" => self.gemini.complete(&r),
                 "custom" => self.generic.complete(&r),
                 _ => self.codex.complete(&r),
             });
@@ -283,6 +298,7 @@ impl LlmRouter {
         vec![
             ("claude".into(), self.claude.health()),
             ("codex".into(), self.codex.health()),
+            ("gemini".into(), self.gemini.health()),
             ("custom".into(), self.generic.health()),
             ("mock".into(), self.mock.health()),
         ]

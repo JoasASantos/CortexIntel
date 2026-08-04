@@ -358,7 +358,11 @@
                   <p class="muted" style="margin-top:10px">Auto routes by task complexity: critical/high-density to Claude (Opus 4.8 → Sonnet), simpler to Codex. Override models with CORTEX_MODEL_COMPLEX / _STANDARD / _SIMPLE.</p></div>
               </div>
               <div class="stab" id="stab-datasources" hidden>
-                <div class="card"><div class="card-head"><h3>Connect a source</h3></div><div class="cards three" id="connectorCards"></div></div>
+                <div class="card"><div class="card-head"><h3>Connect a source</h3></div>
+                  <div id="disciplineSources" style="margin-bottom:16px"></div>
+                  <div class="card-head" style="margin:0 0 8px"><h3 data-i18n="src.generic">Generic connectors</h3></div>
+                  <div class="cards three" id="connectorCards"></div>
+                </div>
                 <div class="card"><div class="card-head"><h3>LLM backends</h3><button class="btn ghost" id="btnDoctor">Recheck</button></div>
                   <div class="list" id="backendList"><div class="empty">—</div></div></div>
                 <div class="card"><div class="card-head"><h3>Saved connectors (this project)</h3></div><div class="list" id="savedConnectors"><div class="empty">—</div></div></div>

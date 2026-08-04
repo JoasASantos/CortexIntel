@@ -560,6 +560,7 @@ pub mod api {
         match s {
             "claude" => ProviderChoice::Claude,
             "codex" => ProviderChoice::Codex,
+            "gemini" => ProviderChoice::Gemini,
             "mock" => ProviderChoice::Mock,
             _ => ProviderChoice::Auto,
         }

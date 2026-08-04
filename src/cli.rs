@@ -346,9 +346,10 @@ fn menu() -> Result<()> {
 
     // 3) Provider.
     let providers = [
-        ("Auto (Claude → Codex fallback)", ProviderChoice::Auto),
+        ("Auto (Claude → Codex → Gemini fallback)", ProviderChoice::Auto),
         ("Claude (subscription)", ProviderChoice::Claude),
         ("ChatGPT Codex", ProviderChoice::Codex),
+        ("Google Gemini", ProviderChoice::Gemini),
         ("Offline mock (no LLM)", ProviderChoice::Mock),
     ];
     let p_idx = Select::with_theme(&theme)
