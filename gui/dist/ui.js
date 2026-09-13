@@ -188,7 +188,8 @@ function npVisible(){ const t=activeTab(); if(!t) return []; const q=NP.q.toLowe
   if(NP.kinds) rows=rows.filter(n=>NP.kinds.has(n.kind));
   if(q) rows=rows.filter(n=>(n.label+" "+n.kind+" "+(n.tags||[]).join(" ")).toLowerCase().includes(q));
   return rows; }
-function renderNodesPanel(){ const list=$("#npList"); if(!list) return; const t=activeTab();
+function npRowH(){ const v=parseInt(getComputedStyle(document.documentElement).getPropertyValue("--np-row")); return v>0?v:40; }
+function renderNodesPanel(){ const list=$("#npList"); if(!list) return; const t=activeTab(); NP.rowH=npRowH();
   NP.rows=npVisible(); const total=t?t.graph.nodes.length:0; $("#npCount").textContent=NP.rows.length===total?String(total):`${NP.rows.length}/${total}`;
   $("#npSpacer").style.height=(NP.rows.length*NP.rowH)+"px";
   if(!NP.rows.length){ let e=list.querySelector(".np-empty"); if(!e){ e=el("div","np-empty"); list.appendChild(e); } e.textContent=total?"No nodes match your search":"No entities yet — add one or run an analysis"; } else { const e=list.querySelector(".np-empty"); if(e) e.remove(); }
@@ -425,6 +426,26 @@ async function renderModels(){ const tb=$("#modelsTable tbody"); if(!tb) return;
 $("#btnModelsRefresh").addEventListener("click", renderModels);
 $("#btnCacheClear").addEventListener("click", async()=>{ try{ const r=await api("/api/cache/clear",{method:"POST",body:{}}); toast(`Cache limpo (${r.cleared})`,"ok"); renderModels(); }catch(e){ toast(e.message,"err"); } });
 const _openSettingsTab=window.openSettingsTab; window.openSettingsTab=function(tab){ _openSettingsTab(tab); if(tab==="providers") renderModels(); };
+
+// ---------- responsive behaviour ----------
+const RESP={ narrow:()=>window.innerWidth<=1180, phone:()=>window.innerWidth<=640, userPanel:null };
+function applyResponsive(){ const narrow=RESP.narrow();
+  // On narrow viewports the side panels overlay the canvas: start with the entities panel
+  // closed (unless the user explicitly opened it) so the graph is visible first.
+  if(currentView==="graph"){ if(narrow && RESP.userPanel!==true && !$("#nodesPanel").hidden) toggleNodesPanel(false); if(!narrow && RESP.userPanel!==false && $("#nodesPanel").hidden) toggleNodesPanel(true); }
+  if(cy) cy.resize(); renderNpRows(); }
+const _toggleNodesPanel=toggleNodesPanel;
+$("#btnNodesPanel").addEventListener("click", ()=>{ RESP.userPanel=!$("#nodesPanel").hidden; });
+let _rzT; window.addEventListener("resize", ()=>{ clearTimeout(_rzT); _rzT=setTimeout(applyResponsive,120); });
+window.addEventListener("orientationchange", ()=>setTimeout(applyResponsive,300));
+// selecting a node on a narrow screen: show details, hide the entities overlay
+const _selectNode=window.selectNode; window.selectNode=function(id){ _selectNode(id); if(RESP.narrow() && !$("#nodesPanel").hidden && RESP.userPanel!==true) toggleNodesPanel(false); };
+// closing details on a phone returns to the canvas cleanly
+$("#ctxClose").addEventListener("click", ()=>{ if(cy) setTimeout(()=>cy.resize(),50); });
+const _showView2=window.showView; window.showView=function(name){ _showView2(name); if(name==="graph") setTimeout(applyResponsive,80); };
+// tap on the canvas closes overlay panels on phones
+$("#gcanvas").addEventListener("pointerdown", e=>{ if(!RESP.phone()) return; if(e.target.closest(".ftb,.legend,.minimap-wrap,.graph-zoom,.ask-dock,.popover,.graph-filters")) return; if(!$("#nodesPanel").hidden) toggleNodesPanel(false); });
+applyResponsive();
 
 // ---------- public hooks ----------
 window.UI={ log, consoleOpen, onGraphRendered, onSelectionChange, selectEdge, edgeMenu, bgMenu, renderNeighbors, renderNodesPanel, quickAdd, afterAdd, removeNodes, mergeNodes, selectedIds, updateCrumbs, detectSelectors, exportPng };
