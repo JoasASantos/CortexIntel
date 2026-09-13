@@ -87,3 +87,18 @@ The AI **supports** decisions — it never decides guilt/liability or takes irre
 ## License & use
 
 Built for authorized intelligence, investigative and decision-support work. Handle personal data under the applicable law (LGPD / GDPR / local). This is decision-support, never a definitive ruling.
+
+
+## Cognitive layer (v0.0.2)
+
+Every LLM call goes through a scored router plus memory/governance layers:
+
+* **Model catalog & base score** (`src/llm/models.rs`) — Claude Opus 5 / Sonnet 5, Codex GPT-6 Astras / GPT-5.6 Sol · Luna · Terra / GPT-5.5, Gemini 2.5, Kimi, Qwen, DeepSeek (OpenAI-compatible APIs from `.env`), hermes / opencode / any CLI. Each model scores reasoning × speed × cost; the task tier (simple / standard / complex), JSON need, payload size and budget pressure pick the winner and the cross-vendor fallback order. Inspect in *Ajustes → Provedores & Roteamento* or `GET /api/models`.
+* **Token / cost governor** (`src/llm/governor.rs`) — per-job budgets scaled to the workload, pressure feedback into routing, hard veto.
+* **Prompt + semantic cache** (`src/llm/cache.rs`) — exact hash cache and near-duplicate (embeddings or lexical) cache, TTL-bound.
+* **Prep / distill** (`src/llm/prep.rs`) — observation compressor (dedupe, truncate, head/tail windowing), language directive (pt-BR by default), reply distillation so only the essential JSON reaches the engine.
+* **Memory & retrieval** (`src/memory.rs`) — project facts, grep + BM25 + vector hybrid retrieval, GraphRAG neighbourhood packing, context compression. `GET/POST /api/memory/*`.
+* **Orchestrator** (`src/orchestrator.rs`) — dynamic tool registry (`GET /api/tools`), planner → worker → answer → critic loop for every question.
+* **Event bus** (`src/bus.rs`) — every step is logged per job (`GET /api/jobs/status` returns `log[]`, shown live in the GUI console) and globally (`GET /api/events`).
+
+See `.env.example` for all knobs.

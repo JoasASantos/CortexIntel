@@ -7,6 +7,7 @@
 // then to the key itself, so partial coverage never breaks the UI.
 const I18N = {
   en: {
+    "np.entities":"Entities","np.add":"Add","np.selected":"selected","np.nodes":"nodes","np.pickType":"Entity type","np.value":"Label / value","np.pasteHint":"Tip: paste emails, IPs, domains or URLs on the canvas (⌘V) to add them.","ctx.properties":"Properties","ctx.relations":"Relationships","ctx.tags":"Tags","ctx.sources":"Sources","ctx.transforms":"Transforms","ctx.neighbors.n":"{0} neighbor(s)","console.title":"Console","gf.title":"Filters","gf.types":"Entity types","gf.edges":"Relationship types","col.entity":"Entity","col.type":"Type","col.risk":"Risk","col.conf":"Confidence","col.quality":"Quality","col.conns":"Conns","col.sources":"Sources","col.status":"Status","col.tags":"Tags","bulk.graph":"Isolate in graph","bulk.intel":"Generate intelligence","bulk.tag":"Bulk tag","bulk.review":"Mark reviewed","bulk.clear":"Clear","log.running":"Running","log.done":"Completed","log.failed":"Failed","log.polling":"still processing…","sb.console":"Console","sb.shortcuts":"Shortcuts","view.dashboard":"Command Center","crumb.project":"Switch project",
     "nav.dashboard":"Dashboard","nav.graph":"Graph","nav.intelligence":"Intelligence","nav.entities":"Entities",
     "nav.agents":"Agents","nav.priority":"Priority","nav.sources":"Sources","view.priority.sub":"Everything ranked by Intelligence Score — what to look at first, and why.","prio.none":"Run an analysis to rank entities by score.","prio.allkinds":"All kinds","prio.count":"{0} entities ranked","view.agents.sub":"Ready-made agents that work over your data and reflect results in the graph.","agents.recommended":"Recommended for this data","agents.none":"Open a project and run an analysis to see recommended agents.","agents.run":"Run","agents.runauto":"Run auto agents","agents.form.run":"Run agent","agents.all":"All agents","agents.new":"New agent","agents.edit":"Edit","agents.delete":"Delete","agents.save":"Save agent","agents.saved":"Agent saved","agents.deleted":"Agent deleted","transforms.configure":"configure","transforms.endpointUrl":"Provider endpoint URL","transforms.webhookUrl":"Webhook URL","transforms.run":"Run","transforms.urlRequired":"URL is required",
     "risk.adjust":"Adjust risk","risk.adjust.title":"Adjust risk","risk.new":"New risk","risk.just":"Justification (why)","risk.just.ph":"Why are you overriding the score? (required, recorded)","risk.just.req":"A justification is required","risk.apply":"Apply","risk.manual":"manual","risk.done":"Risk adjusted","iscore.label":"INTELLIGENCE SCORE","route.intel":"Open Intelligence","route.map":"Open Map","route.timeline":"Open Timeline","route.entities":"Open Entities","route.graph":"Show in graph","onb.title":"Welcome — set up your workspace","onb.sub":"First access: this creates your admin workspace. Name your tenant so cases stay organized by company / unit / team.","onb.org":"Company / business unit / team","onb.org.ph":"e.g. Acme Corp · Fraud Unit · Blue Team","onb.org.req":"Enter an organization name","onb.type":"Type","onb.type.company":"Company","onb.type.bu":"Business unit","onb.type.team":"Team","onb.region":"Region (for KYC / disclaimers)","onb.legal":"Person/identity data is regulated (LGPD/GDPR). This is decision-support, never a definitive ruling.","onb.continue":"Continue","onb.done":"Workspace ready",
@@ -39,10 +40,11 @@ const I18N = {
     "plan.title":"Planning timeline","plan.none":"Run an analysis to sequence the recommended actions.","plan.total":"~{0}h total plan","plan.window":"window: {0}–{1}h","plan.clear":"clear window","plan.hours":"h","cmt.title":"Comments","cmt.placeholder":"Add a comment…","cmt.post":"Post","cmt.empty":"No comments yet.","banner.disclaimer":"Decision-support — not a definitive ruling. Handle under applicable data-protection law.","banner.jurisdiction":"Jurisdiction","banner.vertical":"Vertical","banner.sev":"Severity", "ctx.expand":"Expand (AI)","ctx.edit":"Edit","ctx.connect":"Connect","ctx.isolate":"Isolate","ctx.neighbors":"Neighbors","ctx.alert":"Create alert","empty.title":"No graph yet","empty.sub":"Run an analysis, connect a source, or add entities manually (people, media, IPs…) to start building the graph.","hyp.supporting":"Supporting evidence","hyp.missing":"Missing evidence","hyp.next":"Next","hyp.lead":"lead","hyp.conf":"conf","hyp.none":"No competing hypotheses — add data or generate intelligence.","hyp.take":"Take this action","hyp.rankNone":"Run an analysis to rank next actions.","conf.low":"low","conf.medium":"medium","conf.high":"high","nba.uncertainty":"uncertainty","nba.effort":"effort","nba.priority":"priority","nba.impact":"impact","nba.confidence":"confidence","nba.riskWrong":"risk-if-wrong","nba.route":"route","nba.why":"Why","nba.residual":"Residual uncertainty ~{0} — this is decision support, not certainty.","nba.readyYes":"Data supports acting now.","nba.readyNo":"Consider resolving gaps first (see Data Quality).",
   },
   pt: {
+    "np.entities":"Entidades","np.add":"Adicionar","np.selected":"selecionadas","np.nodes":"nós","np.pickType":"Tipo de entidade","np.value":"Rótulo / valor","np.pasteHint":"Dica: cole e-mails, IPs, domínios ou URLs no canvas (⌘V) para adicioná-los.","ctx.properties":"Propriedades","ctx.relations":"Relações","ctx.tags":"Tags","ctx.sources":"Fontes","ctx.transforms":"Transforms","ctx.neighbors.n":"{0} vizinho(s)","console.title":"Console","gf.title":"Filtros","gf.types":"Tipos de entidade","gf.edges":"Tipos de relação","col.entity":"Entidade","col.type":"Tipo","col.risk":"Risco","col.conf":"Confiança","col.quality":"Qualidade","col.conns":"Conexões","col.sources":"Fontes","col.status":"Status","col.tags":"Tags","bulk.graph":"Isolar no grafo","bulk.intel":"Gerar inteligência","bulk.tag":"Tag em lote","bulk.review":"Marcar revisado","bulk.clear":"Limpar","log.running":"Executando","log.done":"Concluído","log.failed":"Falhou","log.polling":"ainda processando…","sb.console":"Console","sb.shortcuts":"Atalhos","view.dashboard":"Centro de Comando","crumb.project":"Trocar projeto",
     "nav.dashboard":"Painel","nav.graph":"Grafo","nav.intelligence":"Inteligência","nav.entities":"Entidades",
     "nav.agents":"Agentes","nav.priority":"Priorização","nav.sources":"Fontes","view.priority.sub":"Tudo ranqueado por Score de Inteligência — o que olhar primeiro, e por quê.","prio.none":"Execute uma análise para ranquear as entidades por score.","prio.allkinds":"Todos os tipos","prio.count":"{0} entidades ranqueadas","view.agents.sub":"Agentes prontos que trabalham sobre seus dados e refletem o resultado no grafo.","agents.recommended":"Recomendados para estes dados","agents.none":"Abra um projeto e rode uma análise para ver os agentes recomendados.","agents.run":"Rodar","agents.runauto":"Rodar agentes automáticos","agents.form.run":"Rodar agente","agents.all":"Todos os agentes","agents.new":"Novo agente","agents.edit":"Editar","agents.delete":"Excluir","agents.save":"Salvar agente","agents.saved":"Agente salvo","agents.deleted":"Agente excluído","transforms.configure":"configurar","transforms.endpointUrl":"URL do provedor","transforms.webhookUrl":"URL do webhook","transforms.run":"Rodar","transforms.urlRequired":"URL é obrigatória",
-    "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado","iscore.label":"SCORE DE INTELIGÊNCIA","route.intel":"Abrir Inteligência","route.map":"Abrir Mapa","route.timeline":"Abrir Linha do tempo","route.entities":"Abrir Entidades","route.graph":"Ver no grafo","onb.title":"Bem-vindo — configure seu workspace","onb.sub":"Primeiro acesso: isto cria seu workspace admin. Nomeie o tenant para organizar os casos por empresa / unidade / time.","onb.org":"Empresa / unidade de negócio / time","onb.org.ph":"ex.: Acme Corp · Unidade Fraude · Blue Team","onb.org.req":"Informe o nome da organização","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidade de negócio","onb.type.team":"Time","onb.region":"Região (para KYC / avisos legais)","onb.legal":"Dados de pessoa/identidade são regulados (LGPD/GDPR). Isto é apoio à decisão, nunca um veredito definitivo.","onb.continue":"Continuar","onb.done":"Workspace pronto",
-    "nav.timeline":"Linha do tempo","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
+    "risk.adjust":"Ajustar risco","risk.adjust.title":"Ajustar risco","risk.new":"Novo risco","risk.just":"Justificativa (o porquê)","risk.just.ph":"Por que você está sobrepondo o score? (obrigatório, registrado)","risk.just.req":"A justificativa é obrigatória","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Risco ajustado","iscore.label":"SCORE DE INTELIGÊNCIA","route.intel":"Abrir Inteligência","route.map":"Abrir Mapa","route.timeline":"Abrir Timeline","route.entities":"Abrir Entidades","route.graph":"Ver no grafo","onb.title":"Bem-vindo — configure seu workspace","onb.sub":"Primeiro acesso: isto cria seu workspace admin. Nomeie o tenant para organizar os casos por empresa / unidade / time.","onb.org":"Empresa / unidade de negócio / time","onb.org.ph":"ex.: Acme Corp · Unidade Fraude · Blue Team","onb.org.req":"Informe o nome da organização","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidade de negócio","onb.type.team":"Time","onb.region":"Região (para KYC / avisos legais)","onb.legal":"Dados de pessoa/identidade são regulados (LGPD/GDPR). Isto é apoio à decisão, nunca um veredito definitivo.","onb.continue":"Continuar","onb.done":"Workspace pronto",
+    "nav.timeline":"Timeline","nav.alerts":"Alertas","nav.reports":"Relatórios","nav.settings":"Ajustes",
     "set.account":"Conta","set.providers":"Provedores & Roteamento","set.datasources":"Fontes de Dados","set.transforms":"Loja de Transforms","src.byDiscipline":"FONTES POR DISCIPLINA","src.generic":"CONECTORES GENÉRICOS","src.noparams":"Sem parâmetros — clique para puxar.","src.testrun":"Testar e puxar","src.pulling":"Puxando da fonte…","src.pulled":"Fonte puxada e processada","src.opendemo":"Abra um projeto primeiro (teste só no demo).","watch.manage":"Gerenciar watchlist","watch.title":"Watchlist — regras permanentes","watch.none":"Nenhuma regra ainda. Adicione uma — ela alerta a cada re-execução.","watch.name":"Nome da regra","watch.name.req":"Informe um nome de regra","watch.kind":"Tipo de entidade","watch.anykind":"qualquer tipo","watch.minrisk":"Risco mínimo","watch.contains":"Rótulo contém","watch.add":"Adicionar regra","watch.saved":"Watchlist salva",
     "set.keys":"Chaves de API","set.plugins":"Plugins de Classificação","set.project":"Projeto","set.users":"Usuários & Acesso","set.security":"Segurança","set.language":"Idioma",
     "btn.run":"Executar","btn.askai":"Perguntar à IA","btn.newProject":"Novo projeto","btn.fit":"Ajustar","btn.reset":"Redefinir","btn.path":"Caminho","btn.addEntity":"Entidade",
@@ -52,12 +54,12 @@ const I18N = {
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Médio","sev.low":"Baixo","sev.none":"Sem severidade",
     "sit.domain":"Vertical","sit.owner":"Responsável","sit.jurisdiction":"Jurisdição","sit.created":"Criado","sit.updated":"Atualizado","sit.entities":"entidades","sit.relationships":"relações","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Entrar","auth.register":"Criar conta",
-    "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Linha do tempo","gmode.full":"Completo","gmode.network":"Rede","gmode.network.hint":"cor = comunidade · tamanho = broker (intermediação) · o maior nó é o ponto de articulação da rede","gmode.score":"Score","gmode.score.hint":"cor + tamanho = Score de Inteligência (0–100); vermelho = agir primeiro",
+    "gmode.overview":"Visão geral","gmode.risk":"Risco","gmode.neighborhood":"Vizinhança","gmode.timeline":"Timeline","gmode.full":"Completo","gmode.network":"Rede","gmode.network.hint":"cor = comunidade · tamanho = broker (intermediação) · o maior nó é o ponto de articulação da rede","gmode.score":"Score","gmode.score.hint":"cor + tamanho = Score de Inteligência (0–100); vermelho = agir primeiro",
     "gtool.entity":"Entidade","gtool.fit":"Ajustar","gtool.path":"Caminho","gtool.connect":"Conectar","gtool.reset":"Redefinir","gtool.ask":"Perguntar","edge.label.q":"Rótulo da conexão (opcional)","edge.pickSource":"Conectar: clique no nó de origem (Esc para cancelar)","edge.pickTarget":"Conectar: clique no nó de destino (Esc para cancelar)","edge.editTitle":"Editar conexão","edge.delete":"Excluir conexão",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Suspeito/Malicioso","gf.sensitive":"Sensível",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valide, resolva, enriqueça e priorize as entidades que alimentam sua inteligência.",
     "view.intelligence":"Inteligência","view.intelligence.sub":"Produto pronto para decisão, sintetizado da investigação atual.",
-    "view.timeline":"Linha do tempo","view.timeline.sub":"Eventos de auditoria e descoberta.",
+    "view.timeline":"Timeline","view.timeline.sub":"Eventos de auditoria e descoberta.",
     "view.alerts":"Alertas","view.alerts.sub":"Sinalizados para revisão humana.",
     "view.reports":"Relatórios","view.reports.sub":"Resumo investigativo, governança e exportação em PDF.",
     "view.dash.sub":"Estado da investigação, confiança dos dados, fatores de risco e a próxima melhor ação.",
@@ -68,13 +70,14 @@ const I18N = {
     "ready.ready":"Pronto para decisão","ready.needs-review":"Precisa de revisão","ready.insufficient":"Dados insuficientes","ready.conflicting":"Evidências conflitantes",
     "rd.label":"Prontidão para decisão","btn.genIntel":"Gerar inteligência","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confiança · risco · esforço",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"Nenhuma entidade geolocalizada nesta visão. Entidades com latitude/longitude (ou GPS/EXIF) aparecem aqui; as demais ficam no grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trajetórias","map.zoomedTo":"Zoom em","map.backToWorld":"clique em ⊡ para ver o mundo todo","maps.open":"Abrir no Google Maps","map.addrTool":"Endereço → Maps","map.addrLabel":"Endereço","map.addrOpen":"Abrir no Google Maps","map.addrEmpty":"Digite um endereço",
-    "plan.title":"Linha do tempo de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h","cmt.title":"Comentários","cmt.placeholder":"Adicionar um comentário…","cmt.post":"Enviar","cmt.empty":"Nenhum comentário ainda.","banner.disclaimer":"Apoio à decisão — não é um veredito definitivo. Trate conforme a lei de proteção de dados aplicável.","banner.jurisdiction":"Jurisdição","banner.vertical":"Vertical","banner.sev":"Severidade", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Isolar","ctx.neighbors":"Vizinhos","ctx.alert":"Criar alerta","empty.title":"Nenhum grafo ainda","empty.sub":"Execute uma análise, conecte uma fonte ou adicione entidades manualmente (pessoas, mídia, IPs…) para começar a construir o grafo.","hyp.supporting":"Evidências de apoio","hyp.missing":"Evidências faltantes","hyp.next":"Próximo","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sem hipóteses concorrentes — adicione dados ou gere inteligência.","hyp.take":"Executar esta ação","hyp.rankNone":"Execute uma análise para ranquear as próximas ações.","conf.low":"baixa","conf.medium":"média","conf.high":"alta","nba.uncertainty":"incerteza","nba.effort":"esforço","nba.priority":"prioridade","nba.impact":"impacto","nba.confidence":"confiança","nba.riskWrong":"risco-se-errado","nba.route":"rota","nba.why":"Por quê","nba.residual":"Incerteza residual ~{0} — isto é apoio à decisão, não certeza.","nba.readyYes":"Os dados sustentam agir agora.","nba.readyNo":"Considere resolver as lacunas primeiro (ver Qualidade dos dados).",
+    "plan.title":"Timeline de planejamento","plan.none":"Execute uma análise para sequenciar as ações recomendadas.","plan.total":"~{0}h de plano total","plan.window":"janela: {0}–{1}h","plan.clear":"limpar janela","plan.hours":"h","cmt.title":"Comentários","cmt.placeholder":"Adicionar um comentário…","cmt.post":"Enviar","cmt.empty":"Nenhum comentário ainda.","banner.disclaimer":"Apoio à decisão — não é um veredito definitivo. Trate conforme a lei de proteção de dados aplicável.","banner.jurisdiction":"Jurisdição","banner.vertical":"Vertical","banner.sev":"Severidade", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Isolar","ctx.neighbors":"Vizinhos","ctx.alert":"Criar alerta","empty.title":"Nenhum grafo ainda","empty.sub":"Execute uma análise, conecte uma fonte ou adicione entidades manualmente (pessoas, mídia, IPs…) para começar a construir o grafo.","hyp.supporting":"Evidências de apoio","hyp.missing":"Evidências faltantes","hyp.next":"Próximo","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sem hipóteses concorrentes — adicione dados ou gere inteligência.","hyp.take":"Executar esta ação","hyp.rankNone":"Execute uma análise para ranquear as próximas ações.","conf.low":"baixa","conf.medium":"média","conf.high":"alta","nba.uncertainty":"incerteza","nba.effort":"esforço","nba.priority":"prioridade","nba.impact":"impacto","nba.confidence":"confiança","nba.riskWrong":"risco-se-errado","nba.route":"rota","nba.why":"Por quê","nba.residual":"Incerteza residual ~{0} — isto é apoio à decisão, não certeza.","nba.readyYes":"Os dados sustentam agir agora.","nba.readyNo":"Considere resolver as lacunas primeiro (ver Qualidade dos dados).",
   },
   es: {
+    "np.entities":"Entidades","np.add":"Añadir","np.selected":"seleccionadas","np.nodes":"nodos","np.pickType":"Tipo de entidad","np.value":"Etiqueta / valor","np.pasteHint":"Consejo: pega correos, IPs, dominios o URLs en el lienzo (⌘V) para añadirlos.","ctx.properties":"Propiedades","ctx.relations":"Relaciones","ctx.tags":"Etiquetas","ctx.sources":"Fuentes","ctx.transforms":"Transforms","ctx.neighbors.n":"{0} vecino(s)","console.title":"Consola","gf.title":"Filtros","gf.types":"Tipos de entidad","gf.edges":"Tipos de relación","col.entity":"Entidad","col.type":"Tipo","col.risk":"Riesgo","col.conf":"Confianza","col.quality":"Calidad","col.conns":"Conexiones","col.sources":"Fuentes","col.status":"Estado","col.tags":"Etiquetas","bulk.graph":"Aislar en el grafo","bulk.intel":"Generar inteligencia","bulk.tag":"Etiqueta masiva","bulk.review":"Marcar revisado","bulk.clear":"Limpiar","log.running":"Ejecutando","log.done":"Completado","log.failed":"Falló","log.polling":"aún procesando…","sb.console":"Consola","sb.shortcuts":"Atajos","view.dashboard":"Centro de Mando","crumb.project":"Cambiar proyecto",
     "nav.dashboard":"Panel","nav.graph":"Grafo","nav.intelligence":"Inteligencia","nav.entities":"Entidades",
     "nav.agents":"Agentes","nav.priority":"Priorización","nav.sources":"Fuentes","view.priority.sub":"Todo clasificado por Score de Inteligencia — qué mirar primero, y por qué.","prio.none":"Ejecuta un análisis para clasificar por score.","prio.allkinds":"Todos los tipos","prio.count":"{0} entidades clasificadas","view.agents.sub":"Agentes listos que trabajan sobre tus datos y reflejan el resultado en el grafo.","agents.recommended":"Recomendados para estos datos","agents.none":"Abre un proyecto y ejecuta un análisis para ver los agentes recomendados.","agents.run":"Ejecutar","agents.runauto":"Ejecutar agentes automáticos","agents.form.run":"Ejecutar agente","agents.all":"Todos los agentes","agents.new":"Nuevo agente","agents.edit":"Editar","agents.delete":"Eliminar","agents.save":"Guardar agente","agents.saved":"Agente guardado","agents.deleted":"Agente eliminado","transforms.configure":"configurar","transforms.endpointUrl":"URL del proveedor","transforms.webhookUrl":"URL del webhook","transforms.run":"Ejecutar","transforms.urlRequired":"La URL es obligatoria",
-    "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado","iscore.label":"SCORE DE INTELIGENCIA","route.intel":"Abrir Inteligencia","route.map":"Abrir Mapa","route.timeline":"Abrir Línea de tiempo","route.entities":"Abrir Entidades","route.graph":"Ver en el grafo","onb.title":"Bienvenido — configura tu espacio","onb.sub":"Primer acceso: esto crea tu espacio admin. Nombra el tenant para organizar los casos por empresa / unidad / equipo.","onb.org":"Empresa / unidad de negocio / equipo","onb.org.ph":"ej.: Acme Corp · Unidad Fraude · Blue Team","onb.org.req":"Ingresa el nombre de la organización","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidad de negocio","onb.type.team":"Equipo","onb.region":"Región (para KYC / avisos)","onb.legal":"Los datos de persona/identidad están regulados (LGPD/GDPR). Esto es apoyo a la decisión, nunca un veredicto definitivo.","onb.continue":"Continuar","onb.done":"Espacio listo",
-    "nav.timeline":"Línea de tiempo","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
+    "risk.adjust":"Ajustar riesgo","risk.adjust.title":"Ajustar riesgo","risk.new":"Nuevo riesgo","risk.just":"Justificación (por qué)","risk.just.ph":"¿Por qué anulas el score? (obligatorio, registrado)","risk.just.req":"La justificación es obligatoria","risk.apply":"Aplicar","risk.manual":"manual","risk.done":"Riesgo ajustado","iscore.label":"SCORE DE INTELIGENCIA","route.intel":"Abrir Inteligencia","route.map":"Abrir Mapa","route.timeline":"Abrir Timeline","route.entities":"Abrir Entidades","route.graph":"Ver en el grafo","onb.title":"Bienvenido — configura tu espacio","onb.sub":"Primer acceso: esto crea tu espacio admin. Nombra el tenant para organizar los casos por empresa / unidad / equipo.","onb.org":"Empresa / unidad de negocio / equipo","onb.org.ph":"ej.: Acme Corp · Unidad Fraude · Blue Team","onb.org.req":"Ingresa el nombre de la organización","onb.type":"Tipo","onb.type.company":"Empresa","onb.type.bu":"Unidad de negocio","onb.type.team":"Equipo","onb.region":"Región (para KYC / avisos)","onb.legal":"Los datos de persona/identidad están regulados (LGPD/GDPR). Esto es apoyo a la decisión, nunca un veredicto definitivo.","onb.continue":"Continuar","onb.done":"Espacio listo",
+    "nav.timeline":"Timeline","nav.alerts":"Alertas","nav.reports":"Informes","nav.settings":"Ajustes",
     "set.account":"Cuenta","set.providers":"Proveedores y Enrutamiento","set.datasources":"Fuentes de Datos","set.transforms":"Tienda de Transforms","src.byDiscipline":"FUENTES POR DISCIPLINA","src.generic":"CONECTORES GENÉRICOS","src.noparams":"Sin parámetros — clic para extraer.","src.testrun":"Probar y extraer","src.pulling":"Extrayendo de la fuente…","src.pulled":"Fuente extraída y procesada","src.opendemo":"Abre un proyecto primero (prueba solo en demo).","watch.manage":"Gestionar watchlist","watch.title":"Watchlist — reglas permanentes","watch.none":"Aún no hay reglas. Añade una — alerta en cada re-ejecución.","watch.name":"Nombre de la regla","watch.name.req":"Ingresa un nombre de regla","watch.kind":"Tipo de entidad","watch.anykind":"cualquier tipo","watch.minrisk":"Riesgo mínimo","watch.contains":"La etiqueta contiene","watch.add":"Añadir regla","watch.saved":"Watchlist guardada",
     "set.keys":"Claves de API","set.plugins":"Plugins de Clasificación","set.project":"Proyecto","set.users":"Usuarios y Acceso","set.security":"Seguridad","set.language":"Idioma",
     "btn.run":"Ejecutar","btn.askai":"Preguntar a la IA","btn.newProject":"Nuevo proyecto","btn.fit":"Ajustar","btn.reset":"Restablecer","btn.path":"Ruta","btn.addEntity":"Entidad",
@@ -84,12 +87,12 @@ const I18N = {
     "sev.critical":"Crítico","sev.high":"Alto","sev.medium":"Medio","sev.low":"Bajo","sev.none":"Sin severidad",
     "sit.domain":"Vertical","sit.owner":"Responsable","sit.jurisdiction":"Jurisdicción","sit.created":"Creado","sit.updated":"Actualizado","sit.entities":"entidades","sit.relationships":"relaciones","sit.critical":"críticos","sit.alerts":"alertas",
     "auth.signin":"Iniciar sesión","auth.register":"Crear cuenta",
-    "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Línea de tiempo","gmode.full":"Completo","gmode.network":"Red","gmode.network.hint":"color = comunidad · tamaño = broker (intermediación) · el nodo más grande es el punto de articulación de la red","gmode.score":"Score","gmode.score.hint":"color + tamaño = Score de Inteligencia (0–100); rojo = actuar primero",
+    "gmode.overview":"Vista general","gmode.risk":"Riesgo","gmode.neighborhood":"Vecindad","gmode.timeline":"Timeline","gmode.full":"Completo","gmode.network":"Red","gmode.network.hint":"color = comunidad · tamaño = broker (intermediación) · el nodo más grande es el punto de articulación de la red","gmode.score":"Score","gmode.score.hint":"color + tamaño = Score de Inteligencia (0–100); rojo = actuar primero",
     "gtool.entity":"Entidad","gtool.fit":"Ajustar","gtool.path":"Ruta","gtool.connect":"Conectar","gtool.reset":"Restablecer","gtool.ask":"Preguntar","edge.label.q":"Etiqueta de la conexión (opcional)","edge.pickSource":"Conectar: haz clic en el nodo de origen (Esc para cancelar)","edge.pickTarget":"Conectar: haz clic en el nodo de destino (Esc para cancelar)","edge.editTitle":"Editar conexión","edge.delete":"Eliminar conexión",
     "gf.all":"Todos","gf.crit":"Crítico + Alto","gf.suspicious":"Sospechoso/Malicioso","gf.sensitive":"Sensible",
     "view.entities":"Registro de Entidades","view.entities.sub":"Valida, resuelve, enriquece y prioriza las entidades que alimentan tu inteligencia.",
     "view.intelligence":"Inteligencia","view.intelligence.sub":"Producto listo para decidir, sintetizado de la investigación actual.",
-    "view.timeline":"Línea de tiempo","view.timeline.sub":"Eventos de auditoría y descubrimiento.",
+    "view.timeline":"Timeline","view.timeline.sub":"Eventos de auditoría y descubrimiento.",
     "view.alerts":"Alertas","view.alerts.sub":"Marcados para revisión humana.",
     "view.reports":"Informes","view.reports.sub":"Resumen investigativo, gobernanza y exportación en PDF.",
     "view.dash.sub":"Estado de la investigación, confianza de los datos, factores de riesgo y la próxima mejor acción.",
@@ -100,7 +103,7 @@ const I18N = {
     "ready.ready":"Listo para decidir","ready.needs-review":"Necesita revisión","ready.insufficient":"Datos insuficientes","ready.conflicting":"Evidencia contradictoria",
     "rd.label":"Preparación para decidir","btn.genIntel":"Generar inteligencia","btn.openGraph":"Abrir grafo","decision.matrix.sub":"impacto · confianza · riesgo · esfuerzo",
     "canvas.graph":"Grafo","canvas.map":"Mapa","map.none":"No hay entidades geolocalizadas en esta vista. Las entidades con latitud/longitud (o GPS/EXIF) aparecen aquí; el resto permanece en el grafo.","map.plotted":"{0} entidades geolocalizadas","map.trajectories":"{0} trayectorias","map.zoomedTo":"Zoom en","map.backToWorld":"clic en ⊡ para volver al mundo completo","maps.open":"Abrir en Google Maps","map.addrTool":"Dirección → Maps","map.addrLabel":"Dirección","map.addrOpen":"Abrir en Google Maps","map.addrEmpty":"Escribe una dirección",
-    "plan.title":"Línea de tiempo de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h","cmt.title":"Comentarios","cmt.placeholder":"Añadir un comentario…","cmt.post":"Enviar","cmt.empty":"Aún no hay comentarios.","banner.disclaimer":"Apoyo a la decisión — no es un veredicto definitivo. Trátese conforme a la ley de protección de datos aplicable.","banner.jurisdiction":"Jurisdicción","banner.vertical":"Vertical","banner.sev":"Severidad", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Aislar","ctx.neighbors":"Vecinos","ctx.alert":"Crear alerta","empty.title":"Aún no hay grafo","empty.sub":"Ejecuta un análisis, conecta una fuente o añade entidades manualmente (personas, medios, IPs…) para empezar a construir el grafo.","hyp.supporting":"Evidencia de apoyo","hyp.missing":"Evidencia faltante","hyp.next":"Siguiente","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sin hipótesis en competencia — añade datos o genera inteligencia.","hyp.take":"Ejecutar esta acción","hyp.rankNone":"Ejecuta un análisis para clasificar las próximas acciones.","conf.low":"baja","conf.medium":"media","conf.high":"alta","nba.uncertainty":"incertidumbre","nba.effort":"esfuerzo","nba.priority":"prioridad","nba.impact":"impacto","nba.confidence":"confianza","nba.riskWrong":"riesgo-si-erróneo","nba.route":"ruta","nba.why":"Por qué","nba.residual":"Incertidumbre residual ~{0} — esto es apoyo a la decisión, no certeza.","nba.readyYes":"Los datos respaldan actuar ahora.","nba.readyNo":"Considera resolver las brechas primero (ver Calidad de datos).",
+    "plan.title":"Timeline de planificación","plan.none":"Ejecuta un análisis para secuenciar las acciones recomendadas.","plan.total":"~{0}h de plan total","plan.window":"ventana: {0}–{1}h","plan.clear":"limpiar ventana","plan.hours":"h","cmt.title":"Comentarios","cmt.placeholder":"Añadir un comentario…","cmt.post":"Enviar","cmt.empty":"Aún no hay comentarios.","banner.disclaimer":"Apoyo a la decisión — no es un veredicto definitivo. Trátese conforme a la ley de protección de datos aplicable.","banner.jurisdiction":"Jurisdicción","banner.vertical":"Vertical","banner.sev":"Severidad", "ctx.expand":"Expandir (IA)","ctx.edit":"Editar","ctx.connect":"Conectar","ctx.isolate":"Aislar","ctx.neighbors":"Vecinos","ctx.alert":"Crear alerta","empty.title":"Aún no hay grafo","empty.sub":"Ejecuta un análisis, conecta una fuente o añade entidades manualmente (personas, medios, IPs…) para empezar a construir el grafo.","hyp.supporting":"Evidencia de apoyo","hyp.missing":"Evidencia faltante","hyp.next":"Siguiente","hyp.lead":"principal","hyp.conf":"conf","hyp.none":"Sin hipótesis en competencia — añade datos o genera inteligencia.","hyp.take":"Ejecutar esta acción","hyp.rankNone":"Ejecuta un análisis para clasificar las próximas acciones.","conf.low":"baja","conf.medium":"media","conf.high":"alta","nba.uncertainty":"incertidumbre","nba.effort":"esfuerzo","nba.priority":"prioridad","nba.impact":"impacto","nba.confidence":"confianza","nba.riskWrong":"riesgo-si-erróneo","nba.route":"ruta","nba.why":"Por qué","nba.residual":"Incertidumbre residual ~{0} — esto es apoyo a la decisión, no certeza.","nba.readyYes":"Los datos respaldan actuar ahora.","nba.readyNo":"Considera resolver las brechas primero (ver Calidad de datos).",
   },
 };
 function detectLang(){ const s=localStorage.getItem("cortex_lang"); if(s&&I18N[s])return s; const n=(navigator.language||"en").slice(0,2).toLowerCase(); return I18N[n]?n:"en"; }
@@ -181,16 +184,16 @@ const state = {
 // Type palette — deliberately spread across the hue wheel so kinds don't all
 // read as "another blue": teal, blue, violet, amber, magenta, green, red…
 const KIND_COLOR = {
-  account:"#57D7E8", person:"#63B3FF", domain:"#8B7CFF", url:"#F5B84B",
-  ip:"#F59E0B", device:"#2DD4BF", wallet:"#34D399", payment:"#22C55E",
-  organization:"#93C5FD", group:"#FACC15", location:"#FBBF24",
-  case:"#A78BFA", report:"#C084FC", communication:"#4ADE80",
-  person_alt:"#63B3FF", victim:"#F472B6", suspect:"#F87171",
-  media:"#FB7185", evidence:"#FDA4AF", malware:"#EF4444",
-  vulnerability:"#FB923C", incident:"#E879F9", service:"#5EEAD4",
-  repository:"#A3E635",
-  aircraft:"#38BDF8", vessel:"#22D3EE", facility:"#FB923C", sensor:"#A78BFA", selector:"#F472B6",
-  unknown:"#94A3B8"
+  person:"#4C8EDA", person_alt:"#4C8EDA", victim:"#D279A6", suspect:"#E06C6C",
+  account:"#4CB5AE", username:"#8B83C1", email:"#8E7CC3", phone:"#3FB5A5", selector:"#C46FA8", alias:"#A36FA3", credential:"#D4B030",
+  domain:"#66A892", url:"#D279A6", website:"#D279A6", ip:"#5AA1C8", asn:"#D97474", cidr:"#80BF80", dnsrecord:"#BFAF80", port:"#4CB5DA", sslcertificate:"#BFAF80",
+  device:"#E3A857", service:"#4AA29E", repository:"#A5BF50", hash:"#8F9CA3", file:"#8F9CA3", document:"#8F9CA3", script:"#A36FA3",
+  wallet:"#D4B030", cryptowallet:"#D4B030", payment:"#BFA750", transaction:"#BFA750", bankaccount:"#D4B030", creditcard:"#285E8E",
+  organization:"#BCA18A", company:"#BCA18A", group:"#C7BF50", location:"#E57373", facility:"#E98973", address:"#E57373",
+  case:"#9B6F9B", report:"#8F9CA3", evidence:"#7C9CBF", media:"#6CB7CA", image:"#6CB7CA", communication:"#897FC9", message:"#897FC9",
+  malware:"#D95F5F", vulnerability:"#E98973", incident:"#C75B9B", breach:"#CC7A7A", leak:"#7C9CBF", threat:"#D95F5F",
+  aircraft:"#5DAFD9", vessel:"#4CB5DA", sensor:"#A78BFA", event:"#C7BF50", vehicle:"#E3A857",
+  unknown:"#8A94A6"
 };
 const kColor = k => KIND_COLOR[k] || KIND_COLOR.unknown;
 // Categorical palette for the network-science lens (colour by community).
@@ -243,6 +246,34 @@ const ENTITY_GLYPH = {
   sensor:'<circle cx="12" cy="12" r="2.4"/><path d="M6 12a6 6 0 016-6M18 12a6 6 0 01-6 6M3 12a9 9 0 019-9"/>',
   selector:'<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
   unknown:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 013.7 2.1c0 1.6-2.2 2-2.2 3.2M12 17.2h.01"/>',
+  email:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/>',
+  username:'<circle cx="10" cy="8" r="3.5"/><path d="M3 20c0-3.5 3.2-5.5 7-5.5M17 14v6M14 17h6"/>',
+  alias:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.4-5.5 7-5.5s7 1.9 7 5.5M9 8h6"/>',
+  credential:'<circle cx="8" cy="14" r="4"/><path d="M11 11l9-9M16 6l3 3M14 8l2 2"/>',
+  website:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.4 2.6 15.6 0 18M12 3c-2.6 2.4-2.6 15.6 0 18"/>',
+  asn:'<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+  cidr:'<rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/>',
+  dnsrecord:'<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  port:'<path d="M12 22v-5M9 8V2M15 8V2M6 8h12v5a6 6 0 01-12 0z"/>',
+  sslcertificate:'<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/>',
+  hash:'<path d="M4 9h16M4 15h16M10 3L8 21M16 3l-2 18"/>',
+  file:'<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/>',
+  document:'<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+  script:'<path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M10 12l-2 2 2 2M14 12l2 2-2 2"/>',
+  cryptowallet:'<path d="M4 7h13a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M16 12h4M4 7l11-3v3"/>',
+  transaction:'<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+  bankaccount:'<path d="M3 10l9-6 9 6M5 10v9M9 10v9M15 10v9M19 10v9M3 19h18"/>',
+  creditcard:'<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/>',
+  company:'<rect x="4" y="3" width="15" height="18" rx="1"/><path d="M8 8h2M13 8h2M8 12h2M13 12h2M10 20v-3h3v3"/>',
+  address:'<path d="M12 21s7-6 7-11a7 7 0 10-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/>',
+  image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5-4 4 3 3-2 4 3"/>',
+  message:'<path d="M21 15a2 2 0 01-2 2H8l-4 4V5a2 2 0 012-2h13a2 2 0 012 2z"/>',
+  breach:'<path d="M12 3l8 4v5c0 5-4 8-8 9-4-1-8-4-8-9V7z"/><path d="M12 9v3.5M12 15.5h.01"/>',
+  leak:'<path d="M12 3s6 6.5 6 11a6 6 0 01-12 0c0-4.5 6-11 6-11z"/>',
+  threat:'<circle cx="12" cy="12" r="3.6"/><path d="M12 8.4V4M8.4 12H4M15.6 12H20M9.4 9.4L6.5 6.5M14.6 9.4l2.9-2.9M9.4 14.6l-2.9 2.9M14.6 14.6l2.9 2.9"/>',
+  event:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  vehicle:'<path d="M5 17h14M3 12l2-5h14l2 5v5H3z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/>',
 };
 // Uniform clean dark disc for every node; the glyph is drawn in the bright
 // entity-type colour so TYPE reads from the icon, and the ring carries RISK.
@@ -250,9 +281,10 @@ const DISC_FILL = "#141E2B";
 function glyphColor(kc){ const h=(kc||"#94A3B8").replace("#",""); // brighten toward white so even dim hues read
   const c=[0,2,4].map(o=>{ const v=parseInt(h.slice(o,o+2),16); return Math.round(v+(255-v)*0.25); });
   return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
-function nodeIcon(kind, stroke){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
-  const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${stroke||"#EAF2FC"}' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
-  return "data:image/svg+xml;utf8,"+encodeURIComponent(s); }
+const _iconCache={};
+function nodeIcon(kind, stroke){ const key=kind+"|"+(stroke||""); if(_iconCache[key]) return _iconCache[key]; const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown;
+  const s=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${stroke||"#FFFFFF"}' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'>${p}</svg>`;
+  return _iconCache[key]="data:image/svg+xml;utf8,"+encodeURIComponent(s); }
 // If a media/evidence node references a local image file, return a URL the
 // server will stream back (so we can clip a small thumbnail onto the node and
 // preview it in the side panel). Non-image media (video/audio) → null (keep the icon).
@@ -288,7 +320,7 @@ const ICONS = {
   play:'<path d="M6 4l14 8-14 8z"/>', spark:'<path d="M12 3l1.9 4.6L18 9l-4.1 1.4L12 15l-1.9-4.6L6 9l4.1-1.4z"/>',
   bell:'<path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/>',
   logo:'<path d="M12 2l8 4.5v9L12 20l-8-4.5v-9z"/><circle cx="12" cy="11" r="3"/>',
-  close:'<path d="M18 6L6 18M6 6l12 12"/>', plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
+  close:'<path d="M18 6L6 18M6 6l12 12"/>', copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/>', plusc:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>',
   zoomin:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/>', zoomout:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M8 11h6"/>', fit:'<path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/>',
   link:'<path d="M9 15l6-6M10 6l1-1a4 4 0 015.7 5.7l-1 1M14 18l-1 1a4 4 0 01-5.7-5.7l1-1"/>', trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>', run:'<path d="M6 4l14 8-14 8z"/>',
 };
@@ -609,78 +641,102 @@ function consolidatedToGraph(c) {
 
 // ---------- cytoscape ----------
 let cy = null;
+// ---------- graph display settings (persisted) ----------
+const GS_DEFAULT = { outlined:false, nodeSize:30, labelSize:11, showLabels:true, showIcons:true, linkWidth:1.2, autoColorLinks:true, arrows:true, dots:true, minimap:true, legend:true, weightBySize:true, edgeLabels:"hover" };
+let GS = Object.assign({}, GS_DEFAULT, (()=>{ try{ return JSON.parse(localStorage.getItem("cortex_gs")||"{}"); }catch(e){ return {}; } })());
+function saveGS(){ try{ localStorage.setItem("cortex_gs", JSON.stringify(GS)); }catch(e){} }
+function cssVar(n, fb){ try{ const v=getComputedStyle(document.documentElement).getPropertyValue(n).trim(); return v||fb; }catch(e){ return fb; } }
+function isLight(){ return document.documentElement.getAttribute("data-theme")==="light"; }
+// Theme-resolved canvas colours (flowsint-style: filled disc, white glyph, label pill).
+function themeGraph(){ const light=isLight(); return {
+  labelBg: light?"#ffffff":"#202020", labelColor: light?"#1a1a1a":"#ececec", labelOutline: light?"#ffffff":"#202020",
+  edge: light?"rgba(90,90,90,0.55)":"rgba(150,150,150,0.55)", edgeDim: light?"rgba(120,120,120,0.16)":"rgba(140,140,140,0.16)",
+  edgeLabelBg: light?"#ffffff":"#202020", fill: light?"#ffffff":"#1d1d1d", border: light?"rgba(0,0,0,0.18)":"rgba(255,255,255,0.14)",
+  hl: cssVar("--accent","#e8673d"), hover: "rgba(232,103,61,0.28)", sel: "rgba(232,103,61,0.38)", path: cssVar("--info","#5b9cf5"), fresh: cssVar("--green","#4ade80") }; }
+function cyStyle(){ const T=themeGraph(); const lw=GS.linkWidth; const fs=GS.labelSize;
+  return [
+    { selector:"node", style:{
+      "background-color":"data(bg)", "background-opacity":1,
+      "background-image": GS.showIcons?"data(icon)":"none", "background-width":"58%", "background-height":"58%", "background-fit":"none", "background-clip":"none", "background-image-opacity":0.95,
+      "width":"data(size)", "height":"data(size)", "shape":"ellipse",
+      "border-width":"data(bw)", "border-color":"data(bc)", "border-opacity":1,
+      "label": GS.showLabels?"data(label)":"", "font-size":fs+"px", "font-weight":500, "font-family":"Inter, -apple-system, Segoe UI, sans-serif", "color":T.labelColor,
+      "text-wrap":"ellipsis", "text-max-width":"150px", "text-valign":"bottom", "text-halign":"center", "text-margin-y":6, "min-zoomed-font-size":7,
+      "text-background-color":T.labelBg, "text-background-opacity":0.85, "text-background-shape":"round-rectangle", "text-background-padding":"3px", "text-border-width":0,
+      "overlay-opacity":0, "transition-property":"opacity", "transition-duration":"120ms" }},
+    // risk halo: high/critical get a coloured ring behind the disc
+    { selector:"node[halo]", style:{ "border-color":"data(hc)", "border-width":3 }},
+    { selector:"node.plain", style:{ "background-image":"none", "label":"" }},
+    { selector:"node.imgnode", style:{ "background-image":"data(img)", "background-fit":"cover", "background-clip":"node", "background-width":"100%", "background-height":"100%", "background-position-x":"50%", "background-position-y":"50%", "background-image-opacity":1, "border-width":2.5, "border-color":"data(kc)" }},
+    { selector:"node.flagged", style:{ "border-width":3, "border-color":"data(flag)", "border-style":"double" }},
+    { selector:"node.pinned", style:{ "border-style":"dashed" }},
+    // ---- edges ----
+    { selector:"edge", style:{
+      "width": lw, "line-color": GS.autoColorLinks?"data(kc)":T.edge, "line-opacity":0.6,
+      "target-arrow-color": GS.autoColorLinks?"data(kc)":T.edge, "target-arrow-shape": GS.arrows?"triangle":"none", "arrow-scale":0.65, "curve-style":"bezier",
+      "label": GS.edgeLabels==="always"?"data(type)":"", "font-size":"9px", "font-family":"Inter, sans-serif", "color":T.labelColor, "text-opacity":0.85,
+      "text-rotation":"autorotate", "text-background-color":T.edgeLabelBg, "text-background-opacity":0.9, "text-background-shape":"round-rectangle", "text-background-padding":"2px", "min-zoomed-font-size":8,
+      "transition-property":"line-opacity width", "transition-duration":"120ms" }},
+    // ---- hover / selection / focus ----
+    { selector:"node:selected", style:{ "overlay-color":T.hl, "overlay-padding":5, "overlay-opacity":0.35, "z-index":50 }},
+    { selector:"node.focused", style:{ "overlay-color":T.hl, "overlay-padding":5, "overlay-opacity":0.28, "z-index":50 }},
+    { selector:"node.hover", style:{ "overlay-color":T.hl, "overlay-padding":4, "overlay-opacity":0.22, "z-index":49 }},
+    { selector:"node.neighbor", style:{ "z-index":40 }},
+    { selector:"edge.connected", style:{ "line-color":T.hl, "target-arrow-color":T.hl, "line-opacity":0.9, "width":Math.max(1.6,lw*1.6), "label":"data(type)", "z-index":40 }},
+    { selector:"edge:selected", style:{ "line-color":T.hl, "target-arrow-color":T.hl, "line-opacity":1, "width":Math.max(2,lw*2), "label":"data(type)", "z-index":45 }},
+    { selector:"node.dim", style:{ "opacity":0.28 }},
+    { selector:"edge.dim", style:{ "line-opacity":0.12, "label":"" }},
+    { selector:".faded", style:{ "opacity":0.12 }},
+    { selector:".hyp", style:{ "line-style":"dashed", "border-style":"dashed" }},
+    { selector:"edge.predicted", style:{ "line-style":"dashed", "line-color":"#f5b342", "target-arrow-color":"#f5b342", "line-opacity":0.7, "label":"predicted", "font-size":"8px", "color":"#f5b342" }},
+    { selector:"edge.manual", style:{ "line-color":T.hl, "target-arrow-color":T.hl, "line-opacity":1, "width":Math.max(1.6,lw*1.5), "label":"data(elabel)", "font-size":"9px", "font-weight":600, "z-index":45 }},
+    { selector:".fresh", style:{ "overlay-color":T.fresh, "overlay-padding":8, "overlay-opacity":0.45 }},
+    { selector:"node.pathhl", style:{ "overlay-color":T.path, "overlay-padding":6, "overlay-opacity":0.4, "opacity":1, "z-index":60 }},
+    { selector:"edge.pathhl", style:{ "line-color":T.path, "target-arrow-color":T.path, "width":Math.max(2.4,lw*2.2), "line-opacity":1, "label":"data(type)", "z-index":60 }},
+    // ---- meta cluster nodes ----
+    { selector:"node.metanode", style:{ "shape":"hexagon", "background-color":"data(bg)", "border-color":"data(kc)", "border-width":2.5,
+      "background-image":"data(icon)", "background-width":"50%", "background-height":"50%",
+      "label":"data(label)", "text-wrap":"wrap", "font-size":(fs+1)+"px", "font-weight":600, "text-valign":"bottom", "text-margin-y":6 }},
+  ]; }
+function applyGraphStyle(){ if(!cy) return; cy.style(cyStyle()); cy.style().update(); }
+// Build cytoscape data for one entity (shared by full render + incremental append).
+function nodeVisual(n, deg){ const T=themeGraph(); const kc=kColor(n.kind); const band=n.band||bandOf(n.risk); const hot=band==="critical"||band==="high";
+  const bonus = GS.weightBySize ? Math.min(14, Math.sqrt(deg||0)*3) : 0;
+  const size = GS.nodeSize + bonus;
+  const outlined = GS.outlined;
+  const iconStroke = outlined ? (isLight()?"#1a1a1a":"#ffffff") : "#ffffff";
+  return { bg: outlined?T.fill:kc, bc: outlined?kc:T.border, bw: outlined?2:1, icon: nodeIcon(n.kind, iconStroke), kc, hc: bandColor(band), size, halo: hot?1:undefined, flag: n._flag||undefined };
+}
+
 function initCy() {
   if (cy) return cy;
   try { if (window.cytoscapeFcose) cytoscape.use(window.cytoscapeFcose); } catch(e){}
   cy = cytoscape({
     container: $("#cy"),
     wheelSensitivity: 0.25,
-    // Performance: keep large graphs smooth and prevent WebView lockups.
     hideEdgesOnViewport: true,
-    textureOnViewport: true,
+    textureOnViewport: false,
     motionBlur: false,
-    pixelRatio: 1,
-    style: [
-      // Dark, type-tinted disc with a light glyph. Type = disc tint + thin ring
-      // (kc); risk = the ring colour/width (hc) via the [halo] rule. No coloured
-      // underlay square — risk lives on the ring so the canvas stays clean.
-      { selector:"node", style:{
-        "background-color":DISC_FILL, "background-image":"data(icon)", "background-width":"22px", "background-height":"22px", "background-fit":"none", "background-clip":"none",
-        "width":"data(size)", "height":"data(size)", "shape":"ellipse",
-        "label":"data(label)", "font-size":"9px", "font-weight":600, "font-family":"SF Mono, Menlo, monospace", "color":"#E6EDF7",
-        "text-wrap":"wrap", "text-max-width":"88px", "text-valign":"bottom", "text-margin-y":5, "min-zoomed-font-size":8,
-        "text-outline-color":"#070A0F", "text-outline-width":2, "text-outline-opacity":0.85,
-        "border-width":"data(bw)", "border-color":"data(kc)", "border-opacity":0.4,
-        "transition-property":"opacity border-width border-color", "transition-duration":"140ms" }},
-      { selector:"node[halo]", style:{ "border-color":"data(hc)", "border-opacity":1 }},
-      // perf mode: solid coloured dot, no SVG icon
-      { selector:"node.plain", style:{ "background-image":"none", "background-color":"data(kc)" }},
-      // media image node: clip the actual photo into the disc at normal node size
-      // (a small thumbnail, not a full-res dump). Full image shows in the side panel.
-      { selector:"node.imgnode", style:{ "background-image":"data(img)", "background-fit":"cover", "background-clip":"node",
-        "background-width":"100%", "background-height":"100%", "background-position-x":"50%", "background-position-y":"50%",
-        "border-width":2.5, "border-color":"data(kc)", "border-opacity":0.95 }},
-      // ---- edges: discreet by default ----
-      { selector:"edge", style:{
-        "width":"data(w)", "line-color":"rgba(148,163,184,0.16)", "target-arrow-color":"rgba(148,163,184,0.24)",
-        "target-arrow-shape":"triangle", "arrow-scale":0.55, "curve-style":"bezier",
-        "label":"", "font-size":"7px", "font-family":"SF Mono, Menlo, monospace", "color":"rgba(200,214,230,0.7)",
-        "text-rotation":"autorotate", "text-background-color":"#070A0F", "text-background-opacity":0.7, "text-background-padding":2,
-        "transition-property":"opacity line-color width", "transition-duration":"140ms" }},
-      // ---- focus / hover / selection ----
-      { selector:"node.focused", style:{ "border-width":3.5, "border-color":"#E6EDF7", "underlay-color":"data(kc)", "underlay-padding":10, "underlay-opacity":0.55, "z-index":50 }},
-      { selector:"node:selected", style:{ "border-width":3.5, "border-color":"#E6EDF7", "underlay-color":"data(kc)", "underlay-padding":10, "underlay-opacity":0.55, "z-index":50 }},
-      { selector:"node.neighbor", style:{ "border-opacity":1, "z-index":40 }},
-      { selector:"edge.connected", style:{ "line-color":"data(kc)", "target-arrow-color":"data(kc)", "width":"mapData(w, 0, 3, 1.4, 3)", "opacity":1, "label":"data(type)", "min-zoomed-font-size":9, "z-index":40 }},
-      { selector:"node.dim", style:{ "opacity":0.12 }},
-      { selector:"edge.dim", style:{ "opacity":0.05 }},
-      { selector:".faded", style:{ "opacity":0.1 }},
-      { selector:".hyp", style:{ "line-style":"dashed", "line-color":"#8B7CFF", "border-color":"#8B7CFF", "border-style":"dashed" }},
-      // Predicted (inferred, not observed) links: dashed amber so they never read
-      // as fact. Label makes the "predicted" nature explicit on hover/zoom.
-      { selector:"edge.predicted", style:{ "line-style":"dashed", "line-color":"#F59E0B", "target-arrow-color":"#F59E0B", "target-arrow-shape":"triangle", "opacity":0.7, "label":"predicted", "font-size":"7px", "color":"#F59E0B", "text-background-color":"#070A0F", "text-background-opacity":0.7 }},
-      // Analyst-drawn connections: solid cyan arrow with the label always shown.
-      { selector:"edge.manual", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "target-arrow-shape":"triangle", "arrow-scale":0.9, "width":2, "opacity":1, "label":"data(elabel)", "font-size":"9px", "font-weight":600, "color":"#CDE9F0", "text-background-color":"#070A0F", "text-background-opacity":0.75, "text-background-padding":2, "text-rotation":"autorotate", "min-zoomed-font-size":7, "z-index":45 }},
-      { selector:".fresh", style:{ "underlay-color":"#34D399", "underlay-padding":10, "underlay-opacity":0.55 }},
-      { selector:"node.pathhl", style:{ "border-width":3, "border-color":"#57D7E8", "underlay-color":"#57D7E8", "underlay-padding":8, "underlay-opacity":0.5, "opacity":1, "z-index":60 }},
-      { selector:"edge.pathhl", style:{ "line-color":"#57D7E8", "target-arrow-color":"#57D7E8", "width":3, "opacity":1, "label":"data(type)", "z-index":60 }},
-      // ---- meta cluster nodes: two-line label ----
-      { selector:"node.metanode", style:{ "shape":"round-hexagon", "background-color":"#12202B", "border-color":"data(kc)", "border-width":2.5,
-        "background-image":"data(icon)", "background-width":"30px", "background-height":"30px",
-        "label":"data(label)", "text-wrap":"wrap", "font-size":"11px", "color":"#E6EDF7", "text-valign":"bottom", "text-margin-y":6,
-        "text-outline-color":"#070A0F", "text-outline-width":2 }},
-      // show a global "zoomed-in" edge label only when very close
-      { selector:"core", style:{} },
-    ],
+    pixelRatio: "auto",
+    boxSelectionEnabled: true,
+    selectionType: "single",
+    style: cyStyle(),
   });
-  cy.on("tap","node", ev=>{ const id=ev.target.id(); if(linkMode){ finishLink(id); return; } if(connectArm){ startLink(id); return; } if(pathSource){ finishPath(id); return; } selectNode(id); });
-  cy.on("tap","edge", ev=>{ const d=ev.target.data(); if(d&&d.source&&d.target) editEdgeLabel(d.source,d.target); });
+  cy.on("tap","node", ev=>{ const id=ev.target.id(); const oe=ev.originalEvent||{};
+    if(linkMode){ finishLink(id); return; } if(connectArm){ startLink(id); return; } if(pathSource){ finishPath(id); return; }
+    if(oe.shiftKey||oe.metaKey||oe.ctrlKey){ /* additive multi-select */ if(ev.target.selected()) ev.target.unselect(); else ev.target.select(); return; }
+    selectNode(id); });
+  cy.on("tap","edge", ev=>{ const d=ev.target.data(); if(typeof UI!=="undefined") UI.selectEdge(ev.target); else if(d&&d.source&&d.target) editEdgeLabel(d.source,d.target); });
+  cy.on("cxttap","edge", ev=>{ const e=ev.originalEvent; if(typeof UI!=="undefined") UI.edgeMenu(e.clientX,e.clientY,ev.target); });
+  cy.on("cxttap", ev=>{ if(ev.target===cy){ const e=ev.originalEvent; if(typeof UI!=="undefined") UI.bgMenu(e.clientX,e.clientY,ev.position); } });
+  cy.on("select unselect", ()=>{ if(typeof UI!=="undefined") UI.onSelectionChange(); });
+  cy.on("boxend", ()=>{ if(typeof UI!=="undefined") setTimeout(()=>UI.onSelectionChange(),30); });
   cy.on("dbltap","node", ev=>{ const id=ev.target.id(); const t=activeTab(); if(!t)return; if(t._metas&&t._metas[id]) expandCluster(id); else if((t.clusterMode||"none")!=="none") collapseNodeCluster(id); });
-  cy.on("tap", ev=>{ if(ev.target===cy){ clearFocus(); cy.$(":selected").unselect(); $("#context").hidden=true; } });
+  cy.on("tap", ev=>{ if(ev.target===cy){ const oe=ev.originalEvent||{}; if(oe.shiftKey||oe.metaKey) return; clearFocus(); cy.$(":selected").unselect(); $("#context").hidden=true; if(typeof UI!=="undefined") UI.onSelectionChange(); } });
   cy.on("cxttap","node", ev=>{ const e=ev.originalEvent; if(linkMode) finishLink(ev.target.id()); else openCtxMenu(e.clientX,e.clientY,ev.target.id()); });
   // Hover: transient focus on node + neighbors + connected edges, dim the rest.
-  cy.on("mouseover","node", ev=>{ if(!cyPinned) focusNeighborhood(ev.target, false); });
-  cy.on("mouseout","node", ev=>{ if(!cyPinned) clearFocus(); });
+  cy.on("mouseover","node", ev=>{ ev.target.addClass("hover"); if(!cyPinned) focusNeighborhood(ev.target, false); });
+  cy.on("mouseout","node", ev=>{ ev.target.removeClass("hover"); if(!cyPinned) clearFocus(); });
   cy.on("pan zoom", ()=>scheduleMinimap());
   cy.on("layoutstop render", ()=>scheduleMinimap());
   // Responsiveness: keep the canvas sized to its container as the window/panels
@@ -804,10 +860,11 @@ function renderGraph() {
   initCy();
   const model = computeRenderModel(t);
   const g = { nodes: model.nodes, edges: model.edges };
+  const full0 = t.graph;
   const nodeById = {}; g.nodes.forEach(n=>nodeById[n.id]=n);
   // Perf mode: beyond this many rendered nodes, drop per-node SVG icons (heavy to
   // decode ×N) for solid coloured dots, and use a fast non-animated layout.
-  const perf = g.nodes.length > 500;
+  const perf = g.nodes.length > 1500;
   t._perf = perf;
   const els = [];
   // Network-science lens: ring colour = community, size = betweenness (broker),
@@ -816,14 +873,15 @@ function renderGraph() {
   const scoreMode = (t.graphMode === "score");
   // Heat colour for the Intelligence-Score lens.
   const scoreHeat=s=>s>=70?"#ef4444":s>=45?"#fb7185":s>=25?"#f59e0b":"#34d399";
+  const degMap = graphDegrees(full0);
   g.nodes.forEach(n=>{
-    if(n.meta){ els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon("group",glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(bandOf(n.risk)), size: metaSize(n.count) }, classes:"metanode"+(perf?" plain":"") }); return; }
+    if(n.meta){ const kc=kColor(n.kind); els.push({ data:{ id:n.id, label:n.label, icon: nodeIcon("group","#ffffff"), kc, bg:kc, hc:bandColor(bandOf(n.risk)), size: metaSize(n.count), bw:2.5, bc:kc }, classes:"metanode" }); return; }
     const band = n.band||bandOf(n.risk);
-    const hot = band==="critical"||band==="high";
+    const v = nodeVisual(n, degMap[n.id]||0);
     if(scoreMode){
       const sc=parseInt((n.attributes||{}).intel_score||0)||Math.round((n.risk||0)*100);
       const col=scoreHeat(sc); const size=NODE_MIN+(sc/100)*(NODE_MAX-NODE_MIN);
-      els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(col)), kc:col, hc:col, size, bw:sc>=45?3.5:1.5, halo:(sc>=45&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+      els.push({ data:{ id:n.id, label:n.label, icon: nodeIcon(n.kind,"#ffffff"), kc:col, bg:col, bc:v.bc, hc:col, size, bw:1, halo:sc>=45?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
       return;
     }
     if(netMode){
@@ -832,15 +890,13 @@ function renderGraph() {
       const isBroker=(n.tags||[]).includes("broker");
       const kc = at.community!=null ? communityColor(at.community) : kColor(n.kind);
       const size = NODE_MIN + Math.sqrt(bet)*(NODE_MAX-NODE_MIN)*1.5 + (isBroker?10:0);
-      els.push({ data:{ id:n.id, label:n.label, icon: perf?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))),
-        kc, hc:"#E6EDF7", size, bw:isBroker?4.5:2, halo:(isBroker&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
+      els.push({ data:{ id:n.id, label:n.label, icon: nodeIcon(n.kind,"#ffffff"), kc, bg:kc, bc:isBroker?"#ffffff":v.bc, hc:"#ffffff", size, bw:isBroker?3:1, halo:isBroker?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"") });
       return;
     }
     const imgU = perf?null:mediaImgUrl(n);
-    els.push({ data:{ id:n.id, label:n.label, icon:(perf||imgU)?undefined:nodeIcon(n.kind,glyphColor(kColor(n.kind))), img:imgU||undefined, kc:kColor(n.kind), hc:bandColor(band),
-      size: NODE_UNIFORM, bw:hot?3:1.5, halo:(hot&&!perf)?1:undefined }, classes:(n.hypothesis?"hyp ":"")+(perf?"plain":"")+(imgU?" imgnode":"") });
+    els.push({ data: Object.assign({ id:n.id, label:n.label, img:imgU||undefined }, v), classes:(n.hypothesis?"hyp ":"")+(perf?"plain ":"")+(imgU?"imgnode ":"")+(n._flag?"flagged ":"")+(n._pinned?"pinned":"") });
   });
-  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:e.type, elabel:e.label||"", w:edgeW(e.conf), kc:kColor((nodeById[e.source]||{}).kind) }, classes:(e.hypothesis?"hyp ":"")+(e.predicted?"predicted ":"")+(e.manual?"manual":"") }); });
+  g.edges.forEach((e,i)=>{ if(nodeById[e.source]&&nodeById[e.target]) els.push({ data:{ id:"e"+i, source:e.source, target:e.target, type:String(e.type||"").replace(/_/g," "), rtype:e.type, elabel:e.label||"", conf:e.conf, w:edgeW(e.conf), kc:kColor((nodeById[e.target]||{}).kind) }, classes:(e.hypothesis?"hyp ":"")+(e.predicted?"predicted ":"")+(e.manual?"manual":"") }); });
   cy.elements().remove(); cy.add(els);
   // If the graph container isn't visible yet (0×0), layout would be degenerate;
   // defer it to when the Graph view is shown (see showView).
@@ -852,6 +908,8 @@ function renderGraph() {
   else { t._needsRelayout=false; runLayout(perf); }
   const full=t.graph; const clustered=(t.clusterMode||"none")!=="none";
   $("#graphStats").textContent = clustered ? `${g.nodes.length} shown · ${full.nodes.length} entities · ${full.edges.length} edges` : `${full.nodes.length} nodes · ${full.edges.length} edges`;
+  const sbg=$("#sbGraph"); if(sbg) sbg.textContent=$("#graphStats").textContent;
+  if(typeof UI!=="undefined") UI.onGraphRendered();
   const cs=$("#graphCluster"); if(cs) cs.value=t.clusterMode||"none";
   // Large graphs default to Overview (progressive reveal) once, so 10k+ nodes
   // don't dump as noise. The user can switch to Full/Risk/etc. anytime.
@@ -905,7 +963,7 @@ function selectNode(id) {
   const n = nodeData(id); if(!n) return;
   if (cy) { clearFocus(); cy.$(":selected").unselect(); const nel=cy.$id(id); if(nel&&nel.length){ nel.select(); focusNeighborhood(nel, true); } }
   const c=$("#context"); c.hidden=false;
-  $("#ctxKind").textContent = n.kind + (n.sensitive?" · sensitive":"");
+  $("#ctxKind").innerHTML = kindBadge(n.kind) + (n.sensitive?' <span class="chip" style="color:var(--amber)">sensitive</span>':"") + (n._flag?` <span class="kdot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${n._flag}"></span>`:"");
   $("#ctxName").textContent = n.label;
   const band=n.band||bandOf(n.risk);
   const deg=activeTab()?graphDegrees(activeTab().graph)[n.id]||0:0;
@@ -938,7 +996,9 @@ function selectNode(id) {
     im.title="Click to open full size"; im.addEventListener("click",()=>window.open(imgU,"_blank"));
     im.onerror=()=>{ box.remove(); }; box.appendChild(im); meta.appendChild(box); }
   if(!es.length && !imgU) meta.innerHTML='<div class="empty">no metadata</div>';
-  es.slice(0,24).forEach(([k,v])=>{ const r=el("div","row"); r.appendChild(el("span","k",k)); r.appendChild(el("span","v",String(v))); meta.appendChild(r); });
+  const kvRow=(k,v)=>{ const r=el("div","row"); r.appendChild(el("span","k",k)); r.appendChild(el("span","v",String(v))); const cp=el("span","copy"); cp.innerHTML=svg("copy"); cp.title="Copy"; cp.addEventListener("click",e=>{ e.stopPropagation(); copyToClipboard(String(v)); toast("Copied","ok"); }); r.appendChild(cp); meta.appendChild(r); };
+  kvRow("label", n.label); kvRow("type", n.kind);
+  es.slice(0,40).forEach(([k,v])=>kvRow(k,v));
   // Precise Google Maps deep link from the entity's own lat/lon (opens externally).
   const geo=geoOf(n);
   if(geo){ const link=el("a","btn ghost"); link.href=`https://www.google.com/maps/search/?api=1&query=${geo.lat},${geo.lon}`;
@@ -946,17 +1006,19 @@ function selectNode(id) {
     link.textContent="📍 "+t2("maps.open"); meta.appendChild(link); }
   const rels=$("#ctxRels"); rels.innerHTML="";
   const t=activeTab(); const related=(t?.graph.edges||[]).filter(e=>e.source===id||e.target===id);
+  const rcEl=$("#ctxRelCount"); if(rcEl) rcEl.textContent=related.length?`(${related.length})`:"";
+  const nbt=$("#ctxNbTitle"); if(nbt) nbt.textContent=t2("ctx.neighbors.n", new Set(related.map(e=>e.source===id?e.target:e.source)).size);
+  if(typeof UI!=="undefined") UI.renderNeighbors(id);
   if(!related.length) rels.innerHTML='<div class="empty">no direct relations</div>';
   // Sort by confidence desc; humanize the type; colour-dot by the other kind;
   // show confidence and flag predicted links.
   const hum=s=>String(s).replace(/_/g," ");
   [...related].sort((a,b)=>(b.conf||0)-(a.conf||0)).slice(0,60).forEach(e=>{ const other=e.source===id?e.target:e.source; const o=nodeData(other); if(!o)return;
-    const r=el("div","rel"); r.style.cursor="pointer";
-    const dir=e.source===id?"→":"←"; const conf=e.conf!=null?`<span class="conf muted" style="margin-left:auto;font-size:10px">${Math.round(e.conf*100)}%</span>`:"";
-    const pred=e.predicted?' <span class="chip" style="color:#F59E0B;border-color:#F59E0B">predicted</span>':"";
-    r.innerHTML=`<span class="kdot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${kColor(o.kind)};margin-right:7px;flex:0 0 auto"></span>`+
-      `<span class="rt">${esc(hum(e.type))}</span> <span class="muted">${dir}</span> <b>${esc(o.label)}</b>${pred}${conf}`;
-    r.style.display="flex"; r.style.alignItems="center"; r.style.gap="4px";
+    const r=el("div","rel");
+    const out=e.source===id; const conf=e.conf!=null?`<span class="conf">${Math.round(e.conf*100)}%</span>`:"";
+    const pred=e.predicted?' <span class="chip" style="color:var(--amber)">predicted</span>':"";
+    const chipO=`<span class="rn" style="--kc-soft:${hexA(kColor(o.kind),0.18)}"><span class="kdot" style="background:${kColor(o.kind)}"></span>${esc(o.label)}</span>`;
+    r.innerHTML=(out?`<span class="arrow">→</span><span class="rt" title="${esc(hum(e.type))}">${esc(hum(e.label||e.type))}</span><span class="arrow">→</span>${chipO}`:`${chipO}<span class="arrow">→</span><span class="rt" title="${esc(hum(e.type))}">${esc(hum(e.label||e.type))}</span><span class="arrow">→</span>`)+pred+conf;
     r.addEventListener("click",()=>{ selectNode(other); if(cy){const el2=cy.$id(other); if(el2) cy.animate({center:{eles:el2},duration:300}); } }); rels.appendChild(r); });
   const src=$("#ctxSources"); src.innerHTML = n.sources.length?"":'<span class="chip">—</span>'; n.sources.forEach(s=>src.appendChild(el("span","chip",s)));
   renderCtxTransforms(n.kind);
@@ -1081,7 +1143,7 @@ async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   m.style.left=Math.min(x,window.innerWidth-230)+"px"; m.style.top=Math.min(y,window.innerHeight-40-m.childElementCount*34)+"px"; m.hidden=false;
 }
 let connectArm=false; // toolbar "Connect" armed: next node tap is the source
-function linkBanner(msg){ let b=$("#linkmodeBanner"); if(!b){ b=el("div","linkmode"); b.id="linkmodeBanner"; $(".graph-wrap").appendChild(b);} b.textContent=msg; b.hidden=false; }
+function linkBanner(msg){ let b=$("#linkmodeBanner"); if(!b){ b=el("div","linkmode"); b.id="linkmodeBanner"; $("#gcanvas").appendChild(b);} b.textContent=msg; b.hidden=false; }
 function clearLinkBanner(){ const b=$("#linkmodeBanner"); if(b)b.hidden=true; }
 // Toolbar entry point: arm connect mode, then pick source → target on the canvas.
 function startConnectMode(){ showView("graph"); connectArm=true; linkMode=null; linkBanner(t2("edge.pickSource")); }
@@ -1248,7 +1310,7 @@ async function dispatchAgent(agent,vals){
   setSync("busy","running"); toast(`✦ ${agent.name}…`);
   try{
     const graph={nodes:t.graph.nodes,edges:t.graph.edges};
-    const res=await runJob("ask",{question:body,domain:t.project.domain,provider:state.provider,graph,aiInstructions:t.project.ai_instructions||""});
+    const res=await runJob("ask",{question:body,domain:t.project.domain,provider:state.provider,graph,aiInstructions:t.project.ai_instructions||"",projectId:t.project.id,lang:LANG});
     setSync("ok","complete");
     const hasAdds=(res.entities&&res.entities.length)||(res.relationships&&res.relationships.length);
     if(agent.reflects==="graph"&&hasAdds){ mergeProposals(res); }
@@ -1462,6 +1524,7 @@ function renderEntities(){ const t=activeTab(); const tb=$("#entitiesTable tbody
   updateBulkBar();
 }
 // small icon reuse from graph glyphs (dark on kind color)
+function kindBadge(kind){ const c=kColor(kind); return `<span class="kind-badge" style="--kc:${c};--kc-soft:${hexA(c,0.18)}">${svg2(kind)}${esc(kind)}</span>`; }
 function svg2(kind){ const p=ENTITY_GLYPH[kind]||ENTITY_GLYPH.unknown; return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`; }
 function updateBulkBar(){ const bar=$("#entBulkBar"); if(!bar)return; bar.hidden=entSel.size===0; $("#entSelCount").textContent=entSel.size+" selected"; }
 $("#entSearch")&&$("#entSearch").addEventListener("input",()=>{ clearTimeout(window._es); window._es=setTimeout(renderEntities,180); });
@@ -1539,7 +1602,7 @@ function runModal(){
     <div class="field">Business vertical<select id="rDomain" class="select">${domainOpts}</select></div>
     <div class="field">Data type (category → type, or auto)<select id="rType" class="select">${typeOpts}</select></div>
     <div class="field">AI provider<select id="rProvider" class="select">
-      <option value="auto">Auto — smart routing (Opus/Sonnet ⇄ Codex ⇄ Gemini)</option><option value="claude">Claude (Opus/Sonnet)</option><option value="codex">Codex (gpt-5.5)</option><option value="gemini">Google Gemini (2.5 Pro)</option><option value="mock">Offline mock</option></select></div>
+      <option value="auto">Auto — base score (Claude Opus 5/Sonnet 5 ⇄ Codex GPT-6/5.6 ⇄ Gemini ⇄ APIs)</option><option value="claude">Claude (Opus 5 / Sonnet 5)</option><option value="codex">Codex (GPT-6 Astras / GPT-5.6 Sol·Luna·Terra)</option><option value="gemini">Google Gemini (2.5 Pro / Flash)</option><option value="custom">Custom CLI / API (.env)</option><option value="mock">Offline mock</option></select></div>
     <div class="field">Input source(s)<div style="display:flex;gap:8px"><input id="rInputs" placeholder="/path/to/data.csv or .json  (or Browse)" style="flex:1" /><button class="btn ghost" id="rBrowse">Browse…</button></div></div>
     <div id="rTriage" class="triage" hidden></div>
     <div class="field">Max records (graph cap)<input id="rMax" type="number" value="4000" /></div>
@@ -1701,7 +1764,7 @@ async function runGlobalAsk(q){ q=(q||"").trim(); if(!q) return;
   const think=el("div","askbar-msg a","✦ thinking…"); body.appendChild(think);
   try{
     const graph=t?{nodes:t.graph.nodes,edges:t.graph.edges}:{nodes:[],edges:[]};
-    const res=await runJob("ask",{question:q+"\n\n(You are the app-wide assistant. Summarize clearly for a non-technical user; if a specific view/action would help, mention it.)", domain:t?t.project.domain:"generic", provider:state.provider, graph, aiInstructions:t?t.project.ai_instructions:""});
+    const res=await runJob("ask",{question:q+"\n\n(You are the app-wide assistant. Summarize clearly for a non-technical user; if a specific view/action would help, mention it.)", domain:t?t.project.domain:"generic", provider:state.provider, graph, aiInstructions:t?t.project.ai_instructions:"", projectId:t?t.project.id:null, lang:LANG});
     think.remove(); const a=el("div","askbar-msg a"); let h=`<div>${esc(res.answer||"(no answer)")}</div>`;
     if(res.key_points&&res.key_points.length) h+="<ul>"+res.key_points.slice(0,5).map(p=>`<li>${esc(p)}</li>`).join("")+"</ul>";
     a.innerHTML=h;
@@ -1725,7 +1788,7 @@ async function askAbout(q){
   const thinking=el("div","ask-msg a","✦ thinking…"); log.appendChild(thinking); log.scrollTop=log.scrollHeight;
   try {
     const graph = t? {nodes:t.graph.nodes, edges:t.graph.edges}:{nodes:[],edges:[]};
-    const res = await runJob("ask",{question:q, domain:t?t.project.domain:"generic", provider:state.provider, graph, aiInstructions:t?t.project.ai_instructions:""});
+    const res = await runJob("ask",{question:q, domain:t?t.project.domain:"generic", provider:state.provider, graph, aiInstructions:t?t.project.ai_instructions:"", projectId:t?t.project.id:null, lang:LANG});
     thinking.remove();
     const a=el("div","ask-msg a");
     let h=`<div>${esc(res.answer||"(no answer)")}</div>`;
@@ -2012,7 +2075,7 @@ function makeSelect(id,options,value,onChange){ const root=$("#"+id); if(!root)r
   btn.addEventListener("click",e=>{e.stopPropagation(); const open=root.classList.contains("open"); closeAllSelects(); if(!open)root.classList.add("open");});
   api2.set(value); SELECTS[id]=api2; }
 function closeAllSelects(){ $$(".cselect.open").forEach(s=>s.classList.remove("open")); }
-function buildProviderSelect(){ const opts=[{value:"auto",label:"Auto — smart routing (Opus/Sonnet ⇄ Codex ⇄ Gemini)"},{value:"claude",label:"Claude (Opus 4.8 / Sonnet)"},{value:"codex",label:"ChatGPT Codex (gpt-5.5)"},{value:"gemini",label:"Google Gemini (2.5 Pro)"},{value:"mock",label:"Offline mock"}];
+function buildProviderSelect(){ const opts=[{value:"auto",label:"Auto — roteamento por base score (Claude Opus 5 / Sonnet 5 ⇄ Codex GPT-6 Astras / 5.6 Sol·Luna·Terra ⇄ Gemini ⇄ APIs)"},{value:"claude",label:"Claude (Opus 5 / Sonnet 5)"},{value:"codex",label:"ChatGPT Codex (GPT-6 Astras / GPT-5.6 Sol · Luna · Terra)"},{value:"gemini",label:"Google Gemini (2.5 Pro / Flash)"},{value:"custom",label:"Custom CLI / API (.env)"},{value:"mock",label:"Offline mock"}];
   makeSelect("setProvider",opts,state.provider,v=>{ state.provider=v; $("#providerPill").textContent="provider: "+v; }); }
 
 // ---------- notifications ----------
@@ -2067,7 +2130,7 @@ function minimapGoto(ev){ const cv=$("#minimap"); const m=cv._map; if(!m||!cy)re
 
 // ---------- path finder ----------
 let pathSource=null;
-function pathBanner(txt){ let b=$("#pathBanner"); if(txt){ if(!b){ b=el("div","pathbar"); b.id="pathBanner"; $(".graph-wrap").appendChild(b);} b.textContent=txt; b.hidden=false; } else if(b) b.hidden=true; }
+function pathBanner(txt){ let b=$("#pathBanner"); if(txt){ if(!b){ b=el("div","pathbar"); b.id="pathBanner"; $("#gcanvas").appendChild(b);} b.textContent=txt; b.hidden=false; } else if(b) b.hidden=true; }
 function startPath(id){ pathSource=id; if(cy) cy.elements().removeClass("pathhl faded"); pathBanner("Path mode: click the target node (Esc to cancel)"); }
 function finishPath(targetId){ const src=pathSource; pathSource=null; pathBanner(""); if(!cy||src===targetId) return;
   const res=cy.elements().aStar({root:cy.$id(src), goal:cy.$id(targetId), directed:false});
@@ -2105,7 +2168,7 @@ function addEntityModal(){ const t=activeTab(); if(!t){ toast("Open or create a 
     {label:"Add entity",cls:"primary",act:doAddEntity}
   ]);
   aeUploadPath=null;
-  setTimeout(()=>{ const ks=$("#aeKind"); const upd=()=>{ $("#aeMediaField").hidden=!["media","evidence"].includes(ks.value); }; ks&&ks.addEventListener("change",upd); upd();
+  setTimeout(()=>{ const ks=$("#aeKind"); if(!ks) return; const upd=()=>{ const f=$("#aeMediaField"); if(f) f.hidden=!["media","evidence"].includes(ks.value); }; ks.addEventListener("change",upd); upd();
     const b=$("#aeBrowse"); if(b)b.addEventListener("click",()=>pickServerPath(p=>{ aeUploadPath=p; $("#aeFile").value=p.split("/").pop(); if(!$("#aeLabel").value) $("#aeLabel").value=p.split("/").pop(); }, {title:"Choose media file", accept:".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.m4a,.pdf"})); },40);
 }
 function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind").value; let label=$("#aeLabel").value.trim();
@@ -2177,7 +2240,7 @@ $("#graphCluster")&&$("#graphCluster").addEventListener("change",e=>{ const t=ac
 // ---------- progressive view modes ----------
 // Reveal information on demand so 10k+ node graphs stay legible.
 const LARGE_GRAPH = 800;
-function modeHint(txt){ let h=$("#modeHint"); if(txt){ if(!h){ h=el("div","mode-hint"); h.id="modeHint"; $(".graph-wrap").appendChild(h);} h.innerHTML=txt; h.hidden=false; } else if(h) h.hidden=true; }
+function modeHint(txt){ let h=$("#modeHint"); if(txt){ if(!h){ h=el("div","mode-hint"); h.id="modeHint"; $("#gcanvas").appendChild(h);} h.innerHTML=txt; h.hidden=false; } else if(h) h.hidden=true; }
 function syncModeButtons(){ const t=activeTab(); const m=t?(t.graphMode||"full"):"full"; $$(".gmode").forEach(b=>b.classList.toggle("active",b.dataset.mode===m)); }
 function parseTs(n){ for(const k of ["created_at","created at","timestamp","first_seen_at","observed_at","received_at","date"]){ const v=(n.attributes||{})[k]; if(v){ const d=Date.parse(v); if(!isNaN(d))return d; } } return null; }
 function clearTimeScrub(){ const s=$("#timeScrub"); if(s)s.remove(); }
@@ -2226,7 +2289,7 @@ function buildTimeline(t){ const withTs=t.graph.nodes.map(n=>({n,ts:parseTs(n)})
   const fmt=d=>new Date(d).toISOString().slice(0,10);
   const scrub=el("div","time-scrub"); scrub.id="timeScrub";
   scrub.innerHTML=`<span class="ts-label" id="tsLabel">${fmt(min)} → cutoff</span><input type="range" id="tsRange" min="${min}" max="${max}" value="${max}" step="${Math.max(1,Math.floor((max-min)/200))}"><span class="ts-label" id="tsMax" style="text-align:right">${fmt(max)}</span>`;
-  $(".graph-wrap").appendChild(scrub);
+  $("#gcanvas").appendChild(scrub);
   const apply=cutoff=>{ const keep=new Set(); t.graph.nodes.forEach(n=>{ const ts=parseTs(n); if(ts==null||ts<=cutoff)keep.add(n.id); });
     cy.nodes().forEach(n=>n.style("display",keep.has(n.id())?"element":"none")); cy.edges().forEach(ed=>ed.style("display",(keep.has(ed.source().id())&&keep.has(ed.target().id()))?"element":"none"));
     $("#tsLabel").textContent=`up to ${fmt(cutoff)}`; };
@@ -2433,8 +2496,7 @@ async function runTransformNow(t,n,params){
   }catch(e){ setSync("err","failed"); toast(e.message,"err"); }
 }
 // Build a cytoscape element for one graph node (shared by render + append).
-function graphNodeEl(n){ const band=n.band||bandOf(n.risk); const hot=band==="critical"||band==="high";
-  return { data:{ id:n.id, label:n.label, icon:nodeIcon(n.kind,glyphColor(kColor(n.kind))), kc:kColor(n.kind), hc:bandColor(band), size:NODE_UNIFORM, bw:hot?3:1.5, halo:hot?1:undefined }, classes:n.hypothesis?"hyp":"" }; }
+function graphNodeEl(n){ const v=nodeVisual(n, 1); return { data: Object.assign({ id:n.id, label:n.label }, v), classes:n.hypothesis?"hyp":"" }; }
 // Incrementally add nodes/edges near an anchor WITHOUT re-laying-out the whole
 // graph — new results appear next to the seed and settle with a small local layout.
 function appendToCy(newNodes, newEdges, anchorId){ if(!cy){ renderGraph(); return; }
@@ -2443,7 +2505,7 @@ function appendToCy(newNodes, newEdges, anchorId){ if(!cy){ renderGraph(); retur
   newNodes.forEach((n,i)=>{ if(cy.$id(n.id).length) return; const ne=cy.add(graphNodeEl(n)); const ang=(i/Math.max(1,newNodes.length))*Math.PI*2;
     ne.position({x:ap.x+Math.cos(ang)*100+(Math.random()*24-12), y:ap.y+Math.sin(ang)*100+(Math.random()*24-12)}); added=added.union(ne); });
   newEdges.forEach(e=>{ if(cy.$id(e.source).length&&cy.$id(e.target).length){ const dup=cy.edges().some(x=>x.data("source")===e.source&&x.data("target")===e.target);
-    if(!dup) cy.add({ data:{ id:"ex"+(ei++), source:e.source, target:e.target, type:e.type, w:0.6+(e.conf||0.5)*1.8 }, classes:e.hypothesis?"hyp":"" }); } });
+    if(!dup) cy.add({ data:{ id:"ex"+(ei++), source:e.source, target:e.target, type:String(e.type||"").replace(/_/g," "), rtype:e.type, conf:e.conf, w:0.6+(e.conf||0.5)*1.8, kc:kColor((nodeData(e.target)||{}).kind) }, classes:e.hypothesis?"hyp":"" }); } });
   if(added.length){ const region=anchor.union(added).union(added.connectedEdges());
     region.layout({ name:"cose", fit:false, animate:true, animationDuration:400, randomize:false, nodeRepulsion:5000, idealEdgeLength:75,
       boundingBox:{x1:ap.x-240,y1:ap.y-240,x2:ap.x+240,y2:ap.y+240} }).run(); }
@@ -2670,7 +2732,7 @@ function geoOf(n){ const a=n.attributes||{}; const get=(...ks)=>{ for(const k of
   if(lat==null||lon==null||Math.abs(lat)>90||Math.abs(lon)>180) return null; return {lat,lon}; }
 // Graph chrome that must be hidden when the Map lens takes over the canvas, so
 // the two views never bleed into each other.
-const GRAPH_CHROME=["#minimapWrap","#graphModes","#graphZoom","#graphFilters","#legend","#graphEmpty"];
+const GRAPH_CHROME=["#minimapWrap","#ftbLens","#graphZoom","#graphFilters","#legend","#graphEmpty"];
 const HAS_WEBGL = (()=>{ try{ return !!(window.THREE && document.createElement("canvas").getContext("webgl")); }catch(e){ return false; } })();
 function setCanvasMode(mode){ canvasMode=mode;
   $$("#canvasSwitch .cmode").forEach(b=>b.classList.toggle("active",b.dataset.canvas===mode));
@@ -2917,7 +2979,7 @@ function renderWorldMap(){ const t=activeTab(); const cv=$("#mapCanvas"), empty=
 // A floating button that opens a modal to type any address and jump straight to
 // it in Google Maps (external tab) — precise geolocation via Google's own
 // geocoding, no API key needed here.
-function renderMapAddressTool(){ const wrap=$(".graph-wrap"); if(!wrap)return; let b=$("#mapAddrBtn");
+function renderMapAddressTool(){ const wrap=$("#gcanvas"); if(!wrap)return; let b=$("#mapAddrBtn");
   if(!b){ b=el("button","btn ghost"); b.id="mapAddrBtn"; b.style.cssText="position:absolute;right:14px;bottom:16px;z-index:6;padding:5px 10px;font-size:11px";
     b.addEventListener("click",openAddressMapsModal);
     wrap.appendChild(b);
@@ -2938,7 +3000,7 @@ function openAddressMapsModal(){
   setTimeout(()=>$("#addrInput")&&$("#addrInput").focus(),40);
 }
 // A small "scroll to zoom · drag to pan" hint + zoom controls on the map.
-function renderMapScaleHint(){ const wrap=$(".graph-wrap"); if(!wrap)return; let h=$("#mapZoomCtl");
+function renderMapScaleHint(){ const wrap=$("#gcanvas"); if(!wrap)return; let h=$("#mapZoomCtl");
   if(!h){ h=el("div"); h.id="mapZoomCtl"; h.style.cssText="position:absolute;left:14px;bottom:16px;z-index:6;display:flex;gap:6px;align-items:center";
     const mk=(txt,f)=>{ const b=el("button","btn ghost"); b.textContent=txt; b.style.cssText="width:30px;height:30px;padding:0;font-size:16px"; b.addEventListener("click",f); return b; };
     h.appendChild(mk("+",()=>mapZoomBy(1.3))); h.appendChild(mk("−",()=>mapZoomBy(1/1.3)));
@@ -2950,7 +3012,7 @@ function mapZoomBy(f){ const cv=$("#mapCanvas"); if(!cv)return; const r=cv.getBo
   _mapView.ox=mx-(mx-_mapView.ox)*(ns/_mapView.scale); _mapView.oy=my-(my-_mapView.oy)*(ns/_mapView.scale); _mapView.scale=ns; renderWorldMap(); }
 // Layer panel: toggle the severity choropleth + each entity kind present on the
 // map (this is where CCTV / air-base / unit layers live — generic, per project).
-function renderMapLayerLegend(t){ const wrap=$(".graph-wrap"); if(!wrap)return; let box=$("#mapLayers");
+function renderMapLayerLegend(t){ const wrap=$("#gcanvas"); if(!wrap)return; let box=$("#mapLayers");
   if(!box){ box=el("div"); box.id="mapLayers"; box.style.cssText="position:absolute;top:64px;right:14px;z-index:6;background:rgba(10,16,24,0.86);border:1px solid rgba(120,140,160,0.25);border-radius:10px;padding:10px 12px;font-size:11px;color:#cdd8e6;max-height:60%;overflow:auto;backdrop-filter:blur(6px)"; wrap.appendChild(box); }
   box.hidden = canvasMode!=="map";
   const kinds=[...new Set(t.graph.nodes.map(n=>geoOf(n)?n.kind:null).filter(Boolean))].sort();
@@ -3053,7 +3115,7 @@ async function generateIntelligence(customPrompt){ const t=activeTab(); if(!t||!
   showView("intelligence"); $("#intelBrief").innerHTML='<div class="empty">✦ synthesizing intelligence…</div>'; setSync("busy","intel");
   const base="Act as lead analyst and produce a decision-ready INTELLIGENCE PRODUCT for this graph. Provide: (1) a 2-3 sentence executive assessment in 'answer'; (2) 'key_points' as 4-6 crisp KEY JUDGMENTS, each with a confidence word; (3) 'hypotheses' as an array of COMPETING hypotheses, each {title, likelihood 0..1, confidence, evidence:[...], missing_evidence:[...], next_action}; (4) 'recommended_actions' prioritized; (5) overall 'confidence' (low|medium|high). Never state certainty the data doesn't support; separate confirmed facts from inference.";
   const q = customPrompt&&customPrompt.trim() ? (`Analyst directive: ${customPrompt.trim()}\n\n`+base) : base;
-  try{ const res=await runJob("ask",{question:q,domain:t.project.domain,provider:state.provider,graph:{nodes:t.graph.nodes,edges:t.graph.edges},aiInstructions:t.project.ai_instructions});
+  try{ const res=await runJob("ask",{question:q,domain:t.project.domain,provider:state.provider,graph:{nodes:t.graph.nodes,edges:t.graph.edges},aiInstructions:t.project.ai_instructions,projectId:t.project.id,lang:LANG});
     t.intel=res; if(customPrompt&&customPrompt.trim()) t.intel._prompt=customPrompt.trim();
     setSync("ok","complete"); pushNotif("ai","Intelligence product generated"); renderIntelligence();
     $("#intelMeta").textContent = `· ${t.graph.nodes.length} entities · ${computeClusters(t.graph).length} clusters`+(customPrompt&&customPrompt.trim()?` · steered`:``);

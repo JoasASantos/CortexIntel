@@ -7,6 +7,7 @@ pub mod agents;
 pub mod anomaly;
 pub mod assessment;
 pub mod audit;
+pub mod bus;
 pub mod auth;
 pub mod calibrate;
 pub mod cli;
@@ -23,7 +24,9 @@ pub mod iscore;
 pub mod keys;
 pub mod linkpred;
 pub mod llm;
+pub mod memory;
 pub mod monitor;
+pub mod orchestrator;
 pub mod netsci;
 pub mod ontology;
 pub mod pipeline;
@@ -207,8 +210,10 @@ pub mod api {
             LlmRouter::offline(false)
         } else {
             LlmRouter::new(cfg.provider, None, None, false)
-        };
+        }.with_lang(&cfg.lang);
+        crate::bus::emit("run.start", format!("domain={} provider={} lang={} inputs={}", params.domain, params.provider, cfg.lang, params.inputs.len()));
         let result = pipeline::run(srcs, &cfg, &router)?;
+        if let Some(pid) = &params.project_id { crate::memory::invalidate(pid); }
 
         if let Some(pid) = &params.project_id {
             if !pid.is_empty() {
@@ -258,6 +263,13 @@ pub mod api {
         /// Optional project AI instructions to steer the answer.
         #[serde(default, alias = "aiInstructions")]
         pub ai_instructions: Option<String>,
+        #[serde(default, alias = "projectId")]
+        pub project_id: Option<String>,
+        #[serde(default)]
+        pub lang: Option<String>,
+        /// Bypass the orchestrator (planner/worker/critic) and answer directly.
+        #[serde(default)]
+        pub direct: Option<bool>,
     }
 
     pub fn ask(params: AskParams) -> Result<serde_json::Value> {
@@ -266,18 +278,33 @@ pub mod api {
         }
         let domain = parse_domain(&params.domain);
         let provider = parse_provider(&params.provider);
+        let lang = match params.lang.as_deref() { Some("en") => "en", Some("es") => "es", _ => "pt" }.to_string();
         let router = if provider == ProviderChoice::Mock {
             LlmRouter::offline(false)
         } else {
             LlmRouter::new(provider, None, None, false)
+        }.with_lang(&lang);
+        let instr = params.ai_instructions.clone().filter(|s| !s.trim().is_empty());
+        let answer_fn = |q: &str, ctx: &str| -> crate::llm::LlmRequest {
+            let mut context = ctx.to_string();
+            if let Some(i) = &instr { context = format!("OPERATOR INSTRUCTIONS (steer your analysis):\n{i}\n\n{context}"); }
+            crate::agents::ask_request(domain, q, &context)
         };
-        let mut context = summarize_graph_for_prompt(&params.graph);
-        if let Some(instr) = params.ai_instructions.as_deref().filter(|s| !s.trim().is_empty()) {
-            context = format!("OPERATOR INSTRUCTIONS (steer your analysis):\n{instr}\n\n{context}");
+        let project = params.project_id.clone().unwrap_or_default();
+        if params.direct.unwrap_or(false) || project.is_empty() {
+            let context = summarize_graph_for_prompt(&params.graph);
+            let req = answer_fn(&params.question, &context);
+            let resp = router.complete(&req)?;
+            let mut v = resp.as_json().unwrap_or_else(|_| serde_json::json!({ "answer": resp.text }));
+            v["_meta"] = serde_json::json!({"provider": resp.provider, "model": resp.model, "mode": "direct"});
+            return Ok(v);
         }
-        let req = crate::agents::ask_request(domain, &params.question, &context);
-        let resp = router.complete(&req)?;
-        resp.as_json().or_else(|_| Ok(serde_json::json!({ "answer": resp.text })))
+        let (mut answer, trace) = crate::orchestrator::ask(&router, &project, domain.slug(), &params.question, &params.graph, &lang, &answer_fn)?;
+        answer["_meta"] = serde_json::json!({
+            "provider": trace.provider, "model": trace.model, "mode": "orchestrated", "planner": trace.planner,
+            "plan": trace.plan, "observations": trace.observations.len(), "retrieval_chars": trace.retrieval_chars, "critic": trace.critic,
+        });
+        Ok(answer)
     }
 
     /// Compact the frontend graph (nodes/edges) into a prompt-sized context.
@@ -561,6 +588,7 @@ pub mod api {
             "claude" => ProviderChoice::Claude,
             "codex" => ProviderChoice::Codex,
             "gemini" => ProviderChoice::Gemini,
+            "custom" => ProviderChoice::Custom,
             "mock" => ProviderChoice::Mock,
             _ => ProviderChoice::Auto,
         }

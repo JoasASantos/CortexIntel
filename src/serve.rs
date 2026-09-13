@@ -35,6 +35,15 @@ fn start_job(kind: String, payload: serde_json::Value) -> String {
     jobs().lock().unwrap().insert(id.clone(), Job { status: "running".into(), result: None, error: None });
     let jid = id.clone();
     std::thread::spawn(move || {
+        crate::bus::begin_job(&jid);
+        // Budget scales with the workload: runs over big feeds get more headroom.
+        let scale = match kind.as_str() {
+            "run" => (payload.get("maxRecords").or_else(|| payload.get("max_records")).and_then(|v| v.as_u64()).unwrap_or(4000) as f64 / 2000.0).max(1.0),
+            "ask" => 0.5,
+            _ => 1.0,
+        };
+        crate::llm::governor::begin(&jid, scale);
+        crate::bus::emit("job.start", format!("{kind}"));
         let res: Result<serde_json::Value> = (|| match kind.as_str() {
             "ask" => api::ask(serde_json::from_value(payload)?),
             "run" => api::run_analysis(serde_json::from_value(payload)?),
@@ -42,10 +51,22 @@ fn start_job(kind: String, payload: serde_json::Value) -> String {
             "report_pdf" => api::report_pdf_opt(payload.get("project_id").and_then(|v| v.as_str()).unwrap_or(""), payload.get("redact").and_then(|v| v.as_bool()).unwrap_or(false)),
             other => Err(anyhow!("unknown job kind '{other}'")),
         })();
+        let usage = crate::llm::governor::end(&jid);
+        match &res {
+            Ok(_) => crate::bus::emit("job.done", format!("{kind} ✓")),
+            Err(e) => crate::bus::emit("job.error", format!("{kind} ✗ {e}")),
+        }
+        crate::bus::end_job();
         let mut map = jobs().lock().unwrap();
         if let Some(j) = map.get_mut(&jid) {
             match res {
-                Ok(v) => { j.status = "done".into(); j.result = Some(v); }
+                Ok(mut v) => {
+                    if let (Some(u), Some(obj)) = (usage, v.as_object_mut()) {
+                        let meta = obj.entry("_meta").or_insert(serde_json::json!({}));
+                        if let Some(m) = meta.as_object_mut() { m.insert("usage".into(), serde_json::to_value(u).unwrap_or_default()); }
+                    }
+                    j.status = "done".into(); j.result = Some(v);
+                }
                 Err(e) => { j.status = "error".into(); j.error = Some(e.to_string()); }
             }
         }
@@ -56,6 +77,8 @@ fn start_job(kind: String, payload: serde_json::Value) -> String {
 // Embedded frontend assets.
 const INDEX_HTML: &str = include_str!("../gui/dist/index.html");
 const STYLES_CSS: &str = include_str!("../gui/dist/styles.css");
+const UI_JS: &str = include_str!("../gui/dist/ui.js");
+const L10N_JS: &str = include_str!("../gui/dist/l10n.js");
 const APP_JS: &str = include_str!("../gui/dist/app.js");
 const V_CYTOSCAPE: &str = include_str!("../gui/dist/vendor/cytoscape.min.js");
 const V_LAYOUT_BASE: &str = include_str!("../gui/dist/vendor/layout-base.js");
@@ -71,6 +94,7 @@ const V_COUNTRIES: &str = include_str!("../gui/dist/vendor/countries.min.json");
 pub fn serve(port: u16, open: bool) -> Result<()> {
     // GUI apps don't inherit the shell PATH — make the LLM CLIs discoverable.
     crate::llm::augment_path();
+    crate::llm::api::load_dotenv();
     let addr = format!("127.0.0.1:{port}");
     let listener = TcpListener::bind(&addr)
         .map_err(|e| anyhow!("cannot bind {addr}: {e} (try another --port)"))?;
@@ -186,6 +210,8 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         ("GET", "/") | ("GET", "/index.html") => return respond(stream, 200, "text/html; charset=utf-8", INDEX_HTML.as_bytes()),
         ("GET", "/styles.css") => return respond(stream, 200, "text/css; charset=utf-8", STYLES_CSS.as_bytes()),
         ("GET", "/app.js") => return respond(stream, 200, "application/javascript; charset=utf-8", APP_JS.as_bytes()),
+        ("GET", "/ui.js") => return respond(stream, 200, "application/javascript; charset=utf-8", UI_JS.as_bytes()),
+        ("GET", "/l10n.js") => return respond(stream, 200, "application/javascript; charset=utf-8", L10N_JS.as_bytes()),
         ("GET", "/vendor/cytoscape.min.js") => return respond(stream, 200, "application/javascript; charset=utf-8", V_CYTOSCAPE.as_bytes()),
         ("GET", "/vendor/layout-base.js") => return respond(stream, 200, "application/javascript; charset=utf-8", V_LAYOUT_BASE.as_bytes()),
         ("GET", "/vendor/cose-base.js") => return respond(stream, 200, "application/javascript; charset=utf-8", V_COSE_BASE.as_bytes()),
@@ -238,7 +264,7 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
         let writes = p.starts_with("/api/projects") || p.starts_with("/api/run") || p.starts_with("/api/jobs")
             || p.starts_with("/api/transforms") || p.starts_with("/api/connectors") || p.starts_with("/api/keys")
             || p.starts_with("/api/plugins") || p.starts_with("/api/report") || p.starts_with("/api/users")
-            || p.starts_with("/api/agents/save") || p.starts_with("/api/agents/delete");
+            || p.starts_with("/api/agents/save") || p.starts_with("/api/agents/delete") || p.starts_with("/api/memory") || p.starts_with("/api/cache");
         if writes {
             return respond(stream, 403, "application/json; charset=utf-8", br#"{"error":"read-only role (viewer): ask an admin for access"}"#);
         }
@@ -336,12 +362,66 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             json_ok(stream, &serde_json::json!({ "job_id": id }))
         }
         ("GET", "/api/jobs/status") => match param(&req.query, "id") {
-            Some(id) => match jobs().lock().unwrap().get(&id) {
-                Some(j) => json_ok(stream, j),
-                None => json_err(stream, "unknown job"),
-            },
+            Some(id) => {
+                let j = jobs().lock().unwrap().get(&id).cloned();
+                match j {
+                    Some(j) => {
+                        let mut v = serde_json::to_value(&j).unwrap_or_default();
+                        v["log"] = serde_json::Value::Array(crate::bus::job_log(&id).into_iter().map(serde_json::Value::String).collect());
+                        if j.status != "running" { crate::bus::forget_job(&id); }
+                        json_ok(stream, &v)
+                    }
+                    None => json_err(stream, "unknown job"),
+                }
+            }
             None => json_err(stream, "missing id"),
         },
+        // --- cognitive layer introspection ---
+        ("GET", "/api/models") => json_ok(stream, &crate::llm::models::describe()),
+        ("GET", "/api/events") => {
+            let since = param(&req.query, "since").and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
+            json_ok(stream, &crate::bus::events_since(since, 200))
+        }
+        ("GET", "/api/governor") => json_ok(stream, &crate::llm::governor::snapshot()),
+        ("GET", "/api/cache/stats") => json_ok(stream, &crate::llm::cache::stats()),
+        ("POST", "/api/cache/clear") => json_ok(stream, &serde_json::json!({"cleared": crate::llm::cache::clear()})),
+        ("GET", "/api/tools") => json_ok(stream, &crate::orchestrator::registry(&param(&req.query, "domain").unwrap_or_else(|| "generic".into()))),
+        ("GET", "/api/memory/search") => {
+            let pid = param(&req.query, "project").unwrap_or_default();
+            if !check_project_opt(stream, &user, &Some(pid.clone()))? { return Ok(()); }
+            let q = param(&req.query, "q").unwrap_or_default();
+            let mode = param(&req.query, "mode").unwrap_or_else(|| "hybrid".into());
+            let k = param(&req.query, "k").and_then(|s| s.parse::<usize>().ok()).unwrap_or(12);
+            json_ok(stream, &crate::memory::search(&pid, &q, k, None, &mode))
+        }
+        ("POST", "/api/memory/search") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let pid = b.get("project").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if !check_project_opt(stream, &user, &Some(pid.clone()))? { return Ok(()); }
+            let q = b.get("q").and_then(|v| v.as_str()).unwrap_or("");
+            let mode = b.get("mode").and_then(|v| v.as_str()).unwrap_or("hybrid");
+            let k = b.get("k").and_then(|v| v.as_u64()).unwrap_or(12) as usize;
+            json_ok(stream, &crate::memory::search(&pid, q, k, b.get("graph"), mode))
+        }
+        ("GET", "/api/memory/facts") => {
+            let pid = param(&req.query, "project").unwrap_or_default();
+            if !check_project_opt(stream, &user, &Some(pid.clone()))? { return Ok(()); }
+            json_ok(stream, &serde_json::json!({"facts": crate::memory::facts(&pid), "stats": crate::memory::stats(&pid)}))
+        }
+        ("POST", "/api/memory/facts") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let pid = b.get("project").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if !check_project_opt(stream, &user, &Some(pid.clone()))? { return Ok(()); }
+            let f = crate::memory::remember(&pid, b.get("kind").and_then(|v| v.as_str()).unwrap_or("note"), b.get("text").and_then(|v| v.as_str()).unwrap_or(""), &user.email,
+                &b.get("entity_ids").and_then(|v| v.as_array()).map(|a| a.iter().filter_map(|x| x.as_str().map(|s| s.to_string())).collect::<Vec<_>>()).unwrap_or_default());
+            json_ok(stream, &serde_json::json!({"fact": f}))
+        }
+        ("POST", "/api/memory/forget") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            let pid = b.get("project").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            if !check_project_opt(stream, &user, &Some(pid.clone()))? { return Ok(()); }
+            json_ok(stream, &serde_json::json!({"ok": crate::memory::forget(&pid, b.get("id").and_then(|v| v.as_str()).unwrap_or(""))}))
+        }
         ("POST", "/api/report/pdf") => {
             let b: serde_json::Value = parse_body(&req.body)?;
             let pid = b.get("project_id").and_then(|v| v.as_str()).unwrap_or("").to_string();
