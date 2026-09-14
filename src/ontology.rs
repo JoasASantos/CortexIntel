@@ -42,6 +42,23 @@ pub enum EntityKind {
     Facility,   // GEOINT — fixed asset/site (CCTV, air base, unit, sensor site)
     Sensor,     // GEOINT — a sensor/camera feed
     Selector,   // SIGINT — comms selector (phone/IMEI/IMSI/handle)
+    // v0.0.3 — richer OSINT/SIGINT/GEOINT ontology.
+    Vehicle,      // car/van/motorcycle (plate, VIN)
+    Email,        // e-mail address as its own node (distinct from a platform account)
+    Username,     // bare handle reused across platforms
+    Address,      // postal/street address (geocodable)
+    Document,     // identity/legal document (CPF, passport, contract) — sensitive
+    Hash,         // file/content fingerprint (md5/sha1/sha256/phash)
+    Credential,   // leaked credential pair / API token — sensitive
+    Breach,       // data breach / leak event
+    CellTower,    // MCC/MNC/LAC/CID cell site
+    WifiNetwork,  // BSSID/SSID access point
+    Certificate,  // TLS certificate (fingerprint / subject)
+    Camera,       // CCTV / webcam (OSM surveillance node, Shodan webcam)
+    Event,        // dated occurrence (meeting, transfer, crossing)
+    Weapon,       // firearm / weapon reference
+    Face,         // face template / face-match candidate — sensitive biometric
+    BankAccount,  // IBAN / agency+account / PIX key
     Unknown,
 }
 
@@ -76,6 +93,22 @@ impl EntityKind {
             EntityKind::Facility => "facility",
             EntityKind::Sensor => "sensor",
             EntityKind::Selector => "selector",
+            EntityKind::Vehicle => "vehicle",
+            EntityKind::Email => "email",
+            EntityKind::Username => "username",
+            EntityKind::Address => "address",
+            EntityKind::Document => "document",
+            EntityKind::Hash => "hash",
+            EntityKind::Credential => "credential",
+            EntityKind::Breach => "breach",
+            EntityKind::CellTower => "celltower",
+            EntityKind::WifiNetwork => "wifi",
+            EntityKind::Certificate => "certificate",
+            EntityKind::Camera => "camera",
+            EntityKind::Event => "event",
+            EntityKind::Weapon => "weapon",
+            EntityKind::Face => "face",
+            EntityKind::BankAccount => "bankaccount",
             EntityKind::Unknown => "unknown",
         }
     }
@@ -88,27 +121,43 @@ impl EntityKind {
             "person" | "individual" | "people" => EntityKind::Person,
             "victim" => EntityKind::Victim,
             "suspect" | "offender" | "actor" | "threat_actor" => EntityKind::Suspect,
-            "account" | "profile" | "user" | "username" | "handle" => EntityKind::Account,
+            "account" | "profile" | "user" | "socialaccount" | "social_profile" => EntityKind::Account,
+            "username" | "handle" | "alias" | "nickname" => EntityKind::Username,
+            "email" | "email_address" | "e-mail" => EntityKind::Email,
+            "vehicle" | "car" | "van" | "plate" | "license_plate" | "vin" => EntityKind::Vehicle,
+            "address" | "street_address" | "postal_address" | "endereco" | "endereço" => EntityKind::Address,
+            "document" | "passport" | "id_document" | "cpf" | "cnpj" | "contract" => EntityKind::Document,
+            "hash" | "sha256" | "md5" | "sha1" | "phash" | "fingerprint" => EntityKind::Hash,
+            "credential" | "password" | "token" | "api_key" | "leaked_credential" => EntityKind::Credential,
+            "breach" | "leak" | "data_breach" | "dump" => EntityKind::Breach,
+            "celltower" | "cell_tower" | "cell" | "bts" | "cellid" => EntityKind::CellTower,
+            "wifi" | "wifi_network" | "bssid" | "ssid" | "access_point" => EntityKind::WifiNetwork,
+            "certificate" | "cert" | "tls" | "ssl" | "sslcertificate" => EntityKind::Certificate,
+            "camera" | "cctv" | "webcam" | "surveillance" => EntityKind::Camera,
+            "event" | "meeting" | "crossing" | "sighting" => EntityKind::Event,
+            "weapon" | "firearm" | "gun" => EntityKind::Weapon,
+            "face" | "face_match" | "biometric" => EntityKind::Face,
+            "bankaccount" | "bank_account" | "iban" | "pix" | "pix_key" => EntityKind::BankAccount,
             "device" | "host" | "endpoint" => EntityKind::Device,
             "ip" | "ip_address" | "ipv4" | "ipv6" => EntityKind::Ip,
             "url" | "link" | "uri" => EntityKind::Url,
             "domain" | "hostname" | "fqdn" => EntityKind::Domain,
-            "media" | "file" | "image" | "video" | "audio" | "document" => EntityKind::Media,
+            "media" | "file" | "image" | "video" | "audio" | "photo" => EntityKind::Media,
             "evidence" | "exhibit" | "artifact" => EntityKind::Evidence,
-            "communication" | "message" | "chat" | "email" => EntityKind::Communication,
+            "communication" | "message" | "chat" | "sms" => EntityKind::Communication,
             "group" | "channel" | "community" | "server" => EntityKind::Group,
             "payment" | "transaction" | "transfer" => EntityKind::Payment,
-            "wallet" | "crypto_wallet" | "address" => EntityKind::Wallet,
+            "wallet" | "crypto_wallet" | "crypto_address" => EntityKind::Wallet,
             "location" | "place" | "geo" => EntityKind::Location,
             "organization" | "org" | "company" | "merchant" => EntityKind::Organization,
             "malware" | "sample" | "payload" => EntityKind::Malware,
             "vulnerability" | "cve" | "vuln" => EntityKind::Vulnerability,
-            "incident" | "event" | "alert" => EntityKind::Incident,
+            "incident" | "alert" | "indicator" => EntityKind::Incident,
             "service" | "cloud_service" | "saas" => EntityKind::Service,
             "repository" | "repo" | "github" => EntityKind::Repository,
             "aircraft" | "flight" | "airplane" | "plane" | "uav" | "drone" => EntityKind::Aircraft,
             "vessel" | "ship" | "boat" | "maritime" => EntityKind::Vessel,
-            "facility" | "asset" | "site" | "base" | "unit" | "installation" | "cctv" | "camera" => EntityKind::Facility,
+            "facility" | "asset" | "site" | "base" | "unit" | "installation" | "hotel" | "building" => EntityKind::Facility,
             "sensor" | "feed" | "camera_feed" => EntityKind::Sensor,
             "selector" | "imei" | "imsi" | "msisdn" | "phone" => EntityKind::Selector,
             _ => EntityKind::Unknown,
@@ -121,6 +170,7 @@ impl EntityKind {
         matches!(
             self,
             EntityKind::Victim | EntityKind::Media | EntityKind::Evidence | EntityKind::Communication
+                | EntityKind::Document | EntityKind::Credential | EntityKind::Face
         )
     }
 }

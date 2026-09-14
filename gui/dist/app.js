@@ -2165,12 +2165,46 @@ function addEntityModal(){ const t=activeTab(); if(!t){ toast("Open or create a 
     <div class="field">Attributes (key: value per line, optional)<textarea id="aeAttrs" rows="2" placeholder="source: hotline&#10;country: BR"></textarea></div>
   `,[
     {label:"Cancel",cls:"ghost",act:closeModal},
+    {label:"✦ Investigar (IA)",cls:"ghost",act:()=>{ closeModal(); investigateModal(); }},
     {label:"Add entity",cls:"primary",act:doAddEntity}
   ]);
   aeUploadPath=null;
   setTimeout(()=>{ const ks=$("#aeKind"); if(!ks) return; const upd=()=>{ const f=$("#aeMediaField"); if(f) f.hidden=!["media","evidence"].includes(ks.value); }; ks.addEventListener("change",upd); upd();
     const b=$("#aeBrowse"); if(b)b.addEventListener("click",()=>pickServerPath(p=>{ aeUploadPath=p; $("#aeFile").value=p.split("/").pop(); if(!$("#aeLabel").value) $("#aeLabel").value=p.split("/").pop(); }, {title:"Choose media file", accept:".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.m4a,.pdf"})); },40);
 }
+
+// ---------- AI seed investigation ----------
+// Insert a subject (name / phone / CPF / wallet…) + free-form context and let the
+// AI derive the connected entities and relationships (all as hypotheses to confirm).
+function investigateModal(){ const t=activeTab(); if(!t){ toast("Abra ou crie um projeto primeiro","err"); return; }
+  const kinds=["person","organization","username","email","selector","document","wallet","bankaccount","url","domain","address","account","vehicle"];
+  const kopts=kinds.map(k=>`<option value="${k}">${k}</option>`).join("");
+  openModal("Investigar com IA", `
+    <p class="muted" style="margin:0 0 12px">Informe um sujeito e dê contexto. A IA propõe as entidades conectadas (apelidos, telefones, CPF/RG, e-mails, endereços, carteiras cripto, URLs, contas sociais, empresas, veículos…) e as relações — tudo como <b>hipótese</b> para você confirmar.</p>
+    <div class="field">Tipo do sujeito<select id="ivKind" class="select">${kopts}</select></div>
+    <div class="field">Sujeito (nome, telefone, CPF, carteira…)<input id="ivSubject" placeholder="ex.: João da Silva Santos / +55 11 98765-4321 / 0x52908…" /></div>
+    <div class="field">Contexto / descrição (o que você já sabe)<textarea id="ivContext" rows="5" placeholder="ex.: Suspeito de operar anúncios em SP e Foz; usa o handle @lua_sp2026; possível empresa de fachada 'EM Serviços'; recebeu PIX de contas laranja; carteira BTC bc1q…"></textarea></div>
+    <div class="modal-note">Não invente identificadores reais — hipóteses vêm como rótulos descritivos ("e-mail corporativo (a confirmar)"). Depois rode transforms (Shodan, telefone, face, câmeras…) para confirmar.</div>
+  `,[
+    {label:"Cancel",cls:"ghost",act:closeModal},
+    {label:"✦ Investigar",cls:"primary",act:doInvestigate}
+  ]);
+  setTimeout(()=>$("#ivSubject")&&$("#ivSubject").focus(),40);
+}
+async function doInvestigate(){ const t=activeTab(); if(!t)return;
+  const subject=($("#ivSubject")||{}).value.trim(); const kind=($("#ivKind")||{}).value||"person"; const context=($("#ivContext")||{}).value||"";
+  if(!subject){ toast("Informe o sujeito","err"); return; }
+  closeModal(); setSync("busy","investigate"); toast("Investigando com IA…");
+  try{
+    const res=await runJob("investigate",{subject,kind,context,domain:t.project.domain,provider:state.provider,projectId:t.project.id,lang:LANG});
+    // ensure the subject node exists and is the anchor
+    if(res.subject&&res.subject.label){ res.entities=res.entities||[]; if(!res.entities.some(e=>(e.label||"").toLowerCase()===res.subject.label.toLowerCase())) res.entities.unshift({kind:res.subject.kind||kind,label:res.subject.label,attributes:{},hypothesis:false}); }
+    mergeProposals(res); setSync("ok","complete");
+    if(res.summary) pushNotif("ai", res.summary.slice(0,120));
+    const t2c=(res.next_steps||[]).slice(0,4); if(t2c.length) toast("Próximos passos: "+t2c.join(" · "),"ok");
+  }catch(e){ setSync("err","failed"); toast("Investigação falhou: "+e.message,"err"); }
+}
+
 function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind").value; let label=$("#aeLabel").value.trim();
   if(!label && !aeUploadPath){ toast("Label or file required","err"); return; }
   const attrs={}; ($("#aeAttrs").value||"").split("\n").forEach(l=>{ const i=l.indexOf(":"); if(i>0){ const k=l.slice(0,i).trim(); if(k)attrs[k]=l.slice(i+1).trim(); } });
@@ -2305,7 +2339,7 @@ $("#globalSearch").addEventListener("keydown",e=>{ if(e.key==="Enter"){ const q=
 
 // ---------- command palette ----------
 const COMMANDS=[
-  ["New project","⌘N",newProjectModal],["Run analysis","⌘R",runModal],["Add entity","",addEntityModal],["Ask AI copilot","⌘/",openAsk],
+  ["New project","⌘N",newProjectModal],["Run analysis","⌘R",runModal],["Add entity","",addEntityModal],["Investigar com IA (seed)","",investigateModal],["Ask AI copilot","⌘/",openAsk],
   ["Generate intelligence","",()=>{showView("intelligence");renderIntelligence();generateIntelligence();}],
   ["Go to Dashboard","",()=>showView("dashboard")],["Go to Graph","",()=>showView("graph")],["Go to Intelligence","",()=>{showView("intelligence");renderIntelligence();}],["Go to Entities","",()=>showView("entities")],
   ["Go to Timeline","",()=>showView("timeline")],["Go to Reports","",()=>showView("reports")],
@@ -2393,7 +2427,7 @@ $("#btnAddUser")&&$("#btnAddUser").addEventListener("click",()=>{
 });
 
 // ---------- transform store ----------
-const TF_CATS=[["trafficking","Anti-Tráfico de Pessoas (Counter-Trafficking)"],["people","People Search"],["kyc","KYC / Identity (BR·US)"],["cyber","Cybersecurity"],["investigative","Investigative / OSINT"],["media","Media Forensics"],["journalism","Journalism"],["hr","Human Resources"],["business","Business & Corporate"],["military","Military Intelligence"]];
+const TF_CATS=[["signals","Signal Intelligence & OSINT (Shodan/Censys/leaks)"],["phone","Phone Intelligence"],["face","Face & Image Search"],["geoint","GEOINT — geo, câmeras, lugares"],["trafficking","Anti-Tráfico de Pessoas (Counter-Trafficking)"],["people","People Search"],["kyc","KYC / Identity (BR·US)"],["cyber","Cybersecurity"],["investigative","Investigative / OSINT"],["media","Media Forensics"],["journalism","Journalism"],["hr","Human Resources"],["business","Business & Corporate"],["military","Military Intelligence"]];
 async function renderTransformStore(){ const w=$("#transformCatalog"); if(!w)return; w.innerHTML="checking…";
   let cat=[],inst=[]; try{ cat=await api("/api/transforms/catalog"); }catch(e){} try{ inst=await api("/api/transforms"); }catch(e){}
   const instIds=new Set(inst.map(t=>t.id));
@@ -2472,21 +2506,20 @@ async function renderCtxTransforms(kind){ const w=$("#ctxTransforms"); if(!w)ret
 }
 async function runTransformOnSelected(t){ const id=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; const n=id?nodeData(id):null; if(!n){toast("Select an entity","err");return;}
   const doRunTransform=(params)=>runTransformNow(t,n,params||{});
-  // Some transforms (webhook, document-expand…) read a per-run endpoint/url
-  // from params instead of a fixed service — detect that from the entrypoint
-  // source (already in hand from the /api/transforms list) and prompt for it,
-  // instead of letting the run fail with "set params.endpoint".
-  const m=/\.get\(\s*['"](endpoint|url)['"]/.exec(t.entrypoint||"");
-  if(m){
-    const key=m[1];
-    openModal(`${t.name} — ${t2("transforms.configure")}`,
-      `<div class="field">${key==="url"?t2("transforms.webhookUrl"):t2("transforms.endpointUrl")}<input id="tfParamVal" placeholder="https://api.example.com/lookup" /></div>`,
-      [{label:"Cancel",cls:"ghost",act:closeModal},
-       {label:t2("transforms.run"),cls:"primary",act:()=>{ const v=(($("#tfParamVal")||{}).value||"").trim(); if(!v){toast(t2("transforms.urlRequired"),"err");return;} closeModal(); doRunTransform({[key]:v}); }}]);
-    setTimeout(()=>$("#tfParamVal")&&$("#tfParamVal").focus(),40);
-    return;
-  }
-  doRunTransform({});
+  // Declared params (runtime "api" and others) → render a form. Fallback: sniff
+  // the entrypoint for a legacy endpoint/url param.
+  let schema=Array.isArray(t.params)?t.params.slice():[];
+  if(!schema.length){ const m=/\.get\(\s*['"](endpoint|url)['"]/.exec(t.entrypoint||""); if(m) schema=[{name:m[1],label:m[1]==="url"?t2("transforms.webhookUrl"):t2("transforms.endpointUrl"),type:"text",required:true}]; }
+  if(!schema.length){ doRunTransform({}); return; }
+  const rows=schema.map((f,i)=>{ const id="tfp_"+i; const ph=f.type==="file"?"caminho do arquivo, ou deixe usar a mídia":"";
+    if(f.type==="file") return `<div class="field">${esc(f.label||f.name)}${f.required?' <span style="color:var(--red)">*</span>':''}<div style="display:flex;gap:8px"><input id="${id}" placeholder="${esc(ph)}" style="flex:1" readonly/><button class="btn ghost" data-browse="${id}">Procurar…</button></div></div>`;
+    if(f.type==="select") return `<div class="field">${esc(f.label||f.name)}<select id="${id}" class="select">${(f.options||[]).map(o=>`<option value="${esc(o)}">${esc(o)}</option>`).join("")}</select></div>`;
+    return `<div class="field">${esc(f.label||f.name)}${f.required?' <span style="color:var(--red)">*</span>':''}<input id="${id}" type="${f.type==="number"?"number":"text"}" value="${esc(f.default!=null?String(f.default):"")}" placeholder="${esc(ph)}"/></div>`; }).join("");
+  const svcNote = t.requires_api_key ? `<div class="modal-note">Requer chave do serviço "${esc(t.service)}" (Ajustes → Chaves de API).</div>` : "";
+  openModal(`${t.name} — ${t2("transforms.configure")}`, rows+svcNote,
+    [{label:"Cancel",cls:"ghost",act:closeModal},
+     {label:t2("transforms.run"),cls:"primary",act:()=>{ const params={}; for(let i=0;i<schema.length;i++){ const f=schema[i]; const v=($("#tfp_"+i)||{}).value||""; if(f.required&&!v){ toast(`"${f.label||f.name}" obrigatório`,"err"); return; } if(v) params[f.name]=f.type==="number"?parseFloat(v):v; } closeModal(); doRunTransform(params); }}]);
+  setTimeout(()=>{ $$('[data-browse]').forEach(b=>b.addEventListener("click",()=>{ const tgt=b.dataset.browse; (typeof pickServerPath==="function"?pickServerPath:browseUpload)(pp=>{ const el2=$("#"+tgt); if(el2) el2.value=pp; }, {title:"Selecionar arquivo"}); })); },40);
 }
 async function runTransformNow(t,n,params){
   toast("Running "+t.name+"…"); setSync("busy","transform");

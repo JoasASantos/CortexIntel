@@ -106,3 +106,24 @@ See `.env.example` for all knobs.
 ## Scenario packs
 
 * `scenarios/human-trafficking/` — **Operação Rota Silenciosa**: synthetic counter-trafficking case (recruitment → transport → exploitation → proceeds) with 3 datasets, a classifier plugin, 9 transforms (`trafficking` category) and 6 agents. See its README.
+
+## Configurable API transforms (v0.0.3)
+
+A transform with `runtime: "api"` carries a **declarative JSON spec** (no code) so operators wire any REST service from the GUI (Ajustes → Loja de Transforms) or a plugin manifest. Built-ins:
+
+| category | transform | service |
+|---|---|---|
+| signals | Shodan host/search, Censys, GreyNoise, AbuseIPDB, LeakCheck, crypto-abuse, generic GET builder | key per service |
+| phone | HLR/owner lookup, phone→linked accounts (WhatsApp/Telegram) | key + endpoint |
+| face | face search (Search4Faces/PimEyes/FaceCheck-like), face compare, reverse image | key + endpoint, image upload |
+| geoint | geocode (OSM, no key), cameras nearby (OSM surveillance), places nearby (hotels/ATMs), Wi-Fi→location (WiGLE) | mostly no key |
+
+**Spec** (`entrypoint`): `steps[]` (method, url, headers, query, json/form/body, save vars) + `map` (items path, kind, label, attributes, relation, lat/lon, confidence) + optional `extra[]`. Placeholders: `{label} {key} {attr.NAME} {param.NAME} {var.NAME} {lat} {lon} {file_b64} {label_digits} {label_enc}`; item fields as `item.path` or `{item.path}`. Params are declared in `params[]` and the GUI renders a form (text/number/file/select), including file upload for face search. Keys live in Ajustes → Chaves de API; per-run endpoints/files come from the form.
+
+## Seed investigation (AI)
+
+**Investigar com IA** (add-entity modal, entities panel, ⌘K): type a subject (name, phone, CPF, wallet…) + free-form context; the model derives the connected entities (aliases, phones, CPF/RG, e-mails, addresses, crypto wallets, URLs, social accounts, orgs, vehicles) and their relationships as **hypotheses** to confirm. A deterministic extractor guarantees real identifiers in the text (e-mail, CPF/CNPJ, BTC/ETH wallet, @handle, URL/domain) even offline. Endpoint: `POST /api/jobs {kind:"investigate"}` → merged into the graph via the existing proposal flow. Then run the API transforms to confirm each lead.
+
+## Ontology (v0.0.3)
+
+17 new entity kinds: vehicle, email, username, address, document, hash, credential, breach, celltower, wifi, certificate, camera, event, weapon, face, bankaccount (plus richer intra-record links and correlation hubs: same_email_as, same_handle_as, same_address_as, same_vehicle_as, same_bank_account_as, same_cell_as, same_wifi_as, same_file_as). Sensitive kinds (document, credential, face, victim, media…) are fingerprint-labelled and gated.

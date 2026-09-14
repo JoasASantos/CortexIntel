@@ -7,6 +7,7 @@
 (function(){
 "use strict";
 const PT = {
+  "Investigar com IA":"Investigar com IA","Add entity":"Adicionar entidade","Investigar (IA)":"Investigar (IA)","✦ Investigar":"✦ Investigar","Signal Intelligence & OSINT (Shodan/Censys/leaks)":"Signal Intelligence & OSINT (Shodan/Censys/vazamentos)","Phone Intelligence":"Inteligência de Telefone","Face & Image Search":"Busca Facial & de Imagem","GEOINT — geo, câmeras, lugares":"GEOINT — geo, câmeras, lugares",
   // nav / views
   "Dashboard":"Painel","Command Center":"Centro de Comando","Graph":"Grafo","Entities":"Entidades","Intelligence":"Inteligência","Priority":"Priorização","Agents":"Agentes","Sources":"Fontes","Timeline":"Timeline","Alerts":"Alertas","Reports":"Relatórios","Settings":"Ajustes","Entity Registry":"Registro de Entidades",
   "Switch project":"Trocar projeto","All projects…":"Todos os projetos…","Export project":"Exportar projeto","Import project":"Importar projeto","New project":"Novo projeto","Open graph":"Abrir grafo","Run analysis":"Executar análise","Run":"Executar","Ask AI":"Perguntar à IA","Ask AI (⌘/)":"Perguntar à IA (⌘/)","Run analysis (⌘R)":"Executar análise (⌘R)","Toggle theme":"Alternar tema","Notifications":"Notificações","Account":"Conta","Activity log (⌘D)":"Log de atividade (⌘D)",

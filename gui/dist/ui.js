@@ -230,6 +230,7 @@ function afterAdd(ids, anchorId){ const t=activeTab(); if(!t||!ids.length) retur
 $("#npAddBtn").addEventListener("click", ()=>{ const id=quickAdd(npKind,$("#npAddLabel").value); if(id){ $("#npAddLabel").value=""; afterAdd([id]); } });
 $("#npAddLabel").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#npAddBtn").click(); } });
 $("#npAddMore").addEventListener("click", ()=>addEntityModal());
+(function(){ const host=$("#npAdd"); if(host && typeof investigateModal==="function"){ const b=el("button","btn ghost block"); b.style.marginTop="6px"; b.innerHTML="✦ Investigar sujeito com IA"; b.addEventListener("click",()=>investigateModal()); host.appendChild(b); } })();
 // paste-to-add: detect selectors in clipboard text
 function detectSelectors(text){ const out=[]; const seen=new Set(); const push=(kind,v)=>{ const k=kind+":"+v.toLowerCase(); if(seen.has(k)) return; seen.add(k); out.push({kind,label:v}); };
   (text.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g)||[]).forEach(v=>push("email",v));

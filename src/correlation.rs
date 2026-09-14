@@ -21,6 +21,14 @@ pub fn correlate(graph: &mut KnowledgeGraph) -> usize {
             EntityKind::Group => Some("co_member_with"),
             EntityKind::Selector => Some("same_phone_as"),
             EntityKind::Facility => Some("same_site_as"),
+            EntityKind::Email => Some("same_email_as"),
+            EntityKind::Username => Some("same_handle_as"),
+            EntityKind::Address => Some("same_address_as"),
+            EntityKind::Vehicle => Some("same_vehicle_as"),
+            EntityKind::BankAccount => Some("same_bank_account_as"),
+            EntityKind::CellTower => Some("same_cell_as"),
+            EntityKind::WifiNetwork => Some("same_wifi_as"),
+            EntityKind::Hash => Some("same_file_as"),
             _ => None,
         }
     };

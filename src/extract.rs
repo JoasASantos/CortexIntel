@@ -52,6 +52,23 @@ const FIELD_MAP: &[(&[&str], EntityKind)] = &[
     (&["facility_id", "facility", "asset_id", "site_id", "site", "base", "camera_id", "cctv_id"], EntityKind::Facility),
     (&["sensor_id", "sensor", "feed_id"], EntityKind::Sensor),
     (&["imei", "imsi", "msisdn", "selector", "phone_number"], EntityKind::Selector),
+    // v0.0.3 kinds
+    (&["vehicle_plate", "plate", "license_plate", "placa", "vin", "vehicle_id"], EntityKind::Vehicle),
+    (&["email_address", "e-mail", "sender_email", "recipient_email"], EntityKind::Email),
+    (&["handle", "nickname", "alias", "screen_name"], EntityKind::Username),
+    (&["street_address", "postal_address", "endereco", "endereço", "address_line"], EntityKind::Address),
+    (&["passport_number", "passport", "documento", "rg_number", "document_number"], EntityKind::Document),
+    (&["file_hash", "md5", "sha1", "phash"], EntityKind::Hash),
+    (&["credential", "password_hash", "leaked_password", "api_token"], EntityKind::Credential),
+    (&["breach_name", "breach", "leak_name"], EntityKind::Breach),
+    (&["cell_id", "cellid", "cid", "tower_id"], EntityKind::CellTower),
+    (&["bssid", "ssid", "wifi", "access_point"], EntityKind::WifiNetwork),
+    (&["cert_fingerprint", "certificate", "tls_fingerprint", "ja3"], EntityKind::Certificate),
+    (&["camera", "camera_name", "cctv", "webcam_id"], EntityKind::Camera),
+    (&["event_id", "event_name", "meeting_id"], EntityKind::Event),
+    (&["weapon", "firearm", "weapon_serial"], EntityKind::Weapon),
+    (&["face_id", "face_template"], EntityKind::Face),
+    (&["iban", "bank_account", "pix_key", "agency_account", "conta_bancaria"], EntityKind::BankAccount),
 ];
 
 /// Extract entities + relationships from a single record. `extra` carries
@@ -309,6 +326,39 @@ fn infer_links(by_kind: &[(EntityKind, String)]) -> Vec<LabelLink> {
     link(find(Suspect), "active_in", find(Location), 0.5);
     link(find(Victim), "seen_in", find(Location), 0.5);
     link(find(Report), "posted_on", find(Organization), 0.6);
+    // v0.0.3 kinds
+    link(find(Person), "has_email", find(Email), 0.85);
+    link(find(Person), "uses_username", find(Username), 0.75);
+    link(find(Account), "has_email", find(Email), 0.7);
+    link(find(Username), "same_as_account", find(Account), 0.6);
+    link(find(Person), "lives_at", find(Address), 0.7);
+    link(find(Address), "in_city", find(Location), 0.8);
+    link(find(Person), "holds_document", find(Document), 0.85);
+    link(find(Suspect), "holds_document", find(Document), 0.85);
+    link(find(Victim), "holds_document", find(Document), 0.85);
+    link(find(Media), "has_hash", find(Hash), 0.95);
+    link(find(Email), "exposed_in", find(Breach), 0.7);
+    link(find(Breach), "leaked_credential", find(Credential), 0.7);
+    link(find(Account), "has_credential", find(Credential), 0.7);
+    link(find(Device), "connected_to_cell", find(CellTower), 0.7);
+    link(find(Device), "connected_to_wifi", find(WifiNetwork), 0.7);
+    link(find(CellTower), "located_in", find(Location), 0.7);
+    link(find(WifiNetwork), "located_in", find(Location), 0.6);
+    link(find(Domain), "uses_certificate", find(Certificate), 0.8);
+    link(find(Ip), "serves_certificate", find(Certificate), 0.6);
+    link(find(Camera), "located_in", find(Location), 0.7);
+    link(find(Camera), "covers", find(Address), 0.6);
+    link(find(Person), "attended", find(Event), 0.6);
+    link(find(Event), "at_location", find(Location), 0.7);
+    link(find(Suspect), "uses_vehicle", find(Vehicle), 0.7);
+    link(find(Person), "uses_vehicle", find(Vehicle), 0.6);
+    link(find(Vehicle), "observed_at", find(Location), 0.5);
+    link(find(Suspect), "linked_to_weapon", find(Weapon), 0.6);
+    link(find(Media), "contains_face", find(Face), 0.7);
+    link(find(Face), "possible_match", find(Person), 0.4);
+    link(find(Person), "owns_bank_account", find(BankAccount), 0.8);
+    link(find(Organization), "owns_bank_account", find(BankAccount), 0.8);
+    link(find(Payment), "from_bank_account", find(BankAccount), 0.7);
 
     links
 }
@@ -360,13 +410,35 @@ pub fn scan_indicators(s: &str) -> Vec<(EntityKind, String)> {
             found.push((EntityKind::Ip, t.to_string()));
         } else if is_hash(t) {
             found.push((EntityKind::Media, t.to_string()));
-        } else if is_eth_wallet(t) {
+        } else if is_eth_wallet(t) || is_btc_wallet(t) {
             found.push((EntityKind::Wallet, t.to_string()));
         } else if is_domain(t) {
             found.push((EntityKind::Domain, t.to_string()));
+        } else if is_handle(t) {
+            found.push((EntityKind::Username, t.trim_start_matches('@').to_string()));
+        } else if is_cpf_cnpj(t) {
+            found.push((EntityKind::Document, t.to_string()));
+        } else if is_phone_like(t) {
+            found.push((EntityKind::Selector, t.to_string()));
         }
     }
     found
+}
+
+fn is_btc_wallet(t: &str) -> bool {
+    (t.starts_with("bc1") && t.len() >= 26 && t.len() <= 62 && t[3..].chars().all(|c| c.is_ascii_alphanumeric()))
+        || ((t.starts_with('1') || t.starts_with('3')) && t.len() >= 26 && t.len() <= 35 && t.chars().all(|c| c.is_ascii_alphanumeric()) && t.chars().any(|c| c.is_ascii_lowercase()) && t.chars().any(|c| c.is_ascii_uppercase()))
+}
+fn is_handle(t: &str) -> bool {
+    t.starts_with('@') && t.len() >= 3 && t.len() <= 32 && t[1..].chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.')
+}
+fn is_cpf_cnpj(t: &str) -> bool {
+    let d = t.chars().filter(|c| c.is_ascii_digit()).count();
+    (d == 11 || d == 14) && t.chars().all(|c| c.is_ascii_digit() || c == '.' || c == '-' || c == '/') && t.contains(|c| c == '.' || c == '-')
+}
+fn is_phone_like(t: &str) -> bool {
+    let d = t.chars().filter(|c| c.is_ascii_digit()).count();
+    (10..=15).contains(&d) && t.chars().all(|c| c.is_ascii_digit() || " +-().".contains(c)) && (t.starts_with('+') || t.contains('(') || t.contains('-') || d >= 12)
 }
 
 fn is_url(t: &str) -> bool {

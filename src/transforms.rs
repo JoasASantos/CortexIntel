@@ -44,6 +44,9 @@ pub struct Transform {
     pub disclaimer: String,
     #[serde(default)]
     pub enabled: bool,
+    /// Declared run-time parameters (GUI renders a form): [{name,label,type:text|number|file|select,options?,required?,default?}].
+    #[serde(default)]
+    pub params: Vec<serde_json::Value>,
 }
 
 fn dir() -> std::path::PathBuf {
@@ -118,6 +121,10 @@ pub fn run(id: &str, input: serde_json::Value, params: serde_json::Value) -> Res
     let payload = serde_json::json!({ "input": input, "params": params, "api_key": api_key });
     let stdin_data = serde_json::to_vec(&payload)?;
 
+    if t.runtime == "api" {
+        crate::bus::emit("transform.run", format!("{} (api) ← {}", t.name, input.get("label").and_then(|v| v.as_str()).unwrap_or("?")));
+        return api_runtime::run(&t, &input, &params, &api_key);
+    }
     let out = match t.runtime.as_str() {
         "python" => run_python(&t.entrypoint, &stdin_data, &t.service, &api_key)?,
         "rust" => run_rust(&t.entrypoint, &stdin_data, &t.service, &api_key)?,
@@ -212,147 +219,228 @@ pub fn catalog() -> Vec<Transform> {
         Transform { id:"cyber.email-to-domain".into(), name:"Email → Domain".into(), category:"cyber".into(),
             description:"Extract the domain from an email account (local, no key).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["account".into()], runtime:"python".into(),
-            entrypoint: PY_EMAIL_TO_DOMAIN.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: PY_EMAIL_TO_DOMAIN.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         Transform { id:"cyber.hash-classify".into(), name:"Hash → Type".into(), category:"cyber".into(),
             description:"Classify a hash as MD5/SHA1/SHA256 (local Rust, no key).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["media".into()], runtime:"rust".into(),
-            entrypoint: RS_HASH_CLASSIFY.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: RS_HASH_CLASSIFY.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         Transform { id:"cyber.shodan-host".into(), name:"IP → Shodan Host".into(), category:"cyber".into(),
             description:"Enrich an IP with open ports/services from Shodan.".into(), service:"shodan".into(),
             requires_api_key:true, input_kinds:vec!["ip".into()], runtime:"python".into(),
-            entrypoint: PY_SHODAN.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: PY_SHODAN.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         Transform { id:"cyber.virustotal".into(), name:"Hash/URL → VirusTotal".into(), category:"cyber".into(),
             description:"Reputation lookup for a hash or URL via VirusTotal.".into(), service:"virustotal".into(),
             requires_api_key:true, input_kinds:vec!["media".into(),"url".into()], runtime:"python".into(),
-            entrypoint: PY_VIRUSTOTAL.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: PY_VIRUSTOTAL.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         // ---- INVESTIGATIVE ----
         Transform { id:"inv.whois".into(), name:"Domain → WHOIS".into(), category:"investigative".into(),
             description:"Registrant/registrar info via the local `whois` client (no key).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["domain".into()], runtime:"python".into(),
-            entrypoint: PY_WHOIS.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: PY_WHOIS.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         Transform { id:"inv.hibp".into(), name:"Email → Breaches".into(), category:"investigative".into(),
             description:"Check an email against Have I Been Pwned.".into(), service:"hibp".into(),
             requires_api_key:true, input_kinds:vec!["account".into()], runtime:"python".into(),
-            entrypoint: PY_HIBP.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: PY_HIBP.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         // ---- JOURNALISM ----
         Transform { id:"news.github-user".into(), name:"Username → GitHub".into(), category:"journalism".into(),
             description:"Public GitHub profile + repos for a username (no key for public).".into(), service:"github".into(),
             requires_api_key:false, input_kinds:vec!["account".into()], runtime:"python".into(),
-            entrypoint: PY_GITHUB.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: PY_GITHUB.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         // ---- HR ----
         Transform { id:"hr.email-normalize".into(), name:"Person → Corporate email".into(), category:"hr".into(),
             description:"Derive likely corporate email patterns from a name + domain (local).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["person".into()], runtime:"python".into(),
-            entrypoint: PY_HR_EMAIL.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: PY_HR_EMAIL.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         // ---- BUSINESS ----
         Transform { id:"biz.opencorporates".into(), name:"Company → Registry".into(), category:"business".into(),
             description:"Look up a company in OpenCorporates.".into(), service:"opencorporates".into(),
             requires_api_key:true, input_kinds:vec!["organization".into()], runtime:"python".into(),
-            entrypoint: PY_OPENCORP.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: PY_OPENCORP.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         Transform { id:"biz.webhook".into(), name:"Entity → Webhook / API".into(), category:"business".into(),
             description:"POST the selected entity to a webhook/REST endpoint (set params.url). Bring back JSON entities.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec![], runtime:"python".into(),
-            entrypoint: PY_WEBHOOK.into(), disclaimer:String::new(), enabled:false },
+            entrypoint: PY_WEBHOOK.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         // ---- COUNTER-TRAFFICKING (anti-tráfico de pessoas) ----
         Transform { id:"ht.ad-indicators".into(), name:"Anúncio → Indicadores de tráfico".into(), category:"trafficking".into(),
             description:"Analisa texto/atributos de um anúncio ou comunicação e pontua indicadores de tráfico (controle por terceiro, dívida, documentos retidos, movimento entre cidades, sinais de menor, liberdade restrita, códigos/emoji). Local, sem chave.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["url".into(),"report".into(),"communication".into(),"account".into()], runtime:"python".into(),
-            entrypoint: PY_HT_AD_INDICATORS.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+            entrypoint: PY_HT_AD_INDICATORS.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false, params:vec![] },
         Transform { id:"ht.phone-pivot".into(), name:"Telefone → Anúncios & contas".into(), category:"trafficking".into(),
             description:"Pivota um telefone/seletor sobre o corpus local de anúncios (CSV do projeto ou CORTEX_HT_ADS_CSV) e retorna anúncios, contas, cidades e datas que reutilizam o mesmo número. Local, sem chave.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["selector".into(),"account".into()], runtime:"python".into(),
-            entrypoint: PY_HT_PHONE_PIVOT.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+            entrypoint: PY_HT_PHONE_PIVOT.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false, params:vec![] },
         Transform { id:"ht.phone-lookup".into(), name:"Telefone → Operadora / tipo de linha".into(), category:"trafficking".into(),
             description:"Consulta operadora, país e tipo de linha (VoIP/celular) via API numverify-compatível; sinaliza VoIP e número recém-portado como indicador de rotação de chips.".into(), service:"numverify".into(),
             requires_api_key:true, input_kinds:vec!["selector".into()], runtime:"python".into(),
-            entrypoint: PY_HT_PHONE_LOOKUP.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+            entrypoint: PY_HT_PHONE_LOOKUP.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false, params:vec![] },
         Transform { id:"ht.handle-pivot".into(), name:"Handle → Perfis em plataformas".into(), category:"trafficking".into(),
             description:"Verifica a existência de um handle em plataformas públicas (Instagram, X, TikTok, Telegram, OnlyFans, Linktree…) por sondagem HTTP; devolve perfis prováveis para revisão humana. Sem chave.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["account".into()], runtime:"python".into(),
-            entrypoint: PY_HT_HANDLE_PIVOT.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+            entrypoint: PY_HT_HANDLE_PIVOT.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false, params:vec![] },
         Transform { id:"ht.wallet-trace".into(), name:"Carteira cripto → Contrapartes".into(), category:"trafficking".into(),
             description:"Rastreia uma carteira BTC/ETH em explorador público (Blockchair/Blockstream) e devolve contrapartes, volume e datas — para seguir os proventos. Sem chave.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["wallet".into()], runtime:"python".into(),
-            entrypoint: PY_HT_WALLET_TRACE.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+            entrypoint: PY_HT_WALLET_TRACE.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false, params:vec![] },
         Transform { id:"ht.route-timeline".into(), name:"Rota → Movimento entre cidades".into(), category:"trafficking".into(),
             description:"Reconstrói a rota de uma vítima/suspeito a partir do atributo route (A>B>C) ou cidades/datas e cria a cadeia de locais com relações moved_to. Local (Rust).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["victim".into(),"suspect".into(),"person".into(),"device".into()], runtime:"rust".into(),
-            entrypoint: RS_HT_ROUTE.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+            entrypoint: RS_HT_ROUTE.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false, params:vec![] },
         Transform { id:"ht.site-image-match".into(), name:"Imagem → Hotel/quarto (TraffickCam-like)".into(), category:"trafficking".into(),
             description:"Envia o hash/caminho de uma imagem de anúncio a um serviço de identificação de quartos de hotel (endpoint self-hosted ou parceiro, ex.: TraffickCam) e devolve locais candidatos. Requer params.endpoint.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["media".into(),"url".into()], runtime:"python".into(),
-            entrypoint: PY_HT_SITE_IMAGE.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+            entrypoint: PY_HT_SITE_IMAGE.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false, params:vec![] },
         Transform { id:"ht.document-check".into(), name:"Documento → Validação (CPF/passaporte)".into(), category:"trafficking".into(),
             description:"Valida formato e dígitos verificadores de CPF/CNPJ/passaporte informados em atributos e sinaliza documento retido/inconsistente (indicador de servidão por dívida). Local, sem chave.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["victim".into(),"person".into(),"suspect".into(),"selector".into(),"organization".into()], runtime:"python".into(),
-            entrypoint: PY_HT_DOC_CHECK.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+            entrypoint: PY_HT_DOC_CHECK.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false, params:vec![] },
         Transform { id:"ht.referral-package".into(), name:"Entidade → Pacote de encaminhamento".into(), category:"trafficking".into(),
             description:"Monta um pacote de encaminhamento (Disque 100 / Polícia Federal / hotline) com os indicadores observados, locais, seletores e cadeia de custódia como entidade de evidência. Local, sem chave.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec![], runtime:"python".into(),
-            entrypoint: PY_HT_REFERRAL.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+            entrypoint: PY_HT_REFERRAL.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false, params:vec![] },
+        // ---- SIGNALS / OSINT APIs (runtime "api" — declarative, no code) ----
+        Transform { id:"api.shodan-host".into(), name:"IP → Shodan (portas, serviços, CVEs)".into(), category:"signals".into(),
+            description:"Enriquece um IP com portas abertas, serviços, produtos, organização e vulnerabilidades via Shodan. Cria serviços, org e vulnerabilidades ligados ao IP.".into(),
+            service:"shodan".into(), requires_api_key:true, input_kinds:vec!["ip".into()], runtime:"api".into(),
+            entrypoint: SPEC_SHODAN_HOST.into(), disclaimer:String::new(), enabled:false, params:vec![] },
+        Transform { id:"api.shodan-search".into(), name:"Consulta Shodan (câmeras/produtos por região)".into(), category:"signals".into(),
+            description:"Executa uma busca Shodan (ex.: 'webcam country:BR city:\"Sao Paulo\"' ou params.query) e traz hosts/câmeras encontrados como IPs geolocalizados. Use net:CIDR ou geo:lat,lon,raio.".into(),
+            service:"shodan".into(), requires_api_key:true, input_kinds:vec!["location".into(),"address".into(),"ip".into(),"organization".into()], runtime:"api".into(),
+            entrypoint: SPEC_SHODAN_SEARCH.into(), disclaimer:String::new(), enabled:false,
+            params:vec![serde_json::json!({"name":"query","label":"Query Shodan (opcional; senão usa o rótulo/CIDR)","type":"text","required":false})] },
+        Transform { id:"api.censys-host".into(), name:"IP → Censys (serviços & TLS)".into(), category:"signals".into(),
+            description:"Serviços, certificados TLS e localização de um IP via Censys Search API (Basic Auth: params/keys 'censys' = id:secret).".into(),
+            service:"censys".into(), requires_api_key:true, input_kinds:vec!["ip".into()], runtime:"api".into(),
+            entrypoint: SPEC_CENSYS_HOST.into(), disclaimer:String::new(), enabled:false, params:vec![] },
+        Transform { id:"api.greynoise".into(), name:"IP → GreyNoise (ruído/malicioso)".into(), category:"signals".into(),
+            description:"Classifica um IP (benign/malicious/unknown), atores e tags via GreyNoise Community API.".into(),
+            service:"greynoise".into(), requires_api_key:true, input_kinds:vec!["ip".into()], runtime:"api".into(),
+            entrypoint: SPEC_GREYNOISE.into(), disclaimer:String::new(), enabled:false, params:vec![] },
+        Transform { id:"api.abuseipdb".into(), name:"IP → AbuseIPDB (reputação)".into(), category:"signals".into(),
+            description:"Pontuação de abuso, país, ISP e categorias de denúncia de um IP via AbuseIPDB.".into(),
+            service:"abuseipdb".into(), requires_api_key:true, input_kinds:vec!["ip".into()], runtime:"api".into(),
+            entrypoint: SPEC_ABUSEIPDB.into(), disclaimer:String::new(), enabled:false, params:vec![] },
+        Transform { id:"api.leakcheck".into(), name:"E-mail/usuário → Vazamentos".into(), category:"signals".into(),
+            description:"Verifica um e-mail, telefone ou usuário contra bases de vazamento (LeakCheck-compatível) e cria breaches + credenciais ligados.".into(),
+            service:"leakcheck".into(), requires_api_key:true, input_kinds:vec!["email".into(),"account".into(),"selector".into(),"username".into()], runtime:"api".into(),
+            entrypoint: SPEC_LEAKCHECK.into(), disclaimer:"Uso autorizado apenas; não tente autenticar com credenciais recuperadas.".into(), enabled:false, params:vec![] },
+        // ---- PHONE INTELLIGENCE ----
+        Transform { id:"api.phone-hlr".into(), name:"Telefone → HLR / dono (operadora, portabilidade)".into(), category:"phone".into(),
+            description:"Consulta HLR/lookup de um número: operadora atual, país, tipo de linha, status (ativo/portado) e nome do titular quando o provedor expõe. Endpoint padrão numverify/apilayer; troque em params.endpoint para HLR pago (ex.: HLR Lookups, IPQS, Twilio).".into(),
+            service:"phoneapi".into(), requires_api_key:true, input_kinds:vec!["selector".into()], runtime:"api".into(),
+            entrypoint: SPEC_PHONE_HLR.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false,
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint (opcional; padrão apilayer validate)","type":"text","required":false})] },
+        Transform { id:"api.phone-osint".into(), name:"Telefone → Contas vinculadas (WhatsApp/Telegram/apps)".into(), category:"phone".into(),
+            description:"Descobre em quais serviços (WhatsApp, Telegram, apps) o número está registrado, nome público e foto, via provedor OSINT de telefone (IPQS/NumLookup/Eyecon-compatível em params.endpoint).".into(),
+            service:"phoneosint".into(), requires_api_key:true, input_kinds:vec!["selector".into()], runtime:"api".into(),
+            entrypoint: SPEC_PHONE_OSINT.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false,
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint do provedor (JSON)","type":"text","required":true})] },
+        // ---- FACE / IMAGE INTELLIGENCE ----
+        Transform { id:"api.face-search".into(), name:"Rosto → Busca facial na internet (Search4Faces/PimEyes-like)".into(), category:"face".into(),
+            description:"Faz upload de um rosto (entidade media com attributes.path, ou params.file) para um serviço de busca facial e traz perfis/URLs onde o rosto aparece. Endpoint configurável (Search4Faces, FaceCheck.ID, PimEyes API, instância self-hosted).".into(),
+            service:"facesearch".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            entrypoint: SPEC_FACE_SEARCH.into(), disclaimer:"Biometria é dado sensível (LGPD/GDPR). Use só com base legal; resultados são candidatos a confirmar, nunca identificação definitiva.".into(), enabled:false,
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint do serviço de face search","type":"text","required":true}),serde_json::json!({"name":"file","label":"Imagem do rosto (caminho; senão usa a mídia)","type":"file","required":false})] },
+        Transform { id:"api.face-compare".into(), name:"Rosto ↔ Rosto → Similaridade".into(), category:"face".into(),
+            description:"Compara dois rostos (params.file2 vs a mídia/params.file) via API de face-match e devolve o score de similaridade.".into(),
+            service:"facematch".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into()], runtime:"api".into(),
+            entrypoint: SPEC_FACE_COMPARE.into(), disclaimer:"Biometria sensível — base legal obrigatória.".into(), enabled:false,
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint de face-match","type":"text","required":true}),serde_json::json!({"name":"file2","label":"Segundo rosto (caminho)","type":"file","required":true})] },
+        Transform { id:"api.reverse-image".into(), name:"Imagem → Onde aparece (reverse image)".into(), category:"face".into(),
+            description:"Busca reversa de imagem (SerpAPI Google Lens / TinEye / Yandex-compatível em params.endpoint) e traz páginas onde a imagem aparece como URLs.".into(),
+            service:"reverseimage".into(), requires_api_key:true, input_kinds:vec!["media".into(),"url".into()], runtime:"api".into(),
+            entrypoint: SPEC_REVERSE_IMAGE.into(), disclaimer:String::new(), enabled:false, params:vec![] },
+        // ---- GEO / CAMERAS / PLACES ----
+        Transform { id:"api.geocode".into(), name:"Endereço → Coordenadas (geocode)".into(), category:"geoint".into(),
+            description:"Geocodifica um endereço para lat/lon e componentes (cidade, país) via Nominatim/OpenStreetMap (sem chave) ou provedor em params.endpoint. Cria/atualiza a localização.".into(),
+            service:"".into(), requires_api_key:false, input_kinds:vec!["address".into(),"location".into(),"facility".into()], runtime:"api".into(),
+            entrypoint: SPEC_GEOCODE.into(), disclaimer:String::new(), enabled:false, params:vec![] },
+        Transform { id:"api.cameras-nearby".into(), name:"Local → Câmeras de vigilância próximas (OSM)".into(), category:"geoint".into(),
+            description:"Lista câmeras de vigilância mapeadas (man_made=surveillance) num raio ao redor do endereço/geo via Overpass/OpenStreetMap (sem chave). Cria entidades camera geolocalizadas. Ajuste o raio em params.radius (m).".into(),
+            service:"".into(), requires_api_key:false, input_kinds:vec!["location".into(),"address".into(),"facility".into(),"event".into()], runtime:"api".into(),
+            entrypoint: SPEC_CAMERAS_OSM.into(), disclaimer:String::new(), enabled:false,
+            params:vec![serde_json::json!({"name":"radius","label":"Raio (metros)","type":"number","required":false,"default":400})] },
+        Transform { id:"api.places-nearby".into(), name:"Local → Pontos próximos (hotéis, ATMs, lojas)".into(), category:"geoint".into(),
+            description:"Lista lugares próximos por categoria (params.amenity: hotel, atm, bank, fuel, hospital…) via Overpass/OSM (sem chave). Útil para checar hospedagem/rota perto de um ponto.".into(),
+            service:"".into(), requires_api_key:false, input_kinds:vec!["location".into(),"address".into(),"facility".into()], runtime:"api".into(),
+            entrypoint: SPEC_PLACES_OSM.into(), disclaimer:String::new(), enabled:false,
+            params:vec![serde_json::json!({"name":"amenity","label":"Categoria OSM (hotel, atm, bank…)","type":"text","required":false,"default":"hotel"}),serde_json::json!({"name":"radius","label":"Raio (m)","type":"number","required":false,"default":600})] },
+        Transform { id:"api.wigle-wifi".into(), name:"Wi-Fi (BSSID) → Localização (WiGLE)".into(), category:"geoint".into(),
+            description:"Geolocaliza um ponto de acesso Wi-Fi pelo BSSID via WiGLE (Basic Auth: keys 'wigle' = user:token).".into(),
+            service:"wigle".into(), requires_api_key:true, input_kinds:vec!["wifi".into()], runtime:"api".into(),
+            entrypoint: SPEC_WIGLE.into(), disclaimer:String::new(), enabled:false, params:vec![] },
+        // ---- CRYPTO / IDENTITY ----
+        Transform { id:"api.crypto-abuse".into(), name:"Carteira → Denúncias (scam/abuse)".into(), category:"signals".into(),
+            description:"Verifica uma carteira cripto em base de denúncias (ChainAbuse/CryptoScamDB-compatível em params.endpoint) e traz relatos/categorias.".into(),
+            service:"chainabuse".into(), requires_api_key:true, input_kinds:vec!["wallet".into()], runtime:"api".into(),
+            entrypoint: SPEC_CRYPTO_ABUSE.into(), disclaimer:String::new(), enabled:false, params:vec![] },
+        Transform { id:"api.generic-get".into(), name:"Qualquer API GET → Entidades (builder)".into(), category:"signals".into(),
+            description:"Builder genérico: você define URL, cabeçalhos e o mapeamento resposta→entidades em params. Placeholders {label} {key} {attr.X} {param.X} {lat} {lon}. Sem código.".into(),
+            service:"".into(), requires_api_key:false, input_kinds:vec![], runtime:"api".into(),
+            entrypoint: SPEC_GENERIC_GET.into(), disclaimer:String::new(), enabled:false,
+            params:vec![serde_json::json!({"name":"url","label":"URL (use {label},{key},{param.q}…)","type":"text","required":true}),serde_json::json!({"name":"key","label":"Chave/token (opcional)","type":"text","required":false}),serde_json::json!({"name":"items","label":"Caminho da lista na resposta (ex.: data.results[])","type":"text","required":false}),serde_json::json!({"name":"label_path","label":"Campo do rótulo no item (ex.: item.name)","type":"text","required":false,"default":"{item}"}),serde_json::json!({"name":"kind","label":"Tipo de entidade","type":"text","required":false,"default":"incident"}),serde_json::json!({"name":"relation","label":"Relação","type":"text","required":false,"default":"related_to"})] },
         // ---- PEOPLE SEARCH ----
         Transform { id:"people.persona".into(), name:"Name/Email → Persona".into(), category:"people".into(),
             description:"People-search: resolve a name/email to a persona (accounts, locations) via a people-search API.".into(), service:"peoplesearch".into(),
             requires_api_key:true, input_kinds:vec!["person".into(),"account".into()], runtime:"python".into(),
             entrypoint: PY_PERSONA.into(),
-            disclaimer:"GDPR/LGPD: person searches require a lawful basis and data minimization. Use only for authorized investigations; results are leads, not proof.".into(), enabled:false },
+            disclaimer:"GDPR/LGPD: person searches require a lawful basis and data minimization. Use only for authorized investigations; results are leads, not proof.".into(), enabled:false, params:vec![] },
         // ---- KYC / IDENTITY (BR + US) ----
         Transform { id:"kyc.cpf-validate".into(), name:"BR CPF → Validate (local)".into(), category:"kyc".into(),
             description:"Validate a Brazilian CPF's check digits (format only, offline). Does NOT prove identity.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["person".into()], runtime:"python".into(),
             entrypoint: PY_CPF.into(),
-            disclaimer:"LGPD: CPF is personal data. Checksum validity ≠ real identity. Lawful basis required.".into(), enabled:false },
+            disclaimer:"LGPD: CPF is personal data. Checksum validity ≠ real identity. Lawful basis required.".into(), enabled:false, params:vec![] },
         Transform { id:"kyc.ssn-validate".into(), name:"US SSN → Validate (local)".into(), category:"kyc".into(),
             description:"Validate a US SSN's structural format (offline). Does NOT prove identity.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["person".into()], runtime:"python".into(),
             entrypoint: PY_SSN.into(),
-            disclaimer:"US privacy: SSN is sensitive PII. Format validity ≠ real identity.".into(), enabled:false },
+            disclaimer:"US privacy: SSN is sensitive PII. Format validity ≠ real identity.".into(), enabled:false, params:vec![] },
         Transform { id:"kyc.identity-verify".into(), name:"Document → Identity Verify".into(), category:"kyc".into(),
             description:"Verify whether the person behind a document is real via a KYC provider (country-aware).".into(), service:"kyc_provider".into(),
             requires_api_key:true, input_kinds:vec!["person".into()], runtime:"python".into(),
             entrypoint: PY_KYC.into(),
-            disclaimer:"GDPR/LGPD + KYC regulation: identity verification requires explicit lawful basis and provider agreement.".into(), enabled:false },
+            disclaimer:"GDPR/LGPD + KYC regulation: identity verification requires explicit lawful basis and provider agreement.".into(), enabled:false, params:vec![] },
         Transform { id:"kyc.document-expand".into(), name:"Document → Expand Profile (API)".into(), category:"kyc".into(),
             description:"Take a CPF/RG/CNPJ/SSN/EIN off the entity and query a configurable lookup API (params.endpoint) for the full profile — name, phone, address, email. Since the returned entity shares the same document_id, it merges into the existing person instead of creating a duplicate.".into(), service:"document_lookup".into(),
             requires_api_key:true, input_kinds:vec!["person".into(),"selector".into()], runtime:"python".into(),
             entrypoint: PY_DOC_EXPAND.into(),
-            disclaimer:"GDPR/LGPD/CCPA: bulk or automated document lookups require a lawful basis, a signed provider agreement and data-minimization — this only wires the plumbing, it does not grant that authorization.".into(), enabled:false },
+            disclaimer:"GDPR/LGPD/CCPA: bulk or automated document lookups require a lawful basis, a signed provider agreement and data-minimization — this only wires the plumbing, it does not grant that authorization.".into(), enabled:false, params:vec![] },
         // ---- MEDIA INTELLIGENCE ----
         Transform { id:"media.geoint-ai".into(), name:"Image → AI Geolocation (Gemini)".into(), category:"media".into(),
             description:"Analyze an image with Google Gemini AI to extract geolocation, landmarks, environmental context and visual intelligence. Uses the local gemini CLI (subscription).".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["media".into(),"evidence".into()], runtime:"python".into(),
             entrypoint: PY_GEOINT_AI.into(),
-            disclaimer:"AI geolocation is probabilistic — a lead, not ground truth. Always cross-reference with EXIF and corroborating sources.".into(), enabled:false },
+            disclaimer:"AI geolocation is probabilistic — a lead, not ground truth. Always cross-reference with EXIF and corroborating sources.".into(), enabled:false, params:vec![] },
         Transform { id:"media.metadata".into(), name:"Media → Metadata (EXIF)".into(), category:"media".into(),
             description:"Extract EXIF/media metadata (camera, GPS, software) via local exiftool.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec!["media".into()], runtime:"python".into(),
             entrypoint: PY_EXIF.into(),
-            disclaimer:"May reveal location/PII embedded in media. Handle per policy.".into(), enabled:false },
+            disclaimer:"May reveal location/PII embedded in media. Handle per policy.".into(), enabled:false, params:vec![] },
         Transform { id:"media.deepfake".into(), name:"Media → Deepfake / manipulation".into(), category:"media".into(),
             description:"Assess whether an image/video is AI-generated or manipulated (deepfake/deepnude) via a detection API.".into(), service:"deepfake_api".into(),
             requires_api_key:true, input_kinds:vec!["media".into()], runtime:"python".into(),
             entrypoint: PY_DEEPFAKE.into(),
-            disclaimer:"Detection is probabilistic — a signal, not proof. Never generate or store abusive content; reference by hash only.".into(), enabled:false },
+            disclaimer:"Detection is probabilistic — a signal, not proof. Never generate or store abusive content; reference by hash only.".into(), enabled:false, params:vec![] },
         Transform { id:"media.moderation".into(), name:"Media → Sensitive-content check".into(), category:"media".into(),
             description:"Flag whether media is sensitive/NSFW so it can be gated from view (moderation API).".into(), service:"moderation_api".into(),
             requires_api_key:true, input_kinds:vec!["media".into()], runtime:"python".into(),
             entrypoint: PY_MODERATION.into(),
-            disclaimer:"Sensitive content must be handled under strict access controls; do not expose raw material.".into(), enabled:false },
+            disclaimer:"Sensitive content must be handled under strict access controls; do not expose raw material.".into(), enabled:false, params:vec![] },
         Transform { id:"media.reverse-image".into(), name:"Image → Reverse image search".into(), category:"media".into(),
             description:"Search where an image appears online via a configurable reverse-image API (SerpAPI Google Lens, TinEye, Bing Visual Search). Set params.endpoint and the API key. Returns the pages/URLs and any linked accounts where the same picture was found.".into(), service:"reverse_image".into(),
             requires_api_key:true, input_kinds:vec!["media".into(),"evidence".into()], runtime:"python".into(),
             entrypoint: PY_REVERSE_IMAGE.into(),
-            disclaimer:"Reverse-image hits are leads, not proof of identity. Corroborate before acting; respect each source's terms of use.".into(), enabled:false },
+            disclaimer:"Reverse-image hits are leads, not proof of identity. Corroborate before acting; respect each source's terms of use.".into(), enabled:false, params:vec![] },
         Transform { id:"media.face-search".into(), name:"Photo → Face search (social profiles)".into(), category:"media".into(),
             description:"Take a person's photo and search face-recognition indexes (e.g. FaceCheck.ID / PimEyes-style) for matching social-media and web profiles. Set params.endpoint and the API key. Returns candidate profile URLs/accounts as new leads to expand.".into(), service:"face_search".into(),
             requires_api_key:true, input_kinds:vec!["media".into(),"evidence".into(),"person".into()], runtime:"python".into(),
             entrypoint: PY_FACE_SEARCH.into(),
-            disclaimer:"BIOMETRIC / FACIAL RECOGNITION: highly regulated (GDPR/LGPD/BIPA). Requires an explicit lawful basis and, in many jurisdictions, consent. Matches are probabilistic — never treat a hit as a confirmed identity. Authorized investigations only.".into(), enabled:false },
+            disclaimer:"BIOMETRIC / FACIAL RECOGNITION: highly regulated (GDPR/LGPD/BIPA). Requires an explicit lawful basis and, in many jurisdictions, consent. Matches are probabilistic — never treat a hit as a confirmed identity. Authorized investigations only.".into(), enabled:false, params:vec![] },
         Transform { id:"osint.social-profiles".into(), name:"Username / Name → Social profiles".into(), category:"investigative".into(),
             description:"Enumerate accounts a username or person may hold across social networks. Uses the local `sherlock` CLI when installed; otherwise queries a configurable WhatsMyName-style endpoint (params.endpoint). Returns account entities linked back to the person.".into(), service:"social_enum".into(),
             requires_api_key:false, input_kinds:vec!["person".into(),"account".into(),"selector".into()], runtime:"python".into(),
             entrypoint: PY_SOCIAL_PROFILES.into(),
-            disclaimer:"Name/handle collisions are common — a found profile is a candidate, not a confirmed match. Verify before attributing to a real person.".into(), enabled:false },
+            disclaimer:"Name/handle collisions are common — a found profile is a candidate, not a confirmed match. Verify before attributing to a real person.".into(), enabled:false, params:vec![] },
     ]
 }
 
@@ -1162,3 +1250,352 @@ fn main(){
   println!("{{\"entities\":[{}],\"relationships\":[{}]}}", ents.join(","), rels.join(","));
 }
 "#;
+
+// ---------------------------------------------------------------------------
+// Declarative HTTP-API runtime. A transform with `runtime: "api"` carries a JSON
+// spec in `entrypoint` and needs no code — operators wire ANY REST service
+// (people search, face search, HLR, Shodan, cameras…) from the GUI builder.
+//
+// Spec:
+// {
+//   "steps": [ { "method":"GET|POST", "url":"https://…/{label}", "headers":{"X-Key":"{key}"},
+//                "query":{"q":"{label}"}, "json":{...} | "form":{"file":"@file"} | "body":"raw",
+//                "save":{"var_name":"json.path"} } , … ],
+//   "map":  { "items":"results[]", "kind":"person", "label":"{item.name}",
+//             "attributes":{"score":"item.score"}, "relation":"possible_match",
+//             "confidence":"item.score" | 0.6, "id_from":"item.id" }
+//   "extra": [ {"kind":"incident","label":"…","attributes":{…}} ]   // optional static/derived entities
+// }
+// Placeholders: {label} {kind} {key} {attr.NAME} {param.NAME} {var.NAME} {lat} {lon}
+//               {file_b64} (params.file or attributes.path read from disk) {label_digits} {label_enc}
+// Paths: dotted with [i] and trailing [] for arrays ("data.items[]", "faces[0].id").
+// ---------------------------------------------------------------------------
+mod api_runtime {
+    use super::Transform;
+    use anyhow::{anyhow, Context, Result};
+    use serde_json::Value;
+    use std::collections::HashMap;
+    use std::io::Write;
+    use std::process::{Command, Stdio};
+
+    pub fn run(t: &Transform, input: &Value, params: &Value, api_key: &str) -> Result<Value> {
+        let spec: Value = serde_json::from_str(&t.entrypoint).context("api transform: entrypoint must be a JSON spec")?;
+        let mut vars: HashMap<String, String> = HashMap::new();
+        let label = input.get("label").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let attrs = input.get("attributes").cloned().unwrap_or(Value::Null);
+        // geo from attributes (lat/lon spellings) or params
+        let num = |v: Option<&Value>| v.and_then(|x| x.as_f64().or_else(|| x.as_str().and_then(|s| s.split(',').next()).and_then(|s| s.trim().parse().ok())));
+        let mut lat = num(params.get("lat")).or_else(|| ["lat", "latitude", "latitude_approx", "gpslatitude"].iter().find_map(|k| num(attrs.get(*k))));
+        let mut lon = num(params.get("lon")).or_else(|| ["lon", "lng", "longitude", "longitude_approx", "gpslongitude"].iter().find_map(|k| num(attrs.get(*k))));
+        if lat.is_none() { if let Some(s) = params.get("geo").and_then(|v| v.as_str()).or_else(|| attrs.get("geo").and_then(|v| v.as_str())) { let mut it = s.split(','); lat = it.next().and_then(|x| x.trim().parse().ok()); lon = it.next().and_then(|x| x.trim().parse().ok()); } }
+        let ctx = Ctx { label: label.clone(), kind: input.get("kind").and_then(|v| v.as_str()).unwrap_or("").into(), key: api_key.into(), attrs: attrs.clone(), params: params.clone(), lat, lon };
+        let mut last: Value = Value::Null;
+        let steps = spec.get("steps").and_then(|v| v.as_array()).cloned().unwrap_or_default();
+        if steps.is_empty() { return Err(anyhow!("api transform: spec.steps is empty")); }
+        for (i, step) in steps.iter().enumerate() {
+            let method = step.get("method").and_then(|v| v.as_str()).unwrap_or("GET").to_uppercase();
+            let mut url = tpl(step.get("url").and_then(|v| v.as_str()).unwrap_or(""), &ctx, &vars)?;
+            if let Some(q) = step.get("query").and_then(|v| v.as_object()) {
+                let qs: Vec<String> = q.iter().map(|(k, v)| format!("{}={}", k, urlenc(&tpl(&val_str(v), &ctx, &vars).unwrap_or_default()))).collect();
+                if !qs.is_empty() { url.push(if url.contains('?') { '&' } else { '?' }); url.push_str(&qs.join("&")); }
+            }
+            let curl = std::env::var("CORTEX_CURL_BIN").unwrap_or_else(|_| "curl".into());
+            let mut cmd = Command::new(&curl);
+            cmd.arg("-sS").arg("--max-time").arg(step.get("timeout").and_then(|v| v.as_u64()).unwrap_or(45).to_string()).arg("-X").arg(&method).arg(&url).arg("-A").arg("CortexIntel/0.1 (+osint)");
+            if let Some(h) = step.get("headers").and_then(|v| v.as_object()) {
+                for (k, v) in h { cmd.arg("-H").arg(format!("{}: {}", k, tpl(&val_str(v), &ctx, &vars)?)); }
+            }
+            if let Some(u) = step.get("basic_auth").and_then(|v| v.as_str()) { cmd.arg("-u").arg(tpl(u, &ctx, &vars)?); }
+            let mut stdin_body: Option<Vec<u8>> = None;
+            if let Some(j) = step.get("json") {
+                let body = tpl_value(j, &ctx, &vars)?;
+                cmd.arg("-H").arg("Content-Type: application/json").arg("--data-binary").arg("@-");
+                stdin_body = Some(serde_json::to_vec(&body)?);
+            } else if let Some(f) = step.get("form").and_then(|v| v.as_object()) {
+                for (k, v) in f {
+                    let vs = val_str(v);
+                    if vs == "@file" { let path = file_path(&ctx)?; cmd.arg("-F").arg(format!("{}=@{}", k, path)); }
+                    else { cmd.arg("-F").arg(format!("{}={}", k, tpl(&vs, &ctx, &vars)?)); }
+                }
+            } else if let Some(b) = step.get("body").and_then(|v| v.as_str()) {
+                cmd.arg("--data-binary").arg("@-"); stdin_body = Some(tpl(b, &ctx, &vars)?.into_bytes());
+            }
+            cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
+            crate::bus::emit("transform.http", format!("step {}/{} {} {}", i + 1, steps.len(), method, redact(&url)));
+            let mut child = cmd.spawn().with_context(|| format!("spawning {curl}"))?;
+            if let Some(b) = stdin_body { if let Some(mut si) = child.stdin.take() { let _ = si.write_all(&b); } }
+            let out = child.wait_with_output()?;
+            if !out.status.success() { return Err(anyhow!("HTTP step {} failed: {}", i + 1, String::from_utf8_lossy(&out.stderr).trim())); }
+            let text = String::from_utf8_lossy(&out.stdout).to_string();
+            last = serde_json::from_str(&text).unwrap_or_else(|_| Value::String(text.clone()));
+            if let Value::String(raw) = &last {
+                let tl = raw.trim_start();
+                if tl.starts_with('<') || tl.to_lowercase().contains("rate_limited") || tl.to_lowercase().contains("too many requests") {
+                    return Err(anyhow!("provedor retornou erro/limite (não-JSON) no passo {} — tente outro endpoint/mirror ou aguarde: {}", i + 1, raw.chars().take(160).collect::<String>()));
+                }
+            }
+            if let Some(err) = last.get("error").filter(|e| !e.is_null()) {
+                let msg = err.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()).unwrap_or_else(|| err.to_string());
+                if !msg.is_empty() && msg != "null" && msg != "false" && msg != "0" { return Err(anyhow!("API error at step {}: {}", i + 1, msg.chars().take(300).collect::<String>())); }
+            }
+            if let Some(sv) = step.get("save").and_then(|v| v.as_object()) {
+                for (k, path) in sv { let v = get_path(&last, &val_str(path)); vars.insert(k.clone(), val_str(&v)); }
+            }
+        }
+        // ---- map response → entities/relationships
+        let mut ents: Vec<Value> = Vec::new();
+        let mut rels: Vec<Value> = Vec::new();
+        if let Some(m) = spec.get("map") {
+            let items_path = m.get("items").and_then(|v| v.as_str()).unwrap_or("");
+            let items: Vec<Value> = if items_path.is_empty() { vec![last.clone()] } else { match get_path(&last, items_path) { Value::Array(a) => a, Value::Null => vec![], other => vec![other] } };
+            let max = m.get("max").and_then(|v| v.as_u64()).unwrap_or(40) as usize;
+            let mut seen = std::collections::HashSet::new();
+            for item in items.into_iter().take(max) {
+                let mut ivars = vars.clone();
+                let ictx = ItemCtx { base: &ctx, item: &item };
+                let lbl = field(m.get("label").and_then(|v| v.as_str()).unwrap_or("{item}"), &ictx, &ivars)?;
+                let lbl = lbl.trim().to_string();
+                if lbl.is_empty() || lbl == "null" || !seen.insert(lbl.clone()) { continue; }
+                let kind = field(m.get("kind").and_then(|v| v.as_str()).unwrap_or("incident"), &ictx, &ivars)?;
+                let mut attributes = serde_json::Map::new();
+                if let Some(a) = m.get("attributes").and_then(|v| v.as_object()) {
+                    for (k, pth) in a { let v = field(&val_str(pth), &ictx, &ivars)?; if !v.is_empty() && v != "null" { attributes.insert(k.clone(), Value::String(v.chars().take(400).collect())); } }
+                }
+                if let (Some(la), Some(lo)) = (m.get("lat"), m.get("lon")) {
+                    let la = field(&val_str(la), &ictx, &ivars)?; let lo = field(&val_str(lo), &ictx, &ivars)?;
+                    if !la.is_empty() && !lo.is_empty() { attributes.insert("latitude".into(), Value::String(la)); attributes.insert("longitude".into(), Value::String(lo)); }
+                }
+                let conf = match m.get("confidence") { Some(Value::Number(n)) => n.as_f64().unwrap_or(0.6), Some(v) => field(&val_str(v), &ictx, &ivars).ok().and_then(|s| s.parse::<f64>().ok()).map(|c| if c > 1.0 { c / 100.0 } else { c }).unwrap_or(0.6), None => 0.6 };
+                ents.push(serde_json::json!({"kind": kind, "label": lbl, "attributes": attributes}));
+                let rel = field(m.get("relation").and_then(|v| v.as_str()).unwrap_or("related_to"), &ictx, &ivars)?;
+                let reverse = m.get("reverse").and_then(|v| v.as_bool()).unwrap_or(false);
+                rels.push(if reverse { serde_json::json!({"source": lbl, "type": rel, "target": label, "confidence": conf}) } else { serde_json::json!({"source": label, "type": rel, "target": lbl, "confidence": conf}) });
+                ivars.clear();
+            }
+        }
+        if let Some(extra) = spec.get("extra").and_then(|v| v.as_array()) {
+            for e in extra {
+                let v = tpl_value(e, &ctx, &vars)?;
+                let lbl = v.get("label").and_then(|x| x.as_str()).unwrap_or("").to_string();
+                if lbl.is_empty() { continue; }
+                let rel = v.get("relation").and_then(|x| x.as_str()).unwrap_or("summary").to_string();
+                ents.push(serde_json::json!({"kind": v.get("kind").cloned().unwrap_or(Value::String("incident".into())), "label": lbl, "attributes": v.get("attributes").cloned().unwrap_or(serde_json::json!({}))}));
+                rels.push(serde_json::json!({"source": label, "type": rel, "target": lbl, "confidence": 0.7}));
+            }
+        }
+        if ents.is_empty() {
+            // Always leave a trace so the analyst sees the call happened.
+            let lbl = format!("{}:{}", t.id.split('.').last().unwrap_or("api"), label.chars().take(24).collect::<String>());
+            ents.push(serde_json::json!({"kind": "incident", "label": lbl, "attributes": {"result": "sem resultados", "raw": crate::llm::prep::compact(&last.to_string(), 600)}}));
+            rels.push(serde_json::json!({"source": label, "type": "queried", "target": lbl, "confidence": 0.5}));
+        }
+        Ok(serde_json::json!({"entities": ents, "relationships": rels, "_raw_keys": last.as_object().map(|o| o.keys().cloned().collect::<Vec<_>>()).unwrap_or_default()}))
+    }
+
+    // A "map" field value: a template ({...}), an item path (item.x / a.b[0]), or a literal.
+    fn field(spec_val: &str, ic: &ItemCtx, vars: &HashMap<String, String>) -> Result<String> {
+        let v = spec_val.trim();
+        if v.contains('{') { return tpl_item(v, ic, vars); }
+        if v.starts_with("item.") { return Ok(val_str(&get_path(ic.item, &v[5..]))); }
+        if v.is_empty() { return Ok(String::new()); }
+        // bare path against the item, else literal
+        let g = get_path(ic.item, v);
+        Ok(if g.is_null() { v.to_string() } else { val_str(&g) })
+    }
+
+    struct Ctx { label: String, kind: String, key: String, attrs: Value, params: Value, lat: Option<f64>, lon: Option<f64> }
+    struct ItemCtx<'a> { base: &'a Ctx, item: &'a Value }
+
+    fn val_str(v: &Value) -> String { match v { Value::String(s) => s.clone(), Value::Null => String::new(), other => other.to_string() } }
+    fn urlenc(s: &str) -> String { let mut o = String::new(); for b in s.bytes() { match b { b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => o.push(b as char), _ => o.push_str(&format!("%{:02X}", b)) } } o }
+    fn redact(u: &str) -> String { let mut s = u.to_string(); for k in ["key=", "apikey=", "access_key=", "token=", "api_key="] { if let Some(i) = s.to_lowercase().find(k) { let start = i + k.len(); let end = s[start..].find('&').map(|e| start + e).unwrap_or(s.len()); s.replace_range(start..end, "***"); } } s }
+
+    /// Dotted path with [i] / trailing [] support.
+    pub fn get_path(v: &Value, path: &str) -> Value {
+        let mut cur = v.clone();
+        for seg in path.split('.').filter(|s| !s.is_empty()) {
+            let (name, idx) = match seg.find('[') { Some(i) => (&seg[..i], Some(&seg[i + 1..seg.len().saturating_sub(1)])), None => (seg, None) };
+            if !name.is_empty() { cur = match &cur { Value::Object(o) => o.get(name).cloned().unwrap_or(Value::Null), Value::Array(a) => Value::Array(a.iter().map(|x| x.get(name).cloned().unwrap_or(Value::Null)).collect()), _ => Value::Null }; }
+            if let Some(ix) = idx { if !ix.is_empty() { if let Ok(n) = ix.parse::<usize>() { cur = cur.get(n).cloned().unwrap_or(Value::Null); } } }
+        }
+        cur
+    }
+
+    fn file_path(ctx: &Ctx) -> Result<String> {
+        let p = ctx.params.get("file").and_then(|v| v.as_str()).filter(|s| !s.is_empty()).map(|s| s.to_string())
+            .or_else(|| ctx.attrs.get("path").and_then(|v| v.as_str()).map(|s| s.to_string()))
+            .ok_or_else(|| anyhow!("this transform needs a file: pass params.file or run it on a media entity with attributes.path"))?;
+        if !std::path::Path::new(&p).exists() { return Err(anyhow!("file not found: {p}")); }
+        Ok(p)
+    }
+
+    fn b64(bytes: &[u8]) -> String {
+        const T: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        let mut out = String::with_capacity(bytes.len() * 4 / 3 + 4);
+        for chunk in bytes.chunks(3) {
+            let b = [chunk[0], *chunk.get(1).unwrap_or(&0), *chunk.get(2).unwrap_or(&0)];
+            let n = ((b[0] as u32) << 16) | ((b[1] as u32) << 8) | b[2] as u32;
+            out.push(T[(n >> 18) as usize & 63] as char); out.push(T[(n >> 12) as usize & 63] as char);
+            out.push(if chunk.len() > 1 { T[(n >> 6) as usize & 63] as char } else { '=' });
+            out.push(if chunk.len() > 2 { T[n as usize & 63] as char } else { '=' });
+        }
+        out
+    }
+
+    fn resolve(name: &str, ctx: &Ctx, vars: &HashMap<String, String>, item: Option<&Value>) -> Result<String> {
+        Ok(match name {
+            "label" => ctx.label.clone(),
+            "label_enc" => urlenc(&ctx.label),
+            "label_digits" => ctx.label.chars().filter(|c| c.is_ascii_digit()).collect(),
+            "kind" => ctx.kind.clone(),
+            "key" => ctx.key.clone(),
+            "lat" => ctx.lat.map(|v| v.to_string()).unwrap_or_default(),
+            "lon" => ctx.lon.map(|v| v.to_string()).unwrap_or_default(),
+            "file_b64" => { let p = file_path(ctx)?; b64(&std::fs::read(&p)?) }
+            "item" => item.map(val_str).unwrap_or_default(),
+            n if n.starts_with("attr.") => val_str(&ctx.attrs.get(&n[5..]).cloned().unwrap_or(Value::Null)),
+            n if n.starts_with("param.") => val_str(&ctx.params.get(&n[6..]).cloned().unwrap_or(Value::Null)),
+            n if n.starts_with("var.") => vars.get(&n[4..]).cloned().unwrap_or_default(),
+            n if n.starts_with("item.") => item.map(|it| val_str(&get_path(it, &n[5..]))).unwrap_or_default(),
+            other => format!("{{{other}}}"),
+        })
+    }
+
+    fn tpl_gen(s: &str, ctx: &Ctx, vars: &HashMap<String, String>, item: Option<&Value>) -> Result<String> {
+        let mut out = String::new(); let mut rest = s;
+        while let Some(i) = rest.find('{') {
+            out.push_str(&rest[..i]);
+            let Some(j) = rest[i..].find('}') else { out.push_str(&rest[i..]); return Ok(out) };
+            let name = &rest[i + 1..i + j];
+            if name.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '_' || c == '[' || c == ']') && !name.is_empty() { out.push_str(&resolve(name, ctx, vars, item)?); } else { out.push_str(&rest[i..i + j + 1]); }
+            rest = &rest[i + j + 1..];
+        }
+        out.push_str(rest); Ok(out)
+    }
+    fn tpl(s: &str, ctx: &Ctx, vars: &HashMap<String, String>) -> Result<String> { tpl_gen(s, ctx, vars, None) }
+    fn tpl_item(s: &str, ic: &ItemCtx, vars: &HashMap<String, String>) -> Result<String> { tpl_gen(s, ic.base, vars, Some(ic.item)) }
+    fn tpl_value(v: &Value, ctx: &Ctx, vars: &HashMap<String, String>) -> Result<Value> {
+        Ok(match v {
+            Value::String(s) => { let r = tpl(s, ctx, vars)?; if s.trim() == "{lat}" || s.trim() == "{lon}" { r.parse::<f64>().map(|f| serde_json::json!(f)).unwrap_or(Value::String(r)) } else { Value::String(r) } }
+            Value::Array(a) => Value::Array(a.iter().map(|x| tpl_value(x, ctx, vars)).collect::<Result<Vec<_>>>()?),
+            Value::Object(o) => { let mut m = serde_json::Map::new(); for (k, x) in o { m.insert(k.clone(), tpl_value(x, ctx, vars)?); } Value::Object(m) }
+            other => other.clone(),
+        })
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// Declarative API specs (runtime "api"). Placeholders resolved by api_runtime.
+// ---------------------------------------------------------------------------
+const SPEC_SHODAN_HOST: &str = r#"{
+ "steps":[{"method":"GET","url":"https://api.shodan.io/shodan/host/{label}?key={key}"}],
+ "map":{"items":"data[]","kind":"service","label":"{label}:{item.port}","relation":"exposes","confidence":0.8,
+        "attributes":{"port":"item.port","transport":"item.transport","product":"item.product","org":"item.org","hostname":"item.hostnames[0]"}},
+ "extra":[{"kind":"organization","label":"{label} · {}","attributes":{}}]
+}"#;
+
+const SPEC_SHODAN_SEARCH: &str = r#"{
+ "steps":[{"method":"GET","url":"https://api.shodan.io/shodan/host/search?key={key}","query":{"query":"{param.query}"},"save":{"total":"total"}}],
+ "map":{"items":"matches[]","kind":"ip","label":"{item.ip_str}","relation":"found_near","reverse":true,"confidence":0.6,
+        "lat":"item.location.latitude","lon":"item.location.longitude",
+        "attributes":{"port":"item.port","product":"item.product","org":"item.org","city":"item.location.city","country":"item.location.country_name","hostnames":"item.hostnames[0]"}}
+}"#;
+
+const SPEC_CENSYS_HOST: &str = r#"{
+ "steps":[{"method":"GET","url":"https://search.censys.io/api/v2/hosts/{label}","basic_auth":"{key}"}],
+ "map":{"items":"result.services[]","kind":"service","label":"{label}:{item.port}","relation":"exposes","confidence":0.8,
+        "attributes":{"port":"item.port","service_name":"item.service_name","transport":"item.transport_protocol"}},
+ "extra":[{"kind":"incident","label":"censys:{label}","attributes":{"note":"ver serviços/TLS no Censys"}}]
+}"#;
+
+const SPEC_GREYNOISE: &str = r#"{
+ "steps":[{"method":"GET","url":"https://api.greynoise.io/v3/community/{label}","headers":{"key":"{key}"}}],
+ "map":{"items":"","kind":"incident","label":"greynoise:{label}","relation":"reputation","confidence":0.7,
+        "attributes":{"classification":"classification","name":"name","noise":"noise","riot":"riot","last_seen":"last_seen"}}
+}"#;
+
+const SPEC_ABUSEIPDB: &str = r#"{
+ "steps":[{"method":"GET","url":"https://api.abuseipdb.com/api/v2/check","query":{"ipAddress":"{label}","maxAgeInDays":"90"},"headers":{"Key":"{key}","Accept":"application/json"}}],
+ "map":{"items":"","kind":"incident","label":"abuseipdb:{label}","relation":"reputation","confidence":0.7,
+        "attributes":{"abuse_score":"data.abuseConfidenceScore","country":"data.countryCode","isp":"data.isp","domain":"data.domain","total_reports":"data.totalReports","usage_type":"data.usageType"}}
+}"#;
+
+const SPEC_LEAKCHECK: &str = r#"{
+ "steps":[{"method":"GET","url":"https://leakcheck.io/api/v2/query/{label_enc}","headers":{"X-API-Key":"{key}","Accept":"application/json"}}],
+ "map":{"items":"result[]","kind":"breach","label":"{item.source.name}","relation":"exposed_in","confidence":0.7,
+        "attributes":{"date":"item.source.breach_date","fields":"item.fields","username":"item.username","password_hint":"item.password"}}
+}"#;
+
+const SPEC_PHONE_HLR: &str = r#"{
+ "steps":[{"method":"GET","url":"{param.endpoint}","query":{"access_key":"{key}","number":"{label_digits}","key":"{key}","phone":"{label_digits}"}}],
+ "map":{"items":"","kind":"incident","label":"telefone:{label}","relation":"carrier_info","confidence":0.8,
+        "attributes":{"carrier":"carrier","line_type":"line_type","country":"country_name","location":"location","valid":"valid","ported":"ported","name":"name"}},
+ "extra":[{"kind":"organization","label":"{}","attributes":{}}]
+}"#;
+
+const SPEC_PHONE_OSINT: &str = r#"{
+ "steps":[{"method":"GET","url":"{param.endpoint}","query":{"key":"{key}","apikey":"{key}","phone":"{label_digits}","number":"{label}"}}],
+ "map":{"items":"accounts[]","kind":"account","label":"{item.platform}:{label_digits}","relation":"registered_on","confidence":0.6,
+        "attributes":{"platform":"item.platform","name":"item.name","photo":"item.photo","registered":"item.registered","last_seen":"item.last_seen"}},
+ "extra":[{"kind":"incident","label":"phoneosint:{label}","attributes":{"name":"{}","note":"contas vinculadas ao número (revisar manualmente)"}}]
+}"#;
+
+const SPEC_FACE_SEARCH: &str = r#"{
+ "steps":[{"method":"POST","url":"{param.endpoint}","headers":{"Authorization":"Bearer {key}","X-API-Key":"{key}"},"form":{"image":"@file","api_key":"{key}"}}],
+ "map":{"items":"results[]","kind":"url","label":"{item.url}","relation":"face_appears_on","confidence":"item.score",
+        "attributes":{"score":"item.score","source":"item.source","site":"item.site","thumbnail":"item.thumbnail","name":"item.name"}},
+ "extra":[{"kind":"face","label":"face:{label}","attributes":{"note":"candidatos de correspondência facial — confirmação humana obrigatória"}}]
+}"#;
+
+const SPEC_FACE_COMPARE: &str = r#"{
+ "steps":[{"method":"POST","url":"{param.endpoint}","headers":{"X-API-Key":"{key}"},"form":{"image1":"@file","image2":"@file2","api_key":"{key}"}}],
+ "map":{"items":"","kind":"incident","label":"facematch:{label}","relation":"compared_face","confidence":"similarity",
+        "attributes":{"similarity":"similarity","match":"match","confidence":"confidence","distance":"distance"}}
+}"#;
+
+const SPEC_REVERSE_IMAGE: &str = r#"{
+ "steps":[{"method":"GET","url":"https://serpapi.com/search.json","query":{"engine":"google_lens","url":"{attr.image_url}","api_key":"{key}"}}],
+ "map":{"items":"visual_matches[]","kind":"url","label":"{item.link}","relation":"image_appears_on","confidence":0.5,
+        "attributes":{"title":"item.title","source":"item.source","thumbnail":"item.thumbnail"}}
+}"#;
+
+const SPEC_GEOCODE: &str = r#"{
+ "steps":[{"method":"GET","url":"https://nominatim.openstreetmap.org/search","query":{"q":"{label}","format":"json","addressdetails":"1","limit":"1"},"headers":{"Accept-Language":"pt-BR"}}],
+ "map":{"items":"[]","kind":"location","label":"{item.display_name}","relation":"geocoded_to","confidence":0.7,
+        "lat":"item.lat","lon":"item.lon",
+        "attributes":{"latitude":"item.lat","longitude":"item.lon","type":"item.type","osm_id":"item.osm_id"}}
+}"#;
+
+const SPEC_CAMERAS_OSM: &str = r#"{
+ "steps":[{"method":"GET","url":"https://overpass.kumi.systems/api/interpreter","query":{"data":"[out:json][timeout:35];(nwr[man_made=surveillance](around:{param.radius},{lat},{lon});nwr[surveillance](around:{param.radius},{lat},{lon}););out center 80;"}}],
+ "map":{"items":"elements[]","kind":"camera","label":"camera:{item.id}","relation":"camera_near","reverse":true,"confidence":0.6,
+        "lat":"item.lat","lon":"item.lon",
+        "attributes":{"latitude":"item.lat","longitude":"item.lon","center_lat":"item.center.lat","center_lon":"item.center.lon","operator":"item.tags.operator","direction":"item.tags.direction","surveillance":"item.tags.surveillance","camera_type":"item.tags.camera:type","mount":"item.tags.camera:mount"}}
+}"#;
+
+const SPEC_PLACES_OSM: &str = r#"{
+ "steps":[{"method":"GET","url":"https://overpass.kumi.systems/api/interpreter","query":{"data":"[out:json][timeout:30];(nwr[amenity={param.amenity}](around:{param.radius},{lat},{lon});nwr[tourism={param.amenity}](around:{param.radius},{lat},{lon}););out center 40;"}}],
+ "map":{"items":"elements[]","kind":"facility","label":"item.tags.name","relation":"near","reverse":true,"confidence":0.55,
+        "lat":"item.lat","lon":"item.lon",
+        "attributes":{"latitude":"item.lat","longitude":"item.lon","amenity":"item.tags.amenity","tourism":"item.tags.tourism","phone":"item.tags.phone","addr":"item.tags.addr:street"}}
+}"#;
+
+const SPEC_WIGLE: &str = r#"{
+ "steps":[{"method":"GET","url":"https://api.wigle.net/api/v2/network/detail","query":{"netid":"{label}"},"basic_auth":"{key}","headers":{"Accept":"application/json"}}],
+ "map":{"items":"results[]","kind":"location","label":"wifi:{label}","relation":"located_at","confidence":0.6,
+        "lat":"item.trilat","lon":"item.trilong",
+        "attributes":{"ssid":"item.ssid","latitude":"item.trilat","longitude":"item.trilong","city":"item.city","country":"item.country"}}
+}"#;
+
+const SPEC_CRYPTO_ABUSE: &str = r#"{
+ "steps":[{"method":"GET","url":"{param.endpoint}","query":{"address":"{label}","apikey":"{key}"},"headers":{"X-API-KEY":"{key}"}}],
+ "map":{"items":"reports[]","kind":"incident","label":"denuncia:{item.id}","relation":"reported_as","confidence":0.6,
+        "attributes":{"category":"item.category","description":"item.description","date":"item.createdAt"}}
+}"#;
+
+const SPEC_GENERIC_GET: &str = r#"{
+ "steps":[{"method":"GET","url":"{param.url}"}],
+ "map":{"items":"{param.items}","kind":"{param.kind}","label":"{param.label_path}","relation":"{param.relation}","confidence":0.6,"attributes":{}}
+}"#;
+

@@ -49,6 +49,7 @@ fn start_job(kind: String, payload: serde_json::Value) -> String {
             "run" => api::run_analysis(serde_json::from_value(payload)?),
             "connector_run" => api::connector_run(serde_json::from_value(payload)?),
             "report_pdf" => api::report_pdf_opt(payload.get("project_id").and_then(|v| v.as_str()).unwrap_or(""), payload.get("redact").and_then(|v| v.as_bool()).unwrap_or(false)),
+            "investigate" => api::investigate(serde_json::from_value(payload)?),
             other => Err(anyhow!("unknown job kind '{other}'")),
         })();
         let usage = crate::llm::governor::end(&jid);
@@ -352,7 +353,7 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             let b: serde_json::Value = parse_body(&req.body)?;
             let kind = b.get("kind").and_then(|v| v.as_str()).unwrap_or("").to_string();
             let payload = b.get("payload").cloned().unwrap_or(serde_json::json!({}));
-            if !["ask", "run", "connector_run", "report_pdf"].contains(&kind.as_str()) {
+            if !["ask", "run", "connector_run", "report_pdf", "investigate"].contains(&kind.as_str()) {
                 return json_err(stream, "invalid job kind");
             }
             let pid = payload.get("project_id").or_else(|| payload.get("projectId"))
