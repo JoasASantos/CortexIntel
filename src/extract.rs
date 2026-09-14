@@ -203,6 +203,8 @@ fn attach_attrs(e: &mut Entity, rec: &Record) {
         "transaction_type", "url_type", "group_type", "report_category",
         "student_type", "student type", "created_at", "created at", "role",
         "customer_type", "order_status", "product_category", "department",
+        // Counter-trafficking indicators & context.
+        "ad_text", "indicators", "stage", "notes", "age_stated", "doc_status", "route", "channel", "platform", "service_type", "plate", "hotel",
         // Monetary: needed so payments/wallets/accounts carry their value.
         "amount", "value", "currency", "transaction_amount", "total", "balance",
         // Discipline signals: HUMINT reliability grading reads these.
@@ -294,6 +296,19 @@ fn infer_links(by_kind: &[(EntityKind, String)]) -> Vec<LabelLink> {
     link(find(Payment), "at_location", find(Location), 0.5);
     link(find(Facility), "located_in", find(Location), 0.6);
     link(find(Organization), "operates_facility", find(Facility), 0.55);
+    // Counter-trafficking / people-centric records: phones, ads, sites and
+    // vehicles tie recruiters, controllers and victims together.
+    link(find(Suspect), "uses_phone", find(Selector), 0.75);
+    link(find(Account), "uses_phone", find(Selector), 0.7);
+    link(find(Report), "lists_phone", find(Selector), 0.7);
+    link(find(Victim), "advertised_in", find(Report), 0.65);
+    link(find(Victim), "housed_at", find(Facility), 0.6);
+    link(find(Suspect), "uses_vehicle", find(Device), 0.6);
+    link(find(Suspect), "operates_at", find(Facility), 0.55);
+    link(find(Suspect), "uses_wallet", find(Wallet), 0.6);
+    link(find(Suspect), "active_in", find(Location), 0.5);
+    link(find(Victim), "seen_in", find(Location), 0.5);
+    link(find(Report), "posted_on", find(Organization), 0.6);
 
     links
 }

@@ -253,6 +253,12 @@ fn seed_starters(dir: &std::path::Path) {
 /// The library is meant to grow to thousands by dropping more `.md` files here.
 const STARTERS: &[(&str, &str)] = &[
     ("executive-brief.md", include_str!("../agents/executive-brief.md")),
+    ("ht-ad-network.md", include_str!("../agents/ht-ad-network.md")),
+    ("ht-recruitment.md", include_str!("../agents/ht-recruitment.md")),
+    ("ht-victim-triage.md", include_str!("../agents/ht-victim-triage.md")),
+    ("ht-finance.md", include_str!("../agents/ht-finance.md")),
+    ("ht-movement.md", include_str!("../agents/ht-movement.md")),
+    ("ht-evidence-package.md", include_str!("../agents/ht-evidence-package.md")),
     ("hidden-links.md", include_str!("../agents/hidden-links.md")),
     ("key-players.md", include_str!("../agents/key-players.md")),
     ("intel-gaps.md", include_str!("../agents/intel-gaps.md")),

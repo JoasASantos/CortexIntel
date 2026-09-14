@@ -108,6 +108,7 @@ pub fn catalog(domain: Domain) -> Vec<AgentCard> {
 fn specialist_name(domain: Domain) -> &'static str {
     match domain {
         Domain::ChildProtection => "Victim-Protection Specialist",
+        Domain::HumanTrafficking => "Counter-Trafficking Specialist",
         Domain::Cybersecurity => "Threat-Intel Specialist",
         Domain::Fraud => "Financial-Crime Specialist",
         Domain::Health => "Clinical-Safety Specialist",
@@ -122,6 +123,7 @@ fn specialist_name(domain: Domain) -> &'static str {
 fn specialist_note(domain: Domain) -> Option<&'static str> {
     match domain {
         Domain::ChildProtection => Some("Focus on imminent child risk, victim identification support and takedown priority; never expose sensitive media."),
+        Domain::HumanTrafficking => Some("Map recruitment → transport → exploitation → proceeds. Correlate phones/handles reused across ads, controllers behind multiple victims, hotels/apartments, vehicles, routes between cities and payment rails (PIX/cash/crypto). Score trafficking indicators (third-party control, debt, retained documents, minors, movement) as corroboration-needed leads; victim-centred, trauma-informed, never expose victim identity beyond need."),
         Domain::Cybersecurity => Some("Map infrastructure, actors and TTPs; recommend containment and hunting leads."),
         Domain::Fraud => Some("Trace money flows across accounts/wallets; quantify exposure and mule networks."),
         Domain::Health => Some("Correlate safety signals while enforcing patient-privacy minimization."),

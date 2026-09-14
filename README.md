@@ -102,3 +102,7 @@ Every LLM call goes through a scored router plus memory/governance layers:
 * **Event bus** (`src/bus.rs`) — every step is logged per job (`GET /api/jobs/status` returns `log[]`, shown live in the GUI console) and globally (`GET /api/events`).
 
 See `.env.example` for all knobs.
+
+## Scenario packs
+
+* `scenarios/human-trafficking/` — **Operação Rota Silenciosa**: synthetic counter-trafficking case (recruitment → transport → exploitation → proceeds) with 3 datasets, a classifier plugin, 9 transforms (`trafficking` category) and 6 agents. See its README.

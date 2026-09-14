@@ -253,6 +253,43 @@ pub fn catalog() -> Vec<Transform> {
             description:"POST the selected entity to a webhook/REST endpoint (set params.url). Bring back JSON entities.".into(), service:"".into(),
             requires_api_key:false, input_kinds:vec![], runtime:"python".into(),
             entrypoint: PY_WEBHOOK.into(), disclaimer:String::new(), enabled:false },
+        // ---- COUNTER-TRAFFICKING (anti-tráfico de pessoas) ----
+        Transform { id:"ht.ad-indicators".into(), name:"Anúncio → Indicadores de tráfico".into(), category:"trafficking".into(),
+            description:"Analisa texto/atributos de um anúncio ou comunicação e pontua indicadores de tráfico (controle por terceiro, dívida, documentos retidos, movimento entre cidades, sinais de menor, liberdade restrita, códigos/emoji). Local, sem chave.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["url".into(),"report".into(),"communication".into(),"account".into()], runtime:"python".into(),
+            entrypoint: PY_HT_AD_INDICATORS.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+        Transform { id:"ht.phone-pivot".into(), name:"Telefone → Anúncios & contas".into(), category:"trafficking".into(),
+            description:"Pivota um telefone/seletor sobre o corpus local de anúncios (CSV do projeto ou CORTEX_HT_ADS_CSV) e retorna anúncios, contas, cidades e datas que reutilizam o mesmo número. Local, sem chave.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["selector".into(),"account".into()], runtime:"python".into(),
+            entrypoint: PY_HT_PHONE_PIVOT.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+        Transform { id:"ht.phone-lookup".into(), name:"Telefone → Operadora / tipo de linha".into(), category:"trafficking".into(),
+            description:"Consulta operadora, país e tipo de linha (VoIP/celular) via API numverify-compatível; sinaliza VoIP e número recém-portado como indicador de rotação de chips.".into(), service:"numverify".into(),
+            requires_api_key:true, input_kinds:vec!["selector".into()], runtime:"python".into(),
+            entrypoint: PY_HT_PHONE_LOOKUP.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+        Transform { id:"ht.handle-pivot".into(), name:"Handle → Perfis em plataformas".into(), category:"trafficking".into(),
+            description:"Verifica a existência de um handle em plataformas públicas (Instagram, X, TikTok, Telegram, OnlyFans, Linktree…) por sondagem HTTP; devolve perfis prováveis para revisão humana. Sem chave.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["account".into()], runtime:"python".into(),
+            entrypoint: PY_HT_HANDLE_PIVOT.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+        Transform { id:"ht.wallet-trace".into(), name:"Carteira cripto → Contrapartes".into(), category:"trafficking".into(),
+            description:"Rastreia uma carteira BTC/ETH em explorador público (Blockchair/Blockstream) e devolve contrapartes, volume e datas — para seguir os proventos. Sem chave.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["wallet".into()], runtime:"python".into(),
+            entrypoint: PY_HT_WALLET_TRACE.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+        Transform { id:"ht.route-timeline".into(), name:"Rota → Movimento entre cidades".into(), category:"trafficking".into(),
+            description:"Reconstrói a rota de uma vítima/suspeito a partir do atributo route (A>B>C) ou cidades/datas e cria a cadeia de locais com relações moved_to. Local (Rust).".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["victim".into(),"suspect".into(),"person".into(),"device".into()], runtime:"rust".into(),
+            entrypoint: RS_HT_ROUTE.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+        Transform { id:"ht.site-image-match".into(), name:"Imagem → Hotel/quarto (TraffickCam-like)".into(), category:"trafficking".into(),
+            description:"Envia o hash/caminho de uma imagem de anúncio a um serviço de identificação de quartos de hotel (endpoint self-hosted ou parceiro, ex.: TraffickCam) e devolve locais candidatos. Requer params.endpoint.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["media".into(),"url".into()], runtime:"python".into(),
+            entrypoint: PY_HT_SITE_IMAGE.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+        Transform { id:"ht.document-check".into(), name:"Documento → Validação (CPF/passaporte)".into(), category:"trafficking".into(),
+            description:"Valida formato e dígitos verificadores de CPF/CNPJ/passaporte informados em atributos e sinaliza documento retido/inconsistente (indicador de servidão por dívida). Local, sem chave.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec!["victim".into(),"person".into(),"suspect".into(),"selector".into(),"organization".into()], runtime:"python".into(),
+            entrypoint: PY_HT_DOC_CHECK.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
+        Transform { id:"ht.referral-package".into(), name:"Entidade → Pacote de encaminhamento".into(), category:"trafficking".into(),
+            description:"Monta um pacote de encaminhamento (Disque 100 / Polícia Federal / hotline) com os indicadores observados, locais, seletores e cadeia de custódia como entidade de evidência. Local, sem chave.".into(), service:"".into(),
+            requires_api_key:false, input_kinds:vec![], runtime:"python".into(),
+            entrypoint: PY_HT_REFERRAL.into(), disclaimer:HT_DISCLAIMER.into(), enabled:false },
         // ---- PEOPLE SEARCH ----
         Transform { id:"people.persona".into(), name:"Name/Email → Persona".into(), category:"people".into(),
             description:"People-search: resolve a name/email to a persona (accounts, locations) via a people-search API.".into(), service:"peoplesearch".into(),
@@ -858,5 +895,270 @@ fn main(){
   let hex = !label.is_empty() && label.chars().all(|c| c.is_ascii_hexdigit());
   let out = format!("{{\"entities\":[{{\"kind\":\"incident\",\"label\":\"hashtype:{}\",\"attributes\":{{\"algo\":\"{}\",\"is_hex\":\"{}\"}}}}],\"relationships\":[{{\"source\":\"{}\",\"type\":\"classified_as\",\"target\":\"hashtype:{}\",\"confidence\":0.9}}]}}", kind, kind, hex, label, kind);
   println!("{}", out);
+}
+"#;
+
+// ---------------------------------------------------------------------------
+// Counter-trafficking transforms
+// ---------------------------------------------------------------------------
+const HT_DISCLAIMER: &str = "Uso exclusivo para investigação legítima anti-tráfico (polícia, MP, hotlines, ONGs com base legal). Indicadores são pistas que exigem corroboração — nunca prova. Abordagem centrada na vítima: não exponha identidade de vítimas além da necessidade operacional (LGPD/GDPR).";
+
+const PY_HT_AD_INDICATORS: &str = r#"
+import sys, json, re
+d=json.load(sys.stdin); inp=d.get('input') or {}; a=inp.get('attributes') or {}
+text=' '.join(str(v) for v in [inp.get('label',''), a.get('ad_text',''), a.get('notes',''), a.get('report_category',''), a.get('indicators','')]).lower()
+age=str(a.get('age_stated','')).strip()
+RULES=[
+ ('third_party_control',0.9,[r'ag[êe]ncia',r'agenda (pela|com a) recep',r'assessor',r'gerente',r'ger[êe]ncia',r'meu tio',r'agenda com',r'recep[çc][ãa]o']),
+ ('minor_indicator',1.0,[r'novinha',r'rec[ée]m sa[ií]da do col[ée]gio',r'primeira vez',r'\bnew\b.*\btown\b',r'fresh',r'young']),
+ ('movement_between_cities',0.7,[r'rec[ée]m chegad',r'nova na cidade',r'passando por',r'chegando em',r'poucos dias',r'2 dias',r'[úu]ltima semana',r'antes de cruzar',r'viagem']),
+ ('restricted_freedom',0.9,[r'n[ãa]o atende fora',r's[óo] no local',r'n[ãa]o sai',r'hor[áa]rio controlad',r'24h',r'dia todo']),
+ ('debt_bondage',0.9,[r'meta',r'd[íi]vida',r'valores fixad',r'pela casa',r'passagem (e|paga)']),
+ ('cash_only',0.4,[r'dinheiro na m[ãa]o',r'cart[ãa]o n[ãa]o',r's[óo] dinheiro',r'cash only']),
+ ('phone_rotation',0.6,[r'novo n[úu]mero',r'mesma ag[êe]ncia']),
+ ('recruitment_bait',0.8,[r'sem experi[êe]ncia',r'passagem e hospedagem',r'hostess',r'modelo',r'exterior',r'euro']),
+ ('shared_lodging',0.6,[r'mesmo hotel',r'duas amigas',r'hotel pr[óo]prio',r'apartamento',r'pousada']),
+]
+hits=[]; score=0.0
+for name,w,pats in RULES:
+    m=[p for p in pats if re.search(p,text)]
+    if m: hits.append({'indicator':name,'weight':w,'matched':m[:3]}); score+=w
+try:
+    if age and int(float(age))<=18: hits.append({'indicator':'age_at_threshold','weight':0.8,'matched':[age]}); score+=0.8
+except Exception: pass
+score=min(1.0, score/3.5)
+band='critical' if score>=0.8 else 'high' if score>=0.55 else 'medium' if score>=0.3 else 'low'
+out={'entities':[],'relationships':[]}
+lab=inp.get('label','')
+if hits:
+    inc=f"indicadores:{lab[:40]}"
+    out['entities'].append({'kind':'incident','label':inc,'attributes':{'score':f'{score:.2f}','band':band,'indicators':', '.join(h['indicator'] for h in hits),'detail':json.dumps(hits,ensure_ascii=False)[:800],'method':'ht.ad-indicators (regras lexicais pt/en)'}})
+    out['relationships'].append({'source':lab,'type':'shows_indicators','target':inc,'confidence':round(0.5+score/2,2)})
+    for h in hits:
+        if h['weight']>=0.9:
+            il=f"indicador:{h['indicator']}"
+            out['entities'].append({'kind':'incident','label':il,'attributes':{'weight':str(h['weight'])}})
+            out['relationships'].append({'source':inc,'type':'includes','target':il,'confidence':0.7})
+else:
+    out['entities'].append({'kind':'incident','label':f'indicadores:{lab[:40]}','attributes':{'score':'0.00','band':'low','indicators':'nenhum indicador lexical'}})
+print(json.dumps(out,ensure_ascii=False))
+"#;
+
+const PY_HT_PHONE_PIVOT: &str = r#"
+import sys, json, os, csv, re, glob
+d=json.load(sys.stdin); inp=d.get('input') or {}; params=d.get('params') or {}
+label=inp.get('label',''); a=inp.get('attributes') or {}
+digits=lambda s: re.sub(r'\D','',str(s or ''))
+key=digits(label) if inp.get('kind')!='account' else ''
+handle=label.lower() if inp.get('kind')=='account' else ''
+paths=[p for p in [params.get('corpus'), os.environ.get('CORTEX_HT_ADS_CSV')] if p]
+for base in [os.getcwd(), os.path.expanduser('~/.cortexintel/uploads'), os.path.join(os.getcwd(),'demos'), os.path.join(os.getcwd(),'scenarios','human-trafficking')]:
+    paths+=glob.glob(os.path.join(base,'*trafficking*ads*.csv'))
+out={'entities':[],'relationships':[]}; seen=set(); rows=0
+for p in dict.fromkeys(paths):
+    try:
+        with open(p,newline='',encoding='utf-8') as f:
+            for r in csv.DictReader(f):
+                rows+=1
+                ph=digits(r.get('phone_number') or r.get('phone') or ''); acc=(r.get('account_id') or r.get('username') or '').lower()
+                if not ((key and ph and (ph.endswith(key[-8:]) or key.endswith(ph[-8:]))) or (handle and acc==handle)): continue
+                url=r.get('full_url') or r.get('url') or r.get('report_id') or ''
+                city=r.get('city',''); ts=r.get('timestamp') or r.get('posted_at') or ''
+                if url and url not in seen:
+                    seen.add(url)
+                    out['entities'].append({'kind':'url','label':url,'attributes':{'city':city,'timestamp':ts,'report_category':r.get('report_category',''),'age_stated':r.get('age_stated',''),'source':os.path.basename(p)}})
+                    out['relationships'].append({'source':label,'type':'listed_in_ad','target':url,'confidence':0.85})
+                    if city and city not in seen:
+                        seen.add(city); out['entities'].append({'kind':'location','label':city,'attributes':{'latitude':r.get('latitude',''),'longitude':r.get('longitude','')}})
+                    if city: out['relationships'].append({'source':url,'type':'posted_in','target':city,'confidence':0.7})
+                if acc and acc!=handle and acc not in seen:
+                    seen.add(acc); out['entities'].append({'kind':'account','label':acc,'attributes':{'platform':r.get('provider_name','')}})
+                    out['relationships'].append({'source':label,'type':'shared_with_account','target':acc,'confidence':0.75})
+                if ph and key and ph!=key and ph not in seen and handle:
+                    seen.add(ph); out['entities'].append({'kind':'selector','label':'+'+ph,'attributes':{'type':'phone'}})
+                    out['relationships'].append({'source':label,'type':'uses_phone','target':'+'+ph,'confidence':0.7})
+    except Exception as e:
+        out.setdefault('warnings',[]).append(f'{p}: {e}')
+n=len([e for e in out['entities'] if e['kind']=='url'])
+cities=sorted({e['label'] for e in out['entities'] if e['kind']=='location'})
+out['entities'].append({'kind':'incident','label':f'pivot:{label[:30]}','attributes':{'ads_found':str(n),'cities':', '.join(cities),'rows_scanned':str(rows),'note':'telefone reutilizado em múltiplos anúncios/cidades é indicador forte de controle por terceiro' if n>=2 else 'sem reutilização observada'}})
+out['relationships'].append({'source':label,'type':'pivot_summary','target':f'pivot:{label[:30]}','confidence':0.6})
+print(json.dumps(out,ensure_ascii=False))
+"#;
+
+const PY_HT_PHONE_LOOKUP: &str = r#"
+import sys, json, os, re, urllib.request, urllib.parse
+d=json.load(sys.stdin); inp=d.get('input') or {}; key=d.get('api_key') or os.environ.get('TRANSFORM_API_KEY','')
+num=re.sub(r'\D','',inp.get('label','')); out={'entities':[],'relationships':[]}
+try:
+    base=(d.get('params') or {}).get('endpoint') or os.environ.get('NUMVERIFY_URL','http://apilayer.net/api/validate')
+    j=json.load(urllib.request.urlopen(f'{base}?access_key={key}&number={num}',timeout=20))
+    if not j.get('valid'): raise Exception('número inválido ou não encontrado')
+    lt=(j.get('line_type') or '').lower(); carrier=j.get('carrier') or '?'
+    lab=f"linha:{num[-8:]}"
+    flags=[]
+    if 'voip' in lt: flags.append('voip_line')
+    out['entities'].append({'kind':'incident','label':lab,'attributes':{'carrier':carrier,'line_type':lt,'country':j.get('country_name',''),'location':j.get('location',''),'indicators':', '.join(flags) or 'nenhum'}})
+    out['relationships'].append({'source':inp.get('label',''),'type':'carrier_info','target':lab,'confidence':0.8})
+    if carrier and carrier!='?':
+        out['entities'].append({'kind':'organization','label':carrier,'attributes':{'role':'operadora'}})
+        out['relationships'].append({'source':inp.get('label',''),'type':'served_by','target':carrier,'confidence':0.7})
+except Exception as e: out['error']=str(e)
+print(json.dumps(out,ensure_ascii=False))
+"#;
+
+const PY_HT_HANDLE_PIVOT: &str = r#"
+import sys, json, urllib.request, concurrent.futures
+d=json.load(sys.stdin); inp=d.get('input') or {}; h=inp.get('label','').strip().lstrip('@')
+SITES={'instagram':'https://www.instagram.com/{}/','x':'https://x.com/{}','tiktok':'https://www.tiktok.com/@{}','telegram':'https://t.me/{}','onlyfans':'https://onlyfans.com/{}','linktree':'https://linktr.ee/{}','facebook':'https://www.facebook.com/{}','kwai':'https://www.kwai.com/@{}','privacy':'https://privacy.com.br/profile/{}'}
+out={'entities':[],'relationships':[]}
+def probe(item):
+    site,tpl=item; url=tpl.format(h)
+    try:
+        req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0 (CortexIntel OSINT)'},method='HEAD')
+        r=urllib.request.urlopen(req,timeout=8); return site,url,r.status
+    except urllib.error.HTTPError as e: return site,url,e.code
+    except Exception: return site,url,0
+if h:
+    with concurrent.futures.ThreadPoolExecutor(6) as ex:
+        for site,url,st in ex.map(probe,SITES.items()):
+            if st in (200,301,302):
+                out['entities'].append({'kind':'account','label':f'{h}@{site}','attributes':{'platform':site,'profile_url':url,'http_status':str(st),'note':'existência provável — confirmar manualmente'}})
+                out['relationships'].append({'source':inp.get('label',''),'type':'same_handle_on','target':f'{h}@{site}','confidence':0.55})
+if not out['entities']: out['entities'].append({'kind':'incident','label':f'handle:{h}','attributes':{'result':'nenhum perfil público respondeu (ou bloqueio de bot)'}})
+print(json.dumps(out,ensure_ascii=False))
+"#;
+
+const PY_HT_WALLET_TRACE: &str = r#"
+import sys, json, urllib.request
+d=json.load(sys.stdin); inp=d.get('input') or {}; addr=inp.get('label','').strip(); out={'entities':[],'relationships':[]}
+def get(u):
+    req=urllib.request.Request(u,headers={'User-Agent':'CortexIntel'}); return json.load(urllib.request.urlopen(req,timeout=25))
+try:
+    if addr.startswith('0x') and len(addr)==42:
+        j=get(f'https://api.blockchair.com/ethereum/dashboards/address/{addr}?limit=25')
+        a=j['data'][addr]['address']; calls=j['data'][addr].get('calls',[])
+        out['entities'].append({'kind':'incident','label':f'chain:{addr[:10]}','attributes':{'chain':'ethereum','balance_wei':str(a.get('balance','')),'tx_count':str(a.get('transaction_count','')),'first_seen':str(a.get('first_seen_receiving','')),'last_seen':str(a.get('last_seen_receiving',''))}})
+        out['relationships'].append({'source':addr,'type':'chain_summary','target':f'chain:{addr[:10]}','confidence':0.9})
+        for c in calls[:25]:
+            other=c.get('recipient') if c.get('sender','').lower()==addr.lower() else c.get('sender')
+            if not other: continue
+            out['entities'].append({'kind':'wallet','label':other,'attributes':{'chain':'ethereum'}})
+            out['relationships'].append({'source':addr if c.get('sender','').lower()==addr.lower() else other,'type':'transferred_to','target':other if c.get('sender','').lower()==addr.lower() else addr,'confidence':0.85})
+    else:
+        j=get(f'https://blockstream.info/api/address/{addr}'); st=j.get('chain_stats',{})
+        out['entities'].append({'kind':'incident','label':f'chain:{addr[:10]}','attributes':{'chain':'bitcoin','funded_txo_sum':str(st.get('funded_txo_sum','')),'spent_txo_sum':str(st.get('spent_txo_sum','')),'tx_count':str(st.get('tx_count',''))}})
+        out['relationships'].append({'source':addr,'type':'chain_summary','target':f'chain:{addr[:10]}','confidence':0.9})
+        txs=get(f'https://blockstream.info/api/address/{addr}/txs')
+        seen=set()
+        for tx in txs[:20]:
+            for o in tx.get('vout',[]):
+                oa=o.get('scriptpubkey_address')
+                if oa and oa!=addr and oa not in seen and len(seen)<25:
+                    seen.add(oa); out['entities'].append({'kind':'wallet','label':oa,'attributes':{'chain':'bitcoin','value_sat':str(o.get('value',''))}})
+                    out['relationships'].append({'source':addr,'type':'transferred_to','target':oa,'confidence':0.7})
+except Exception as e: out['error']=str(e)
+print(json.dumps(out,ensure_ascii=False))
+"#;
+
+const PY_HT_SITE_IMAGE: &str = r#"
+import sys, json, os, urllib.request
+d=json.load(sys.stdin); inp=d.get('input') or {}; a=inp.get('attributes') or {}; params=d.get('params') or {}
+ep=params.get('endpoint') or os.environ.get('CORTEX_HT_IMAGE_ENDPOINT',''); out={'entities':[],'relationships':[]}
+try:
+    if not ep: raise Exception('set params.endpoint (serviço de identificação de quartos de hotel, ex.: instância TraffickCam)')
+    body=json.dumps({'label':inp.get('label',''),'path':a.get('path',''),'hash':a.get('sha256') or a.get('hash',''),'phash':a.get('perceptual_hash','')}).encode()
+    req=urllib.request.Request(ep,data=body,headers={'content-type':'application/json'})
+    r=json.load(urllib.request.urlopen(req,timeout=40))
+    for m in (r.get('matches') or r.get('candidates') or [])[:10]:
+        name=m.get('hotel') or m.get('name') or 'local'; lab=f"{name}"
+        out['entities'].append({'kind':'facility','label':lab,'attributes':{'city':m.get('city',''),'latitude':str(m.get('lat','')),'longitude':str(m.get('lon','')),'similarity':str(m.get('score','')),'room':str(m.get('room',''))}})
+        out['relationships'].append({'source':inp.get('label',''),'type':'possibly_taken_at','target':lab,'confidence':min(0.9,float(m.get('score',0.5) or 0.5))})
+    if not out['entities']: out['entities'].append({'kind':'incident','label':f"imagem:{inp.get('label','')[:24]}",'attributes':{'result':'sem candidatos'}})
+except Exception as e: out['error']=str(e)
+print(json.dumps(out,ensure_ascii=False))
+"#;
+
+const PY_HT_DOC_CHECK: &str = r#"
+import sys, json, re
+d=json.load(sys.stdin); inp=d.get('input') or {}; a=inp.get('attributes') or {}; out={'entities':[],'relationships':[]}
+def cpf_ok(c):
+    c=re.sub(r'\D','',c)
+    if len(c)!=11 or c==c[0]*11: return False
+    for n in (9,10):
+        s=sum(int(c[i])*((n+1)-i) for i in range(n)); dv=(s*10%11)%10
+        if dv!=int(c[n]): return False
+    return True
+def cnpj_ok(c):
+    c=re.sub(r'\D','',c)
+    if len(c)!=14 or c==c[0]*14: return False
+    w1=[5,4,3,2,9,8,7,6,5,4,3,2]; w2=[6]+w1
+    for w,n in ((w1,12),(w2,13)):
+        s=sum(int(c[i])*w[i] for i in range(n)); dv=11-s%11; dv=0 if dv>=10 else dv
+        if dv!=int(c[n]): return False
+    return True
+found=[]
+for k,v in a.items():
+    kl=k.lower(); v=str(v)
+    if kl in('cpf','document_id','documento') and re.sub(r'\D','',v).__len__()==11: found.append(('cpf',v,cpf_ok(v)))
+    elif kl in('cnpj',) or (kl=='document_id' and len(re.sub(r'\D','',v))==14): found.append(('cnpj',v,cnpj_ok(v)))
+    elif 'passport' in kl or 'passaporte' in kl: found.append(('passport',v,bool(re.match(r'^[A-Z]{1,2}[0-9]{6,8}$',v.strip().upper()))))
+flags=[]
+ds=str(a.get('doc_status','')).lower()
+if ds in('retained','retido','confiscado','withheld'): flags.append('document_retained')
+if any(not ok for _,_,ok in found): flags.append('document_invalid_or_forged')
+age=a.get('age_stated')
+try:
+    if age and int(float(age))<18: flags.append('minor_declared')
+except Exception: pass
+lab=f"documentos:{inp.get('label','')[:30]}"
+out['entities'].append({'kind':'incident','label':lab,'attributes':{'checked':'; '.join(f'{t}:{"ok" if ok else "INVÁLIDO"}' for t,_,ok in found) or 'nenhum documento nos atributos','indicators':', '.join(flags) or 'nenhum','note':'documento retido por terceiro é indicador clássico de servidão por dívida (Protocolo de Palermo)'}})
+out['relationships'].append({'source':inp.get('label',''),'type':'document_check','target':lab,'confidence':0.8 if flags else 0.5})
+print(json.dumps(out,ensure_ascii=False))
+"#;
+
+const PY_HT_REFERRAL: &str = r#"
+import sys, json, datetime
+d=json.load(sys.stdin); inp=d.get('input') or {}; a=inp.get('attributes') or {}
+now=datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+ind=[x for x in [a.get('indicators'), a.get('report_category'), a.get('doc_status'), a.get('stage')] if x]
+pkg={'referral_to':['Disque 100 (Direitos Humanos)','Polícia Federal — tráfico de pessoas (Lei 13.344/2016)','Núcleo de Enfrentamento ao Tráfico de Pessoas (NETP) do estado'],
+     'subject':inp.get('label',''),'kind':inp.get('kind',''),'indicators':ind,'locations':[x for x in [a.get('city'),a.get('location'),a.get('hotel')] if x],
+     'selectors':[x for x in [a.get('phone'),a.get('phone_number')] if x],'route':a.get('route',''),'generated_at':now,
+     'chain_of_custody':{'source':inp.get('sources',''),'exported_by':'CortexIntel','note':'preservar originais; hash dos arquivos no case.json'},
+     'victim_centred':'não confrontar suspeitos; priorizar segurança, consentimento e sigilo da vítima; acionar assistência (CREAS/abrigo)'}
+lab=f"encaminhamento:{inp.get('label','')[:30]}"
+out={'entities':[{'kind':'evidence','label':lab,'attributes':{'package':json.dumps(pkg,ensure_ascii=False)[:1500],'generated_at':now,'status':'rascunho — revisão humana obrigatória'}}],
+     'relationships':[{'source':inp.get('label',''),'type':'referral_package','target':lab,'confidence':0.9}]}
+print(json.dumps(out,ensure_ascii=False))
+"#;
+
+const RS_HT_ROUTE: &str = r#"
+use std::io::Read;
+fn get<'a>(s: &'a str, key: &str) -> Option<&'a str> {
+  let pat = format!("\"{}\"", key);
+  let i = s.find(&pat)? + pat.len();
+  let rest = &s[i..];
+  let q = rest.find('"')? + 1;
+  let rest = &rest[q..];
+  let e = rest.find('"')?;
+  Some(&rest[..e])
+}
+fn main(){
+  let mut s=String::new(); std::io::stdin().read_to_string(&mut s).ok();
+  let label = get(&s,"label").unwrap_or("").to_string();
+  let route = get(&s,"route").unwrap_or("").to_string();
+  let mut cities: Vec<String> = route.split(|c| c=='>' || c=='→' || c==';' || c==',').map(|x| x.trim().to_string()).filter(|x| !x.is_empty()).collect();
+  if cities.is_empty() { if let Some(c) = get(&s,"city") { cities.push(c.to_string()); } }
+  let mut ents = Vec::new(); let mut rels = Vec::new();
+  for (i,c) in cities.iter().enumerate() {
+    ents.push(format!("{{\"kind\":\"location\",\"label\":\"{}\",\"attributes\":{{\"hop\":\"{}\"}}}}", c, i+1));
+    if i==0 { rels.push(format!("{{\"source\":\"{}\",\"type\":\"origin\",\"target\":\"{}\",\"confidence\":0.7}}", label, c)); }
+    else { rels.push(format!("{{\"source\":\"{}\",\"type\":\"moved_to\",\"target\":\"{}\",\"confidence\":0.75}}", cities[i-1], c)); rels.push(format!("{{\"source\":\"{}\",\"type\":\"seen_in\",\"target\":\"{}\",\"confidence\":0.6}}", label, c)); }
+  }
+  let n = cities.len();
+  ents.push(format!("{{\"kind\":\"incident\",\"label\":\"rota:{}\",\"attributes\":{{\"hops\":\"{}\",\"route\":\"{}\",\"indicator\":\"{}\"}}}}", label.chars().take(30).collect::<String>(), n, cities.join(" > "), if n>=3 {"movimento_multicidade (indicador de transporte/exploração itinerante)"} else {"rota curta"}));
+  rels.push(format!("{{\"source\":\"{}\",\"type\":\"route_summary\",\"target\":\"rota:{}\",\"confidence\":0.6}}", label, label.chars().take(30).collect::<String>()));
+  println!("{{\"entities\":[{}],\"relationships\":[{}]}}", ents.join(","), rels.join(","));
 }
 "#;

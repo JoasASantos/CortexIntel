@@ -19,6 +19,8 @@ pub fn correlate(graph: &mut KnowledgeGraph) -> usize {
             EntityKind::Wallet => Some("shares_wallet_with"),
             EntityKind::Domain => Some("shares_domain_with"),
             EntityKind::Group => Some("co_member_with"),
+            EntityKind::Selector => Some("same_phone_as"),
+            EntityKind::Facility => Some("same_site_as"),
             _ => None,
         }
     };
