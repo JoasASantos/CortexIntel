@@ -2150,38 +2150,52 @@ $("#btnConnect")&&$("#btnConnect").addEventListener("click",()=>{ const t=active
 
 // ---------- add entity manually (incl. media for analysis) ----------
 let aeUploadPath=null;
-function addEntityModal(prefill){ prefill=prefill||{}; const t=activeTab(); if(!t){ toast("Open or create a project first","err"); return; }
-  const kinds=["person","account","organization","ip","domain","url","media","evidence","device","wallet","payment","group","location","communication","malware","incident","vulnerability","suspect","victim","case","report","service","repository"];
+function addEntityModal(prefill){ prefill=prefill||{}; const t=activeTab(); if(!t){ toast("Abra ou crie um projeto primeiro","err"); return; }
+  const kinds=["person","account","organization","ip","domain","url","media","face","evidence","device","wallet","payment","group","location","communication","malware","incident","vulnerability","suspect","victim","case","report","service","repository","selector","email","username","address","document","vehicle","bankaccount"];
   const kopts=kinds.map(k=>`<option value="${k}">${k}</option>`).join("");
-  openModal("Add entity", `
-    <div class="field">Type<select id="aeKind" class="select">${kopts}</select></div>
-    <div class="field">Label / value<input id="aeLabel" placeholder="name, email, IP, domain, file name…" /></div>
-    <div class="field" id="aeMediaField" hidden>Media file (image / video / audio) — uploaded for metadata & authenticity analysis
-      <div style="display:flex;gap:8px"><input id="aeFile" placeholder="no file selected" readonly style="flex:1"/><button class="btn ghost" id="aeBrowse">Browse…</button></div>
-      <select id="aeMediaType" class="select" style="margin-top:8px"><option value="image">image</option><option value="video">video</option><option value="audio">audio</option><option value="document">document</option></select>
-      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:600;color:var(--accent,#33c2dd)"><input type="checkbox" id="aeGeminiAnalyze" checked /> AI Image Analysis (Gemini) — geolocation, landmarks, visual intel</label>
-      <div class="disclaimer" style="margin-top:8px">When checked, Gemini AI analyzes the image after adding — extracts geolocation, landmarks, environmental context. Requires gemini CLI installed.</div>
-      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:600;color:var(--accent)"><input type="checkbox" id="aeFaceSearch" /> Busca facial em todos os provedores (FaceCheck, PimEyes, Search4Faces, FaceSearch…) — usa esta imagem como rosto</label>
+  const startKind=prefill.kind||"person";
+  const mediaFlow=["media","face","evidence"].includes(startKind)||prefill.openFile;
+  const acc=".png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff,.heic,.mp4,.mov,.avi,.mkv,.mp3,.wav,.m4a,.pdf";
+  openModal(mediaFlow?"Adicionar mídia":"Adicionar entidade", `
+    <div id="aeDrop" class="ae-drop"><div class="ae-drop-ic">⬆</div><div class="ae-drop-main" id="aeDropMain">Clique para escolher um arquivo</div><div class="ae-drop-sub" id="aeDropSub">imagem · vídeo · áudio · PDF — ou arraste aqui · <a href="#" id="aeServerPath">caminho no servidor…</a></div></div>
+    <input id="aeFile" type="hidden" />
+    <select id="aeMediaType" class="select" hidden><option value="image">image</option><option value="video">video</option><option value="audio">audio</option><option value="document">document</option></select>
+    <div class="field" id="aeChecks">
+      <label class="ae-check"><input type="checkbox" id="aeFaceSearch" ${startKind==="face"?"checked":""}/> <span><b>Busca facial em todos os provedores</b> — usa esta imagem como rosto (FaceCheck, PimEyes, Search4Faces, FaceSearch…)</span></label>
+      <label class="ae-check"><input type="checkbox" id="aeGeminiAnalyze" checked/> <span><b>Análise de imagem (Gemini)</b> — geolocalização, marcos, contexto visual</span></label>
       <div class="disclaimer" style="margin-top:6px">Biometria é dado sensível (LGPD/GDPR). Só provedores instalados e com chave/endpoint rodam. Resultados são candidatos a confirmar.</div>
     </div>
-    <div class="field">Attributes (key: value per line, optional)<textarea id="aeAttrs" rows="2" placeholder="source: hotline&#10;country: BR"></textarea></div>
+    <div class="field">Rótulo <span class="muted" style="text-transform:none">(opcional — usa o nome do arquivo)</span><input id="aeLabel" placeholder="rótulo…" value="${prefill.label?esc(prefill.label):""}"/></div>
+    <div class="field">Atributos (chave: valor por linha, opcional)<textarea id="aeAttrs" rows="2" placeholder="source: hotline&#10;country: BR"></textarea></div>
+    <div class="field ae-adv"><span>Tipo da entidade</span><select id="aeKind" class="select">${kopts}</select></div>
   `,[
-    {label:"Cancel",cls:"ghost",act:closeModal},
+    {label:"Cancelar",cls:"ghost",act:closeModal},
     {label:"✦ Investigar (IA)",cls:"ghost",act:()=>{ closeModal(); investigateModal(); }},
-    {label:"Add entity",cls:"primary",act:doAddEntity}
+    {label:mediaFlow?"Adicionar mídia":"Adicionar entidade",cls:"primary",act:doAddEntity}
   ]);
   aeUploadPath=null;
-  setTimeout(()=>{ const ks=$("#aeKind"); if(!ks) return; const upd=()=>{ const f=$("#aeMediaField"); if(f) f.hidden=!["media","evidence","person","face","victim","suspect"].includes(ks.value); }; ks.addEventListener("change",upd); upd();
-    // prefill kind/label from the quick-add panel
-    if(prefill.kind){ ks.value=prefill.kind; } if(prefill.label && $("#aeLabel")) $("#aeLabel").value=prefill.label;
-    const b=$("#aeBrowse"); const acc=".png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff,.heic,.mp4,.mov,.avi,.mkv,.mp3,.wav,.m4a,.pdf";
-    const openFile=()=>browseUpload(p=>{ aeUploadPath=p; if($("#aeFile"))$("#aeFile").value=p.split("/").pop(); if($("#aeLabel")&&!$("#aeLabel").value) $("#aeLabel").value=p.split("/").pop(); }, acc);
-    if(b) b.addEventListener("click", openFile);
-    // small "usar caminho do servidor" fallback link for desktop paths
-    const media=$("#aeMediaField"); if(media && !$("#aeServerPath")){ const a=el("a","muted","ou escolher um caminho no servidor…"); a.id="aeServerPath"; a.href="#"; a.style.cssText="display:inline-block;margin-top:6px;font-size:11px;cursor:pointer"; a.addEventListener("click",e=>{e.preventDefault(); pickServerPath(p=>{ aeUploadPath=p; if($("#aeFile"))$("#aeFile").value=p.split("/").pop(); }, {title:"Escolher arquivo (servidor)", accept:acc});}); const fileRow=media.querySelector("div"); if(fileRow) fileRow.appendChild(a); }
-    if(prefill.openFile) setTimeout(openFile, 60);
+  setTimeout(()=>{ const ks=$("#aeKind"); if(!ks) return; ks.value=startKind;
+    const isMediaKind=k=>["media","face","evidence"].includes(k);
+    const sync=()=>{ const k=ks.value; const mf=isMediaKind(k)||aeUploadPath; $("#aeDrop").hidden=!mf; $("#aeChecks").hidden=!mf; };
+    ks.addEventListener("change",sync); sync();
+    const guessType=name=>{ const e=(name.split(".").pop()||"").toLowerCase(); if(/(png|jpe?g|gif|webp|bmp|tiff?|heic)/.test(e))return"image"; if(/(mp4|mov|avi|mkv|webm)/.test(e))return"video"; if(/(mp3|wav|m4a|aac|ogg)/.test(e))return"audio"; return"document"; };
+    const onPicked=p=>{ aeUploadPath=p; const name=p.split("/").pop(); if($("#aeFile"))$("#aeFile").value=p; $("#aeDropMain").textContent="✓ "+name; $("#aeDropSub").innerHTML="pronto — clique para trocar"; const mt=$("#aeMediaType"); if(mt)mt.value=guessType(name); if(!$("#aeLabel").value)$("#aeLabel").value=name; if(!isMediaKind(ks.value)){ ks.value="media"; } sync(); };
+    const openFile=(e)=>{ if(e)e.preventDefault(); browseUpload(onPicked, acc); };
+    const drop=$("#aeDrop"); if(drop){ drop.addEventListener("click",openFile);
+      drop.addEventListener("dragover",e=>{e.preventDefault(); drop.classList.add("over");});
+      drop.addEventListener("dragleave",()=>drop.classList.remove("over"));
+      drop.addEventListener("drop",e=>{ e.preventDefault(); drop.classList.remove("over"); const f=e.dataTransfer.files[0]; if(f){ const inp=$("#filePicker"); const dt=new DataTransfer(); dt.items.add(f); inp.files=dt.files; browseUploadFromInput(onPicked); } });
+    }
+    const sp=$("#aeServerPath"); if(sp) sp.addEventListener("click",e=>{ e.preventDefault(); e.stopPropagation(); pickServerPath(onPicked, {title:"Escolher arquivo (servidor)", accept:acc}); });
   },40);
 }
+// Upload whatever is already in the shared file input (used by drag-drop).
+async function browseUploadFromInput(cb){ const inp=$("#filePicker"); const f=inp.files&&inp.files[0]; if(!f)return;
+  if(!isLocalOrigin() && MODE!=="http"){ cb("/uploads/"+f.name); return; }
+  setSync("busy","upload"); toast(`Enviando ${f.name} (${(f.size/1048576).toFixed(1)} MB)…`);
+  try{ const buf=await f.arrayBuffer(); const r=await fetch("/api/upload?name="+encodeURIComponent(f.name),{method:"POST",headers:{"Authorization":"Bearer "+TOKEN,"Content-Type":"application/octet-stream"},body:buf});
+    const txt=await r.text(); let j; try{ j=JSON.parse(txt);}catch(_){ j={}; } if(!r.ok) throw new Error(j.error||("upload falhou ("+r.status+")")); setSync("ok","uploaded"); cb(j.path); toast("Enviado "+f.name,"ok"); }
+  catch(e){ setSync("err","failed"); toast("Upload falhou: "+e.message,"err"); } }
 
 
 // ---------- Face search fan-out (todos os provedores instalados) ----------
@@ -2255,10 +2269,10 @@ async function doInvestigate(){ const t=activeTab(); if(!t)return;
 function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind").value; let label=$("#aeLabel").value.trim();
   if(!label && !aeUploadPath){ toast("Label or file required","err"); return; }
   const attrs={}; ($("#aeAttrs").value||"").split("\n").forEach(l=>{ const i=l.indexOf(":"); if(i>0){ const k=l.slice(0,i).trim(); if(k)attrs[k]=l.slice(i+1).trim(); } });
-  if(["media","evidence"].includes(kind)){ attrs.media_type=$("#aeMediaType").value; if(aeUploadPath){ attrs.path=aeUploadPath; attrs.file=aeUploadPath.split("/").pop(); if(!label)label=aeUploadPath.split("/").pop(); } }
+  if(aeUploadPath){ const mt=$("#aeMediaType"); if(mt) attrs.media_type=mt.value; attrs.path=aeUploadPath; attrs.file=aeUploadPath.split("/").pop(); if(!label)label=aeUploadPath.split("/").pop(); }
   if(!label) label=kind+" (manual)";
   const id="man-"+Math.abs(hashStr(kind+label+String(state.tabs.length)+Object.keys(attrs).join()));
-  const wantGemini=["media","evidence"].includes(kind) && aeUploadPath && ($("#aeGeminiAnalyze")||{}).checked;
+  const wantGemini=aeUploadPath && ($("#aeGeminiAnalyze")||{}).checked && ["media","evidence","face"].includes(kind);
   const wantFace=aeUploadPath && ($("#aeFaceSearch")||{}).checked;
   t.graph.nodes.push({ id, kind, label, risk:0.3, band:"low", attributes:attrs, tags:["manual"], sources:["manual"], sensitive:["media","evidence","victim","communication"].includes(kind) });
   closeModal(); renderGraph(); renderGraphFilters(); showView("graph"); setTimeout(()=>{ selectNode(id); if(cy){const e=cy.$id(id); if(e){e.addClass("fresh"); setTimeout(()=>e.removeClass("fresh"),1800);} } },250);
