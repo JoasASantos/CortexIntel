@@ -227,7 +227,11 @@ function quickAdd(kind,label,attrs){ const t=activeTab(); if(!t){ toast("Open a 
   log("ok",`added ${kind} "${label}"`); return id; }
 function afterAdd(ids, anchorId){ const t=activeTab(); if(!t||!ids.length) return; if(cy&&(t.clusterMode||"none")==="none"&&cy.nodes().length){ const nodes=ids.map(id=>t.graph.nodes.find(n=>n.id===id)).filter(Boolean); const edges=[]; appendToCy(nodes,edges,anchorId||(cy.$(":selected").length?cy.$(":selected")[0].id():null)||cy.nodes()[0].id()); } else renderGraph();
   renderGraphFilters(); renderNodesPanel(); flashFresh(ids); $("#graphEmpty").hidden=true; pushNotif("entity",`${ids.length} entity(ies) added`); if(ids.length===1) setTimeout(()=>selectNode(ids[0]),200); }
-$("#npAddBtn").addEventListener("click", ()=>{ const id=quickAdd(npKind,$("#npAddLabel").value); if(id){ $("#npAddLabel").value=""; afterAdd([id]); } });
+$("#npAddBtn").addEventListener("click", ()=>{
+  // file-bearing kinds → open the full modal (with native file picker) prefilled
+  if(["media","face","evidence"].includes(npKind)){ const lbl=$("#npAddLabel").value; $("#npAddLabel").value=""; addEntityModal({kind:npKind,label:lbl,openFile:true}); return; }
+  const id=quickAdd(npKind,$("#npAddLabel").value); if(id){ $("#npAddLabel").value=""; afterAdd([id]); }
+});
 $("#npAddLabel").addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); $("#npAddBtn").click(); } });
 $("#npAddMore").addEventListener("click", ()=>addEntityModal());
 (function(){ const host=$("#npAdd"); if(host && typeof investigateModal==="function"){ const b=el("button","btn ghost block"); b.style.marginTop="6px"; b.innerHTML="✦ Investigar sujeito com IA"; b.addEventListener("click",()=>investigateModal()); host.appendChild(b); } })();
@@ -292,6 +296,7 @@ window.openCtxMenu=async function(x,y,id){ const n=nodeData(id); if(!n) return; 
   FLAGS.forEach(([c,name])=>items.push({label:name,dot:c,run:()=>setFlag(id,c)})); if(n._flag) items.push({label:"Clear flag",icon:"x",run:()=>setFlag(id,null)});
   items.push({sep:true},{label:"Create alert",icon:"alerts",run:()=>{ pushNotif("alert",`Alert on ${n.label}`); toast("Alert created"); }});
   if(["media","evidence"].includes(n.kind)&&(n.attributes||{}).path) items.push({label:"AI Geolocation (Gemini)",icon:"spark",run:()=>{ cy.$(":selected").unselect(); cy.$id(id).select(); triggerGeminiGeoint(id); }});
+  if(["media","face","person","victim","suspect"].includes(n.kind)) items.push({label:"Buscar rosto (todos os provedores)",icon:"scan",run:()=>{ if(typeof faceSearchAll==="function") faceSearchAll(id); }});
   if((activeTab()?.clusterMode||"none")!=="none") items.push({label:"Collapse this cluster",icon:"graph",run:()=>collapseNodeCluster(id)});
   items.push({label:"Remove node",icon:"trash",danger:true,kbd:"⌫",run:()=>removeNode(id)});
   let inst=[]; try{ inst=await api("/api/transforms"); }catch(e){}

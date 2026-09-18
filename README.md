@@ -115,7 +115,7 @@ A transform with `runtime: "api"` carries a **declarative JSON spec** (no code) 
 |---|---|---|
 | signals | Shodan host/search, Censys, GreyNoise, AbuseIPDB, LeakCheck, crypto-abuse, generic GET builder | key per service |
 | phone | HLR/owner lookup, phone→linked accounts (WhatsApp/Telegram) | key + endpoint |
-| face | face search (Search4Faces/PimEyes/FaceCheck-like), face compare, reverse image | key + endpoint, image upload |
+| face | per-provider face search — FaceCheck.ID, PimEyes, Search4Faces, FaceSearch/FaceOnLive, Lenso.ai, Betaface — plus generic, face compare, reverse image | key per provider (+ endpoint for some), image upload |
 | geoint | geocode (OSM, no key), cameras nearby (OSM surveillance), places nearby (hotels/ATMs), Wi-Fi→location (WiGLE) | mostly no key |
 
 **Spec** (`entrypoint`): `steps[]` (method, url, headers, query, json/form/body, save vars) + `map` (items path, kind, label, attributes, relation, lat/lon, confidence) + optional `extra[]`. Placeholders: `{label} {key} {attr.NAME} {param.NAME} {var.NAME} {lat} {lon} {file_b64} {label_digits} {label_enc}`; item fields as `item.path` or `{item.path}`. Params are declared in `params[]` and the GUI renders a form (text/number/file/select), including file upload for face search. Keys live in Ajustes → Chaves de API; per-run endpoints/files come from the form.
@@ -127,3 +127,10 @@ A transform with `runtime: "api"` carries a **declarative JSON spec** (no code) 
 ## Ontology (v0.0.3)
 
 17 new entity kinds: vehicle, email, username, address, document, hash, credential, breach, celltower, wifi, certificate, camera, event, weapon, face, bankaccount (plus richer intra-record links and correlation hubs: same_email_as, same_handle_as, same_address_as, same_vehicle_as, same_bank_account_as, same_cell_as, same_wifi_as, same_file_as). Sensitive kinds (document, credential, face, victim, media…) are fingerprint-labelled and gated.
+
+
+### Face-search providers & fan-out
+
+Dedicated transforms: `face.facecheck` (FaceCheck.ID, 2-step upload+search), `face.pimeyes`, `face.search4faces` (VK/OK/TikTok/IG datasets), `face.facesearch` (FaceSearch/FaceOnLive), `face.lenso`, `face.betaface` (attributes + match). Each takes the image from a media/face/person entity (`attributes.path`) or a `file` param, keys from Ajustes → Chaves de API, per-run endpoints remembered per provider.
+
+Add an entity + image and search in one shot: the **Adicionar entidade** modal (and the entities panel quick-add for media/face) opens the native file picker directly, with a "Busca facial em todos os provedores" checkbox that fans out across every installed+configured face provider on add. Results are merged as URLs/accounts tagged by provider and match band (`match:strong ≥90` / `match:likely 75–90` / `match:possible <75`). Also on any media/face/person node: right-click → "Buscar rosto (todos os provedores)", or ⌘K → "Busca facial".

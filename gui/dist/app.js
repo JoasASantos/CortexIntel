@@ -2150,7 +2150,7 @@ $("#btnConnect")&&$("#btnConnect").addEventListener("click",()=>{ const t=active
 
 // ---------- add entity manually (incl. media for analysis) ----------
 let aeUploadPath=null;
-function addEntityModal(){ const t=activeTab(); if(!t){ toast("Open or create a project first","err"); return; }
+function addEntityModal(prefill){ prefill=prefill||{}; const t=activeTab(); if(!t){ toast("Open or create a project first","err"); return; }
   const kinds=["person","account","organization","ip","domain","url","media","evidence","device","wallet","payment","group","location","communication","malware","incident","vulnerability","suspect","victim","case","report","service","repository"];
   const kopts=kinds.map(k=>`<option value="${k}">${k}</option>`).join("");
   openModal("Add entity", `
@@ -2161,6 +2161,8 @@ function addEntityModal(){ const t=activeTab(); if(!t){ toast("Open or create a 
       <select id="aeMediaType" class="select" style="margin-top:8px"><option value="image">image</option><option value="video">video</option><option value="audio">audio</option><option value="document">document</option></select>
       <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:600;color:var(--accent,#33c2dd)"><input type="checkbox" id="aeGeminiAnalyze" checked /> AI Image Analysis (Gemini) — geolocation, landmarks, visual intel</label>
       <div class="disclaimer" style="margin-top:8px">When checked, Gemini AI analyzes the image after adding — extracts geolocation, landmarks, environmental context. Requires gemini CLI installed.</div>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px;cursor:pointer;font-weight:600;color:var(--accent)"><input type="checkbox" id="aeFaceSearch" /> Busca facial em todos os provedores (FaceCheck, PimEyes, Search4Faces, FaceSearch…) — usa esta imagem como rosto</label>
+      <div class="disclaimer" style="margin-top:6px">Biometria é dado sensível (LGPD/GDPR). Só provedores instalados e com chave/endpoint rodam. Resultados são candidatos a confirmar.</div>
     </div>
     <div class="field">Attributes (key: value per line, optional)<textarea id="aeAttrs" rows="2" placeholder="source: hotline&#10;country: BR"></textarea></div>
   `,[
@@ -2169,9 +2171,54 @@ function addEntityModal(){ const t=activeTab(); if(!t){ toast("Open or create a 
     {label:"Add entity",cls:"primary",act:doAddEntity}
   ]);
   aeUploadPath=null;
-  setTimeout(()=>{ const ks=$("#aeKind"); if(!ks) return; const upd=()=>{ const f=$("#aeMediaField"); if(f) f.hidden=!["media","evidence"].includes(ks.value); }; ks.addEventListener("change",upd); upd();
-    const b=$("#aeBrowse"); if(b)b.addEventListener("click",()=>pickServerPath(p=>{ aeUploadPath=p; $("#aeFile").value=p.split("/").pop(); if(!$("#aeLabel").value) $("#aeLabel").value=p.split("/").pop(); }, {title:"Choose media file", accept:".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.avi,.mp3,.wav,.m4a,.pdf"})); },40);
+  setTimeout(()=>{ const ks=$("#aeKind"); if(!ks) return; const upd=()=>{ const f=$("#aeMediaField"); if(f) f.hidden=!["media","evidence","person","face","victim","suspect"].includes(ks.value); }; ks.addEventListener("change",upd); upd();
+    // prefill kind/label from the quick-add panel
+    if(prefill.kind){ ks.value=prefill.kind; } if(prefill.label && $("#aeLabel")) $("#aeLabel").value=prefill.label;
+    const b=$("#aeBrowse"); const acc=".png,.jpg,.jpeg,.gif,.webp,.bmp,.tiff,.heic,.mp4,.mov,.avi,.mkv,.mp3,.wav,.m4a,.pdf";
+    const openFile=()=>browseUpload(p=>{ aeUploadPath=p; if($("#aeFile"))$("#aeFile").value=p.split("/").pop(); if($("#aeLabel")&&!$("#aeLabel").value) $("#aeLabel").value=p.split("/").pop(); }, acc);
+    if(b) b.addEventListener("click", openFile);
+    // small "usar caminho do servidor" fallback link for desktop paths
+    const media=$("#aeMediaField"); if(media && !$("#aeServerPath")){ const a=el("a","muted","ou escolher um caminho no servidor…"); a.id="aeServerPath"; a.href="#"; a.style.cssText="display:inline-block;margin-top:6px;font-size:11px;cursor:pointer"; a.addEventListener("click",e=>{e.preventDefault(); pickServerPath(p=>{ aeUploadPath=p; if($("#aeFile"))$("#aeFile").value=p.split("/").pop(); }, {title:"Escolher arquivo (servidor)", accept:acc});}); const fileRow=media.querySelector("div"); if(fileRow) fileRow.appendChild(a); }
+    if(prefill.openFile) setTimeout(openFile, 60);
+  },40);
 }
+
+
+// ---------- Face search fan-out (todos os provedores instalados) ----------
+function faceBand(score){ // normalize 0..1 or 0..100 → strong|likely|possible
+  let s=parseFloat(score); if(isNaN(s)) return null; if(s<=1) s*=100;
+  return s>=90?"strong":s>=75?"likely":"possible";
+}
+async function faceSearchAll(nodeId){ const t=activeTab(); if(!t)return; const seed=nodeData(nodeId); if(!seed){toast("Selecione uma entidade","err");return;}
+  const path=(seed.attributes||{}).path;
+  if(!path){ toast("Esta entidade não tem imagem (attributes.path). Adicione uma mídia/rosto com arquivo.","err"); return; }
+  let inst=[]; try{ inst=await api("/api/transforms"); }catch(e){}
+  const faceTf=inst.filter(x=>x.enabled && (x.category==="face") && /face|reverse-image/.test(x.id) && x.id!=="api.face-compare");
+  if(!faceTf.length){ toast("Nenhum provedor de face instalado — Ajustes → Loja de Transforms → Busca Facial","err"); openSettingsTab&&openSettingsTab("transforms"); return; }
+  setSync("busy","face"); toast(`Buscando rosto em ${faceTf.length} provedor(es)…`);
+  let total=0; const perProvider=[];
+  for(const tf of faceTf){
+    // provider needs an endpoint param? detect from declared params
+    const needEndpoint=(tf.params||[]).some(p=>p.name==="endpoint"&&p.required);
+    const params={ file:path };
+    // pull a saved endpoint from localStorage if present, else skip endpoint-required providers with a note
+    const savedEp=localStorage.getItem("face_ep_"+tf.id); if(savedEp) params.endpoint=savedEp;
+    if(needEndpoint && !params.endpoint){ perProvider.push(`${tf.name.split(" →")[0]}: endpoint não configurado`); continue; }
+    try{
+      const res=await api("/api/transforms/run",{method:"POST",body:{id:tf.id,input:{kind:seed.kind,label:seed.label,attributes:seed.attributes},params}});
+      if(res.error){ perProvider.push(`${provShort(tf)}: ${String(res.error).slice(0,50)}`); continue; }
+      // tag results with provider + match band
+      (res.entities||[]).forEach(e=>{ const b=faceBand((e.attributes||{}).score); e.tags=["face-match"]; if(b){ e.tags.push("match:"+b); (e.attributes=e.attributes||{}).match_band=b; } });
+      const n=(res.entities||[]).filter(e=>e.kind!=="face").length; total+=n; perProvider.push(`${provShort(tf)}: ${n}`);
+      mergeTransformResult(seed, res);
+    }catch(e){ perProvider.push(`${provShort(tf)}: ${e.message.slice(0,40)}`); }
+  }
+  setSync("ok","complete");
+  pushNotif("transform","Busca facial: "+perProvider.join(" · "));
+  toast(total?`Busca facial: ${total} correspondência(s) — ${perProvider.join(" · ")}`:`Sem correspondências — ${perProvider.join(" · ")}`, total?"ok":"");
+}
+function provShort(tf){ const a=(tf.attributes||{}); return (tf.name||tf.id).replace(/^.*→\s*/,"").replace("Busca facial","").replace(/\(.*\)/,"").trim()||tf.id.split(".").pop(); }
+// remember endpoints entered in the run form for face providers
 
 // ---------- AI seed investigation ----------
 // Insert a subject (name / phone / CPF / wallet…) + free-form context and let the
@@ -2212,10 +2259,12 @@ function doAddEntity(){ const t=activeTab(); if(!t)return; const kind=$("#aeKind
   if(!label) label=kind+" (manual)";
   const id="man-"+Math.abs(hashStr(kind+label+String(state.tabs.length)+Object.keys(attrs).join()));
   const wantGemini=["media","evidence"].includes(kind) && aeUploadPath && ($("#aeGeminiAnalyze")||{}).checked;
+  const wantFace=aeUploadPath && ($("#aeFaceSearch")||{}).checked;
   t.graph.nodes.push({ id, kind, label, risk:0.3, band:"low", attributes:attrs, tags:["manual"], sources:["manual"], sensitive:["media","evidence","victim","communication"].includes(kind) });
   closeModal(); renderGraph(); renderGraphFilters(); showView("graph"); setTimeout(()=>{ selectNode(id); if(cy){const e=cy.$id(id); if(e){e.addClass("fresh"); setTimeout(()=>e.removeClass("fresh"),1800);} } },250);
   pushNotif("entity","Manual entity added: "+label);
-  if(wantGemini){ toast("Entity added — running Gemini AI geolocation…","ok"); triggerGeminiGeoint(id); }
+  if(wantFace){ toast("Entidade adicionada — buscando rosto nos provedores…","ok"); faceSearchAll(id); }
+  else if(wantGemini){ toast("Entity added — running Gemini AI geolocation…","ok"); triggerGeminiGeoint(id); }
   else { toast("Entity added — run transforms to analyze","ok"); }
 }
 async function triggerGeminiGeoint(entityId){ const t=activeTab(); if(!t)return; const n=t.graph.nodes.find(x=>x.id===entityId); if(!n)return;
@@ -2339,7 +2388,7 @@ $("#globalSearch").addEventListener("keydown",e=>{ if(e.key==="Enter"){ const q=
 
 // ---------- command palette ----------
 const COMMANDS=[
-  ["New project","⌘N",newProjectModal],["Run analysis","⌘R",runModal],["Add entity","",addEntityModal],["Investigar com IA (seed)","",investigateModal],["Ask AI copilot","⌘/",openAsk],
+  ["New project","⌘N",newProjectModal],["Run analysis","⌘R",runModal],["Add entity","",addEntityModal],["Investigar com IA (seed)","",investigateModal],["Busca facial (rosto selecionado)","",()=>{ const id=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; if(id) faceSearchAll(id); else toast("Selecione uma entidade com imagem","err"); }],["Ask AI copilot","⌘/",openAsk],
   ["Generate intelligence","",()=>{showView("intelligence");renderIntelligence();generateIntelligence();}],
   ["Go to Dashboard","",()=>showView("dashboard")],["Go to Graph","",()=>showView("graph")],["Go to Intelligence","",()=>{showView("intelligence");renderIntelligence();}],["Go to Entities","",()=>showView("entities")],
   ["Go to Timeline","",()=>showView("timeline")],["Go to Reports","",()=>showView("reports")],
@@ -2522,6 +2571,7 @@ async function runTransformOnSelected(t){ const id=cy&&cy.$(":selected").length?
   setTimeout(()=>{ $$('[data-browse]').forEach(b=>b.addEventListener("click",()=>{ const tgt=b.dataset.browse; (typeof pickServerPath==="function"?pickServerPath:browseUpload)(pp=>{ const el2=$("#"+tgt); if(el2) el2.value=pp; }, {title:"Selecionar arquivo"}); })); },40);
 }
 async function runTransformNow(t,n,params){
+  if(params&&params.endpoint&&/face|lenso|reverse/.test(t.id)){ try{ localStorage.setItem("face_ep_"+t.id, params.endpoint); }catch(e){} }
   toast("Running "+t.name+"…"); setSync("busy","transform");
   try{ const res=await api("/api/transforms/run",{method:"POST",body:{id:t.id,input:{kind:n.kind,label:n.label,attributes:n.attributes},params}});
     if(res.error){ toast("Transform: "+res.error,"err"); setSync("err","failed"); return; }

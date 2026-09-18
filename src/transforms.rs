@@ -340,6 +340,36 @@ pub fn catalog() -> Vec<Transform> {
             service:"facesearch".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
             entrypoint: SPEC_FACE_SEARCH.into(), disclaimer:"Biometria é dado sensível (LGPD/GDPR). Use só com base legal; resultados são candidatos a confirmar, nunca identificação definitiva.".into(), enabled:false,
             params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint do serviço de face search","type":"text","required":true}),serde_json::json!({"name":"file","label":"Imagem do rosto (caminho; senão usa a mídia)","type":"file","required":false})] },
+        Transform { id:"face.facecheck".into(), name:"FaceCheck.ID → Busca facial".into(), category:"face".into(),
+            description:"Sobe o rosto ao FaceCheck.ID (facecheck.id) e traz as URLs onde a pessoa aparece com score de similaridade. 2 passos (upload + search). Chave 'facecheck' = seu API token.".into(),
+            service:"facecheck".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            entrypoint: SPEC_FACECHECK.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
+            params:vec![serde_json::json!({"name":"file","label":"Imagem do rosto (caminho; senão usa a mídia)","type":"file","required":false})] },
+        Transform { id:"face.pimeyes".into(), name:"PimEyes → Busca facial".into(), category:"face".into(),
+            description:"Busca facial via PimEyes (API não-oficial / gateway self-hosted). Informe o endpoint que aceita a imagem e devolve results[]{url,score}. Chave 'pimeyes' opcional.".into(),
+            service:"pimeyes".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            entrypoint: SPEC_PIMEYES.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint PimEyes (gateway)","type":"text","required":true}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
+        Transform { id:"face.search4faces".into(), name:"Search4Faces → Busca facial (VK/OK/TikTok/IG)".into(), category:"face".into(),
+            description:"Busca em datasets sociais (VKontakte, OK, TikTok, Instagram) via Search4Faces. Envia a imagem em base64 e traz perfis com score. Chave 'search4faces' = api_key; endpoint padrão da API.".into(),
+            service:"search4faces".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            entrypoint: SPEC_SEARCH4FACES.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint (opcional; padrão search4faces)","type":"text","required":false}),serde_json::json!({"name":"dataset","label":"Dataset (vk_wall|tiktok|instagram|ok_avatar)","type":"select","options":["vk_wall","tiktok","instagram","ok_avatar"],"required":false}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
+        Transform { id:"face.facesearch".into(), name:"FaceSearch / FaceOnLive → Busca facial".into(), category:"face".into(),
+            description:"Busca facial genérica (FaceSearch.app / FaceOnLive / ProFaceFinder). Envia a imagem (multipart 'image') ao endpoint e mapeia results[]{url,score,source}. Chave 'facesearch' opcional.".into(),
+            service:"facesearch".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            entrypoint: SPEC_FACESEARCH_APP.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint do serviço","type":"text","required":true}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
+        Transform { id:"face.lenso".into(), name:"Lenso.ai → Busca facial/imagem".into(), category:"face".into(),
+            description:"Busca por imagem/rosto via Lenso.ai (endpoint/gateway). Traz páginas e imagens semelhantes. Chave 'lenso' + endpoint.".into(),
+            service:"lenso".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"url".into()], runtime:"api".into(),
+            entrypoint: SPEC_LENSO.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint Lenso","type":"text","required":true}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
+        Transform { id:"face.betaface".into(), name:"Betaface → Reconhecimento & atributos faciais".into(), category:"face".into(),
+            description:"Detecta rostos e atributos (idade/gênero/óculos/etc.) e faz match contra galerias via Betaface API (documentada). Chave 'betaface' = api_key.".into(),
+            service:"betaface".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into()], runtime:"api".into(),
+            entrypoint: SPEC_BETAFACE.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
+            params:vec![serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
         Transform { id:"api.face-compare".into(), name:"Rosto ↔ Rosto → Similaridade".into(), category:"face".into(),
             description:"Compara dois rostos (params.file2 vs a mídia/params.file) via API de face-match e devolve o score de similaridade.".into(),
             service:"facematch".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into()], runtime:"api".into(),
@@ -1597,5 +1627,52 @@ const SPEC_CRYPTO_ABUSE: &str = r#"{
 const SPEC_GENERIC_GET: &str = r#"{
  "steps":[{"method":"GET","url":"{param.url}"}],
  "map":{"items":"{param.items}","kind":"{param.kind}","label":"{param.label_path}","relation":"{param.relation}","confidence":0.6,"attributes":{}}
+}"#;
+
+
+const FACE_DISCLAIMER: &str = "Biometria facial é dado pessoal sensível (LGPD art. 11 / GDPR art. 9). Use SOMENTE com base legal e finalidade legítima. Resultados são candidatos a confirmar por humano — nunca identificação definitiva. Não use para vigilância indiscriminada.";
+
+// FaceCheck.ID — 2 passos: upload da imagem → search pelo id retornado.
+const SPEC_FACECHECK: &str = r#"{
+ "steps":[
+   {"method":"POST","url":"https://facecheck.id/api/upload_pic","headers":{"Authorization":"{key}","accept":"application/json"},"form":{"images":"@file"},"save":{"id_search":"id_search"}},
+   {"method":"POST","url":"https://facecheck.id/api/search","headers":{"Authorization":"{key}","Content-Type":"application/json"},"json":{"id_search":"{var.id_search}","with_progress":true,"status_only":false,"demo":false}}
+ ],
+ "map":{"items":"output.items[]","kind":"url","label":"item.url","relation":"face_appears_on","reverse":false,"confidence":"item.score","max":30,
+        "attributes":{"provider":"FaceCheck.ID","score":"item.score","group":"item.group","guid":"item.guid","thumb":"item.base64"}},
+ "extra":[{"kind":"face","label":"face:{label}","attributes":{"provider":"FaceCheck.ID","note":"candidatos faciais — confirmação humana obrigatória"}}]
+}"#;
+
+const SPEC_PIMEYES: &str = r#"{
+ "steps":[{"method":"POST","url":"{param.endpoint}","headers":{"Authorization":"Bearer {key}","X-API-Key":"{key}"},"form":{"image":"@file","api_key":"{key}"}}],
+ "map":{"items":"results[]","kind":"url","label":"item.url","relation":"face_appears_on","confidence":"item.score","max":40,
+        "attributes":{"provider":"PimEyes","score":"item.score","source":"item.source","thumbnail":"item.thumbnail"}},
+ "extra":[{"kind":"face","label":"face:{label}","attributes":{"provider":"PimEyes","note":"candidatos — confirmar"}}]
+}"#;
+
+const SPEC_SEARCH4FACES: &str = r#"{
+ "steps":[{"method":"POST","url":"{param.endpoint}","headers":{"Content-Type":"application/json"},"json":{"api_key":"{key}","hash":"{key}","dataset":"{param.dataset}","image":"{file_b64}"}}],
+ "map":{"items":"results[]","kind":"account","label":"item.url","relation":"face_matches_profile","confidence":"item.score","max":30,
+        "attributes":{"provider":"Search4Faces","dataset":"{param.dataset}","score":"item.score","name":"item.name","source":"item.source","photo":"item.photo"}},
+ "extra":[{"kind":"face","label":"face:{label}","attributes":{"provider":"Search4Faces","note":"perfis sociais candidatos — confirmar"}}]
+}"#;
+
+const SPEC_FACESEARCH_APP: &str = r#"{
+ "steps":[{"method":"POST","url":"{param.endpoint}","headers":{"Authorization":"Bearer {key}","X-API-Key":"{key}"},"form":{"image":"@file","api_key":"{key}"}}],
+ "map":{"items":"results[]","kind":"url","label":"item.url","relation":"face_appears_on","confidence":"item.score","max":40,
+        "attributes":{"provider":"FaceSearch","score":"item.score","source":"item.source","tags":"item.tags","status":"item.status","thumbnail":"item.thumbnail"}},
+ "extra":[{"kind":"face","label":"face:{label}","attributes":{"provider":"FaceSearch","note":"candidatos — confirmar"}}]
+}"#;
+
+const SPEC_LENSO: &str = r#"{
+ "steps":[{"method":"POST","url":"{param.endpoint}","headers":{"Authorization":"Bearer {key}","Content-Type":"application/json"},"json":{"image":"{file_b64}","api_key":"{key}"}}],
+ "map":{"items":"results[]","kind":"url","label":"item.url","relation":"image_appears_on","confidence":"item.score","max":40,
+        "attributes":{"provider":"Lenso.ai","score":"item.score","title":"item.title","source":"item.source","thumbnail":"item.thumbnail"}}
+}"#;
+
+const SPEC_BETAFACE: &str = r#"{
+ "steps":[{"method":"POST","url":"https://www.betafaceapi.com/api/v2/media","headers":{"Content-Type":"application/json"},"json":{"api_key":"{key}","file_base64":"{file_b64}","detection_flags":"basicpoints,propoints,classifiers,extended"}}],
+ "map":{"items":"media.faces[]","kind":"face","label":"face:{item.face_uuid}","relation":"detected_face","confidence":0.7,"max":10,
+        "attributes":{"provider":"Betaface","gender":"item.tags[0].value","age":"item.tags[1].value","x":"item.x","y":"item.y","width":"item.width","face_uuid":"item.face_uuid"}}
 }"#;
 
