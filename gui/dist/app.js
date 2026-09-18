@@ -2160,10 +2160,10 @@ function addEntityModal(prefill){ prefill=prefill||{}; const t=activeTab(); if(!
     <div id="aeDrop" class="ae-drop"><div class="ae-drop-ic">⬆</div><div class="ae-drop-main" id="aeDropMain">Clique para escolher um arquivo</div><div class="ae-drop-sub" id="aeDropSub">imagem · vídeo · áudio · PDF — ou arraste aqui · <a href="#" id="aeServerPath">caminho no servidor…</a></div></div>
     <input id="aeFile" type="hidden" />
     <select id="aeMediaType" class="select" hidden><option value="image">image</option><option value="video">video</option><option value="audio">audio</option><option value="document">document</option></select>
-    <div class="field" id="aeChecks">
-      <label class="ae-check"><input type="checkbox" id="aeFaceSearch" ${startKind==="face"?"checked":""}/> <span><b>Busca facial em todos os provedores</b> — usa esta imagem como rosto (FaceCheck, PimEyes, Search4Faces, FaceSearch…)</span></label>
-      <label class="ae-check"><input type="checkbox" id="aeGeminiAnalyze" checked/> <span><b>Análise de imagem (Gemini)</b> — geolocalização, marcos, contexto visual</span></label>
-      <div class="disclaimer" style="margin-top:6px">Biometria é dado sensível (LGPD/GDPR). Só provedores instalados e com chave/endpoint rodam. Resultados são candidatos a confirmar.</div>
+    <div id="aeChecks" style="margin:12px 0">
+      <label class="ae-check"><input type="checkbox" id="aeFaceSearch" ${startKind==="face"?"checked":""}/><span class="aec-txt"><b>Busca facial em todos os provedores</b> — usa esta imagem como rosto (FaceCheck, PimEyes, Search4Faces, FaceSearch…)</span></label>
+      <label class="ae-check"><input type="checkbox" id="aeGeminiAnalyze" checked/><span class="aec-txt"><b>Análise de imagem (Gemini)</b> — geolocalização, marcos, contexto visual</span></label>
+      <div class="disclaimer" style="margin-top:8px">Biometria é dado sensível (LGPD/GDPR). Só provedores instalados e com chave/endpoint rodam. Resultados são candidatos a confirmar.</div>
     </div>
     <div class="field">Rótulo <span class="muted" style="text-transform:none">(opcional — usa o nome do arquivo)</span><input id="aeLabel" placeholder="rótulo…" value="${prefill.label?esc(prefill.label):""}"/></div>
     <div class="field">Atributos (chave: valor por linha, opcional)<textarea id="aeAttrs" rows="2" placeholder="source: hotline&#10;country: BR"></textarea></div>
@@ -2179,7 +2179,7 @@ function addEntityModal(prefill){ prefill=prefill||{}; const t=activeTab(); if(!
     const sync=()=>{ const k=ks.value; const mf=isMediaKind(k)||aeUploadPath; $("#aeDrop").hidden=!mf; $("#aeChecks").hidden=!mf; };
     ks.addEventListener("change",sync); sync();
     const guessType=name=>{ const e=(name.split(".").pop()||"").toLowerCase(); if(/(png|jpe?g|gif|webp|bmp|tiff?|heic)/.test(e))return"image"; if(/(mp4|mov|avi|mkv|webm)/.test(e))return"video"; if(/(mp3|wav|m4a|aac|ogg)/.test(e))return"audio"; return"document"; };
-    const onPicked=p=>{ aeUploadPath=p; const name=p.split("/").pop(); if($("#aeFile"))$("#aeFile").value=p; $("#aeDropMain").textContent="✓ "+name; $("#aeDropSub").innerHTML="pronto — clique para trocar"; const mt=$("#aeMediaType"); if(mt)mt.value=guessType(name); if(!$("#aeLabel").value)$("#aeLabel").value=name; if(!isMediaKind(ks.value)){ ks.value="media"; } sync(); };
+    const onPicked=(p,orig)=>{ aeUploadPath=p; const name=orig||p.split("/").pop(); if($("#aeFile"))$("#aeFile").value=p; $("#aeDropMain").textContent="✓ "+name; $("#aeDropSub").innerHTML="pronto — clique para trocar"; const mt=$("#aeMediaType"); if(mt)mt.value=guessType(name); if(!$("#aeLabel").value)$("#aeLabel").value=name; if(!isMediaKind(ks.value)){ ks.value="media"; } sync(); };
     const openFile=(e)=>{ if(e)e.preventDefault(); browseUpload(onPicked, acc); };
     const drop=$("#aeDrop"); if(drop){ drop.addEventListener("click",openFile);
       drop.addEventListener("dragover",e=>{e.preventDefault(); drop.classList.add("over");});
@@ -2191,10 +2191,10 @@ function addEntityModal(prefill){ prefill=prefill||{}; const t=activeTab(); if(!
 }
 // Upload whatever is already in the shared file input (used by drag-drop).
 async function browseUploadFromInput(cb){ const inp=$("#filePicker"); const f=inp.files&&inp.files[0]; if(!f)return;
-  if(!isLocalOrigin() && MODE!=="http"){ cb("/uploads/"+f.name); return; }
+  if(!isLocalOrigin() && MODE!=="http"){ cb("/uploads/"+f.name, f.name); return; }
   setSync("busy","upload"); toast(`Enviando ${f.name} (${(f.size/1048576).toFixed(1)} MB)…`);
   try{ const buf=await f.arrayBuffer(); const r=await fetch("/api/upload?name="+encodeURIComponent(f.name),{method:"POST",headers:{"Authorization":"Bearer "+TOKEN,"Content-Type":"application/octet-stream"},body:buf});
-    const txt=await r.text(); let j; try{ j=JSON.parse(txt);}catch(_){ j={}; } if(!r.ok) throw new Error(j.error||("upload falhou ("+r.status+")")); setSync("ok","uploaded"); cb(j.path); toast("Enviado "+f.name,"ok"); }
+    const txt=await r.text(); let j; try{ j=JSON.parse(txt);}catch(_){ j={}; } if(!r.ok) throw new Error(j.error||("upload falhou ("+r.status+")")); setSync("ok","uploaded"); cb(j.path, f.name); toast("Enviado "+f.name,"ok"); }
   catch(e){ setSync("err","failed"); toast("Upload falhou: "+e.message,"err"); } }
 
 
@@ -3257,13 +3257,13 @@ let npUploadPath=null;
 function browseUpload(cb, accept){ const inp=$("#filePicker"); if(accept)inp.setAttribute("accept",accept); else inp.removeAttribute("accept"); inp.value="";
   inp.onchange=async ()=>{ const f=inp.files[0]; if(!f)return;
     // Only the static artifact preview lacks a backend; a local origin always has one.
-    if(!isLocalOrigin() && MODE!=="http"){ cb("/uploads/"+f.name); toast("Preview: file path simulated","ok"); return; }
+    if(!isLocalOrigin() && MODE!=="http"){ cb("/uploads/"+f.name, f.name); toast("Preview: file path simulated","ok"); return; }
     setSync("busy","upload"); toast(`Uploading ${f.name} (${(f.size/1048576).toFixed(1)} MB)…`);
     try{ const buf=await f.arrayBuffer();
       const r=await fetch("/api/upload?name="+encodeURIComponent(f.name),{method:"POST",headers:{"Authorization":"Bearer "+TOKEN,"Content-Type":"application/octet-stream"},body:buf});
       const txt=await r.text(); let j; try{ j=JSON.parse(txt);}catch(_){ j={}; }
       if(!r.ok) throw new Error(j.error||("upload failed ("+r.status+")"));
-      setSync("ok","uploaded"); cb(j.path); toast("Uploaded "+f.name,"ok"); }
+      setSync("ok","uploaded"); cb(j.path, f.name); toast("Enviado "+f.name,"ok"); }
     catch(e){ setSync("err","failed"); toast("Upload failed: "+e.message,"err"); } };
   inp.click(); }
 
