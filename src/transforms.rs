@@ -116,7 +116,8 @@ pub fn run(id: &str, input: serde_json::Value, params: serde_json::Value) -> Res
     let api_key = if t.requires_api_key {
         keys::get(&t.service).ok_or_else(|| anyhow!("missing API key for service '{}'; add it in Settings → API Keys", t.service))?
     } else {
-        String::new()
+        // Key optional: use it if configured, empty string otherwise.
+        keys::get(&t.service).unwrap_or_default()
     };
     let payload = serde_json::json!({ "input": input, "params": params, "api_key": api_key });
     let stdin_data = serde_json::to_vec(&payload)?;
@@ -337,47 +338,47 @@ pub fn catalog() -> Vec<Transform> {
         // ---- FACE / IMAGE INTELLIGENCE ----
         Transform { id:"api.face-search".into(), name:"Rosto → Busca facial na internet (Search4Faces/PimEyes-like)".into(), category:"face".into(),
             description:"Faz upload de um rosto (entidade media com attributes.path, ou params.file) para um serviço de busca facial e traz perfis/URLs onde o rosto aparece. Endpoint configurável (Search4Faces, FaceCheck.ID, PimEyes API, instância self-hosted).".into(),
-            service:"facesearch".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            service:"facesearch".into(), requires_api_key:false, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
             entrypoint: SPEC_FACE_SEARCH.into(), disclaimer:"Biometria é dado sensível (LGPD/GDPR). Use só com base legal; resultados são candidatos a confirmar, nunca identificação definitiva.".into(), enabled:false,
-            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint do serviço de face search","type":"text","required":true}),serde_json::json!({"name":"file","label":"Imagem do rosto (caminho; senão usa a mídia)","type":"file","required":false})] },
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint do serviço de face search (opcional)","type":"text","required":false}),serde_json::json!({"name":"file","label":"Imagem do rosto (caminho; senão usa a mídia)","type":"file","required":false})] },
         Transform { id:"face.facecheck".into(), name:"FaceCheck.ID → Busca facial".into(), category:"face".into(),
             description:"Sobe o rosto ao FaceCheck.ID (facecheck.id) e traz as URLs onde a pessoa aparece com score de similaridade. 2 passos (upload + search). Chave 'facecheck' = seu API token.".into(),
-            service:"facecheck".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            service:"facecheck".into(), requires_api_key:false, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
             entrypoint: SPEC_FACECHECK.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
             params:vec![serde_json::json!({"name":"file","label":"Imagem do rosto (caminho; senão usa a mídia)","type":"file","required":false})] },
         Transform { id:"face.pimeyes".into(), name:"PimEyes → Busca facial".into(), category:"face".into(),
-            description:"Busca facial via PimEyes (API não-oficial / gateway self-hosted). Informe o endpoint que aceita a imagem e devolve results[]{url,score}. Chave 'pimeyes' opcional.".into(),
-            service:"pimeyes".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            description:"Busca facial via PimEyes (gateway self-hosted ou API). Informe o endpoint que aceita a imagem e devolve results[]{url,score}. Chave 'pimeyes' opcional — funciona sem API key se o gateway não exigir.".into(),
+            service:"pimeyes".into(), requires_api_key:false, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
             entrypoint: SPEC_PIMEYES.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
-            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint PimEyes (gateway)","type":"text","required":true}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint PimEyes gateway (opcional)","type":"text","required":false}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
         Transform { id:"face.search4faces".into(), name:"Search4Faces → Busca facial (VK/OK/TikTok/IG)".into(), category:"face".into(),
             description:"Busca em datasets sociais (VKontakte, OK, TikTok, Instagram) via Search4Faces. Envia a imagem em base64 e traz perfis com score. Chave 'search4faces' = api_key; endpoint padrão da API.".into(),
-            service:"search4faces".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            service:"search4faces".into(), requires_api_key:false, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
             entrypoint: SPEC_SEARCH4FACES.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
-            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint (opcional; padrão search4faces)","type":"text","required":false}),serde_json::json!({"name":"dataset","label":"Dataset (vk_wall|tiktok|instagram|ok_avatar)","type":"select","options":["vk_wall","tiktok","instagram","ok_avatar"],"required":false}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
+            params:vec![serde_json::json!({"name":"dataset","label":"Dataset (vk_wall|tiktok|instagram|ok_avatar)","type":"select","options":["vk_wall","tiktok","instagram","ok_avatar"],"required":false}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
         Transform { id:"face.facesearch".into(), name:"FaceSearch / FaceOnLive → Busca facial".into(), category:"face".into(),
             description:"Busca facial genérica (FaceSearch.app / FaceOnLive / ProFaceFinder). Envia a imagem (multipart 'image') ao endpoint e mapeia results[]{url,score,source}. Chave 'facesearch' opcional.".into(),
-            service:"facesearch".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
+            service:"facesearch".into(), requires_api_key:false, input_kinds:vec!["media".into(),"face".into(),"person".into()], runtime:"api".into(),
             entrypoint: SPEC_FACESEARCH_APP.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
-            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint do serviço","type":"text","required":true}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
+            params:vec![serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
         Transform { id:"face.lenso".into(), name:"Lenso.ai → Busca facial/imagem".into(), category:"face".into(),
             description:"Busca por imagem/rosto via Lenso.ai (endpoint/gateway). Traz páginas e imagens semelhantes. Chave 'lenso' + endpoint.".into(),
-            service:"lenso".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into(),"url".into()], runtime:"api".into(),
+            service:"lenso".into(), requires_api_key:false, input_kinds:vec!["media".into(),"face".into(),"url".into()], runtime:"api".into(),
             entrypoint: SPEC_LENSO.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
-            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint Lenso","type":"text","required":true}),serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
+            params:vec![serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
         Transform { id:"face.betaface".into(), name:"Betaface → Reconhecimento & atributos faciais".into(), category:"face".into(),
             description:"Detecta rostos e atributos (idade/gênero/óculos/etc.) e faz match contra galerias via Betaface API (documentada). Chave 'betaface' = api_key.".into(),
-            service:"betaface".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into()], runtime:"api".into(),
+            service:"betaface".into(), requires_api_key:false, input_kinds:vec!["media".into(),"face".into()], runtime:"api".into(),
             entrypoint: SPEC_BETAFACE.into(), disclaimer:FACE_DISCLAIMER.into(), enabled:false,
             params:vec![serde_json::json!({"name":"file","label":"Imagem (caminho; senão usa a mídia)","type":"file","required":false})] },
         Transform { id:"api.face-compare".into(), name:"Rosto ↔ Rosto → Similaridade".into(), category:"face".into(),
             description:"Compara dois rostos (params.file2 vs a mídia/params.file) via API de face-match e devolve o score de similaridade.".into(),
-            service:"facematch".into(), requires_api_key:true, input_kinds:vec!["media".into(),"face".into()], runtime:"api".into(),
+            service:"facematch".into(), requires_api_key:false, input_kinds:vec!["media".into(),"face".into()], runtime:"api".into(),
             entrypoint: SPEC_FACE_COMPARE.into(), disclaimer:"Biometria sensível — base legal obrigatória.".into(), enabled:false,
-            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint de face-match","type":"text","required":true}),serde_json::json!({"name":"file2","label":"Segundo rosto (caminho)","type":"file","required":true})] },
+            params:vec![serde_json::json!({"name":"endpoint","label":"Endpoint de face-match (opcional)","type":"text","required":false}),serde_json::json!({"name":"file2","label":"Segundo rosto (caminho)","type":"file","required":true})] },
         Transform { id:"api.reverse-image".into(), name:"Imagem → Onde aparece (reverse image)".into(), category:"face".into(),
             description:"Busca reversa de imagem (SerpAPI Google Lens / TinEye / Yandex-compatível em params.endpoint) e traz páginas onde a imagem aparece como URLs.".into(),
-            service:"reverseimage".into(), requires_api_key:true, input_kinds:vec!["media".into(),"url".into()], runtime:"api".into(),
+            service:"reverseimage".into(), requires_api_key:false, input_kinds:vec!["media".into(),"url".into()], runtime:"api".into(),
             entrypoint: SPEC_REVERSE_IMAGE.into(), disclaimer:String::new(), enabled:false, params:vec![] },
         // ---- GEO / CAMERAS / PLACES ----
         Transform { id:"api.geocode".into(), name:"Endereço → Coordenadas (geocode)".into(), category:"geoint".into(),
@@ -1313,6 +1314,20 @@ mod api_runtime {
         let mut vars: HashMap<String, String> = HashMap::new();
         let label = input.get("label").and_then(|v| v.as_str()).unwrap_or("").to_string();
         let attrs = input.get("attributes").cloned().unwrap_or(Value::Null);
+        // Merge spec.defaults into params (params take precedence).
+        let params = if let Some(defs) = spec.get("defaults").and_then(|v| v.as_object()) {
+            let mut merged = defs.clone();
+            if let Some(p) = params.as_object() {
+                for (k, v) in p {
+                    // Only override default if param is non-empty.
+                    let is_empty = v.is_null() || v.as_str().map(|s| s.is_empty()).unwrap_or(false);
+                    if !is_empty { merged.insert(k.clone(), v.clone()); }
+                }
+            }
+            Value::Object(merged)
+        } else {
+            params.clone()
+        };
         // geo from attributes (lat/lon spellings) or params
         let num = |v: Option<&Value>| v.and_then(|x| x.as_f64().or_else(|| x.as_str().and_then(|s| s.split(',').next()).and_then(|s| s.trim().parse().ok())));
         let mut lat = num(params.get("lat")).or_else(|| ["lat", "latitude", "latitude_approx", "gpslatitude"].iter().find_map(|k| num(attrs.get(*k))));
@@ -1325,6 +1340,9 @@ mod api_runtime {
         for (i, step) in steps.iter().enumerate() {
             let method = step.get("method").and_then(|v| v.as_str()).unwrap_or("GET").to_uppercase();
             let mut url = tpl(step.get("url").and_then(|v| v.as_str()).unwrap_or(""), &ctx, &vars)?;
+            if url.is_empty() || (!url.starts_with("http://") && !url.starts_with("https://")) {
+                return Err(anyhow!("endpoint não configurado — informe a URL do serviço em params.endpoint ou configure nas opções do transform"));
+            }
             if let Some(q) = step.get("query").and_then(|v| v.as_object()) {
                 let qs: Vec<String> = q.iter().map(|(k, v)| format!("{}={}", k, urlenc(&tpl(&val_str(v), &ctx, &vars).unwrap_or_default()))).collect();
                 if !qs.is_empty() { url.push(if url.contains('?') { '&' } else { '?' }); url.push_str(&qs.join("&")); }
@@ -1651,6 +1669,7 @@ const SPEC_PIMEYES: &str = r#"{
 }"#;
 
 const SPEC_SEARCH4FACES: &str = r#"{
+ "defaults":{"endpoint":"https://search4faces.com/api/search"},
  "steps":[{"method":"POST","url":"{param.endpoint}","headers":{"Content-Type":"application/json"},"json":{"api_key":"{key}","hash":"{key}","dataset":"{param.dataset}","image":"{file_b64}"}}],
  "map":{"items":"results[]","kind":"account","label":"item.url","relation":"face_matches_profile","confidence":"item.score","max":30,
         "attributes":{"provider":"Search4Faces","dataset":"{param.dataset}","score":"item.score","name":"item.name","source":"item.source","photo":"item.photo"}},
@@ -1658,6 +1677,7 @@ const SPEC_SEARCH4FACES: &str = r#"{
 }"#;
 
 const SPEC_FACESEARCH_APP: &str = r#"{
+ "defaults":{"endpoint":"https://faceonlive.com/api/search"},
  "steps":[{"method":"POST","url":"{param.endpoint}","headers":{"Authorization":"Bearer {key}","X-API-Key":"{key}"},"form":{"image":"@file","api_key":"{key}"}}],
  "map":{"items":"results[]","kind":"url","label":"item.url","relation":"face_appears_on","confidence":"item.score","max":40,
         "attributes":{"provider":"FaceSearch","score":"item.score","source":"item.source","tags":"item.tags","status":"item.status","thumbnail":"item.thumbnail"}},
@@ -1665,6 +1685,7 @@ const SPEC_FACESEARCH_APP: &str = r#"{
 }"#;
 
 const SPEC_LENSO: &str = r#"{
+ "defaults":{"endpoint":"https://lenso.ai/api/v1/search"},
  "steps":[{"method":"POST","url":"{param.endpoint}","headers":{"Authorization":"Bearer {key}","Content-Type":"application/json"},"json":{"image":"{file_b64}","api_key":"{key}"}}],
  "map":{"items":"results[]","kind":"url","label":"item.url","relation":"image_appears_on","confidence":"item.score","max":40,
         "attributes":{"provider":"Lenso.ai","score":"item.score","title":"item.title","source":"item.source","thumbnail":"item.thumbnail"}}
