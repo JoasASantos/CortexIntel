@@ -345,6 +345,34 @@ impl KnowledgeGraph {
         Self::default()
     }
 
+    /// Reconstruct a KnowledgeGraph from a consolidated case JSON (as stored
+    /// in `Project::last_result`). Entities are scattered across category
+    /// buckets under `"entities"`; relationships are a flat array.
+    pub fn from_case(case: &serde_json::Value) -> Self {
+        let mut g = Self::new();
+        if let Some(ents) = case.get("entities").and_then(|v| v.as_object()) {
+            for (_category, arr) in ents {
+                if let Some(items) = arr.as_array() {
+                    for item in items {
+                        if let Ok(e) = serde_json::from_value::<Entity>(item.clone()) {
+                            let id = e.id.clone();
+                            g.dedup_index.insert(e.dedup_key.clone(), id.clone());
+                            g.entities.insert(id, e);
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(rels) = case.get("relationships").and_then(|v| v.as_array()) {
+            for item in rels {
+                if let Ok(r) = serde_json::from_value::<Relationship>(item.clone()) {
+                    g.add_relationship(r);
+                }
+            }
+        }
+        g
+    }
+
     /// Insert an entity, deduplicating by canonical key. Returns the id of the
     /// canonical entity (either newly inserted or the pre-existing match).
     pub fn upsert_entity(&mut self, entity: Entity) -> String {

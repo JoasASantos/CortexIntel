@@ -347,6 +347,10 @@ fn route(stream: &mut TcpStream, req: &Req) -> Result<()> {
             if !check_project_opt(stream, &user, &params.project_id)? { return Ok(()); }
             finish(stream, api::run_analysis(params))
         }
+        ("POST", "/api/attack-path") => {
+            let b: serde_json::Value = parse_body(&req.body)?;
+            finish(stream, api::attack_path(b))
+        }
         ("POST", "/api/ask") => finish(stream, parse_body(&req.body).and_then(api::ask)),
         // Async jobs (used by the UI for long LLM calls)
         ("POST", "/api/jobs") => {

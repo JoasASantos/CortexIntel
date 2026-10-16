@@ -6,6 +6,7 @@ pub mod agentlib;
 pub mod agents;
 pub mod anomaly;
 pub mod assessment;
+pub mod attackpath;
 pub mod audit;
 pub mod bus;
 pub mod auth;
@@ -646,6 +647,25 @@ pub mod api {
         let raw = std::fs::read_to_string(&path)
             .map_err(|e| anyhow!("cannot read {}: {e}", path.display()))?;
         Ok(serde_json::from_str(&raw)?)
+    }
+
+    /// Find attack paths between two entities in a project's graph.
+    pub fn attack_path(params: serde_json::Value) -> Result<serde_json::Value> {
+        let project_id = params.get("project_id").or_else(|| params.get("projectId"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("missing project_id"))?;
+        let source_id = params.get("source_id").and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("missing source_id"))?;
+        let target_id = params.get("target_id").and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("missing target_id"))?;
+        let max_paths = params.get("max_paths").and_then(|v| v.as_u64()).unwrap_or(3) as usize;
+        let max_depth = params.get("max_depth").and_then(|v| v.as_u64()).unwrap_or(15) as usize;
+
+        let p = crate::projects::load(project_id)?;
+        let c = p.last_result.ok_or_else(|| anyhow!("project has no analysis yet"))?;
+        let graph = crate::ontology::KnowledgeGraph::from_case(&c);
+        let result = crate::attackpath::find_paths(&graph, source_id, target_id, max_paths, max_depth);
+        Ok(serde_json::to_value(result)?)
     }
 
     fn parse_domain(s: &str) -> Domain {

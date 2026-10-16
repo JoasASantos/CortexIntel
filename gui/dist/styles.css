@@ -318,6 +318,9 @@ input, textarea, select { font-family: var(--font); }
 .ge-inner .ge-hints { display: flex; gap: 12px; justify-content: center; margin-top: 18px; font-size: 11px; color: var(--muted-2); flex-wrap: wrap; }
 .linkmode, .pathbar { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); z-index: 9; background: var(--accent); color: #fff; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 20px; box-shadow: var(--sh); white-space: nowrap; }
 .pathbar { background: var(--info); }
+.pathbar .path-nav { margin-left: 8px; font-weight: 400; }
+.pathbar .path-nav a { color: #fff; text-decoration: underline; }
+.risk-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
 .time-scrub { position: absolute; bottom: 12px; left: 180px; right: 250px; z-index: 6; display: flex; align-items: center; gap: 12px; background: var(--glass); backdrop-filter: blur(14px); border: 1px solid var(--border-2); border-radius: var(--r-l); padding: 8px 14px; }
 .time-scrub input[type=range] { flex: 1; accent-color: var(--accent); }
 .time-scrub .ts-label { font-family: var(--mono); font-size: 11px; color: var(--fg-2); min-width: 130px; }

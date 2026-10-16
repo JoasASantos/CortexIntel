@@ -1131,7 +1131,7 @@ async function openCtxMenu(x,y,id){ const m=$("#ctxmenu"); m.innerHTML="";
   add("fit","Isolate neighborhood",()=>isolate(id));
   add("graph","Focus neighbors",()=>{if(cy)cy.animate({fit:{eles:cy.$id(id).closedNeighborhood(),padding:80},duration:350});});
   add("graph","Neighborhood mode from here",()=>setGraphMode("neighborhood",{seed:id,hops:2}),true);
-  add("graph","Find path from here…",()=>startPath(id));
+  add("graph","Attack path from here…",()=>startPath(id));
   add("link","Connect to another node…",()=>startLink(id));
   add("alerts","Create alert",()=>{pushNotif("alert",`Alert on ${n.label}`);toast("Alert created");});
   if(["media","evidence"].includes(n.kind) && (n.attributes||{}).path) add("spark","AI Geolocation (Gemini)",()=>{ cy.$(":selected").unselect(); cy.$id(id).select(); triggerGeminiGeoint(id); },true);
@@ -2128,23 +2128,83 @@ function minimapGoto(ev){ const cv=$("#minimap"); const m=cv._map; if(!m||!cy)re
   window.addEventListener("mousemove",e=>{ if(down)minimapGoto(e); });
   window.addEventListener("mouseup",()=>down=false); })();
 
-// ---------- path finder ----------
+// ---------- attack path finder ----------
 let pathSource=null;
-function pathBanner(txt){ let b=$("#pathBanner"); if(txt){ if(!b){ b=el("div","pathbar"); b.id="pathBanner"; $("#gcanvas").appendChild(b);} b.textContent=txt; b.hidden=false; } else if(b) b.hidden=true; }
-function startPath(id){ pathSource=id; if(cy) cy.elements().removeClass("pathhl faded"); pathBanner("Path mode: click the target node (Esc to cancel)"); }
-function finishPath(targetId){ const src=pathSource; pathSource=null; pathBanner(""); if(!cy||src===targetId) return;
+let attackPaths=[]; // server results cache
+let attackPathIdx=0;
+function pathBanner(txt){ let b=$("#pathBanner"); if(txt){ if(!b){ b=el("div","pathbar"); b.id="pathBanner"; $("#gcanvas").appendChild(b);} b.innerHTML=txt; b.hidden=false; } else if(b) b.hidden=true; }
+function startPath(id){ pathSource=id; if(cy) cy.elements().removeClass("pathhl faded"); attackPaths=[]; attackPathIdx=0; pathBanner("Attack path: click the target node (Esc to cancel)"); }
+async function finishPath(targetId){ const src=pathSource; pathSource=null; pathBanner(""); if(!cy||src===targetId) return;
+  const t=activeTab();
+  // Try server-side weighted attack path first
+  if(t&&t.project&&t.project.id){
+    try{
+      const r=await api("/api/attack-path",{method:"POST",body:{project_id:t.project.id,source_id:src,target_id:targetId,max_paths:5,max_depth:15}});
+      if(r.paths&&r.paths.length){ attackPaths=r.paths; attackPathIdx=0; renderAttackPath(0); return; }
+    }catch(e){}
+  }
+  // Fallback: client-side aStar (unweighted)
   const res=cy.elements().aStar({root:cy.$id(src), goal:cy.$id(targetId), directed:false});
   if(!res.found){ toast("No path between these entities","err"); return; }
   cy.elements().addClass("faded"); res.path.removeClass("faded").addClass("pathhl");
   cy.fit(res.path,80);
   const nodes=res.path.nodes().map(n=>{ const d=nodeData(n.id()); return d?d.label:n.id(); });
   toast(`Path found · ${res.path.nodes().length} hops`,"ok");
-  // show the path chain in the dossier relations area
+  showPathPanel(nodes, null);
+}
+function renderAttackPath(idx){
+  if(!attackPaths.length||!cy)return;
+  const p=attackPaths[idx]; attackPathIdx=idx;
+  cy.elements().removeClass("pathhl faded").addClass("faded");
+  // Collect node IDs and highlight
+  const ids=new Set();
+  p.hops.forEach(h=>{ ids.add(h.from_id); ids.add(h.to_id); });
+  ids.forEach(id=>{ const e=cy.$id(id); if(e.length) e.removeClass("faded").addClass("pathhl"); });
+  // Highlight edges
+  p.hops.forEach(h=>{
+    cy.edges().forEach(e=>{
+      const d=e.data(); if((d.source===h.from_id&&d.target===h.to_id)||(d.source===h.to_id&&d.target===h.from_id)){
+        e.removeClass("faded").addClass("pathhl");
+      }
+    });
+  });
+  const pathEles=cy.$(".pathhl");
+  if(pathEles.length) cy.fit(pathEles,80);
+  // Score display
+  const pct=Math.round(p.total_score*100);
+  const nav=attackPaths.length>1?` <span class="path-nav">Path ${idx+1}/${attackPaths.length} · <a href="#" onclick="event.preventDefault();renderAttackPath(${(idx+1)%attackPaths.length})">next</a></span>`:"";
+  pathBanner(`Attack path · ${p.length} hops · score ${pct}%${nav}`);
+  toast(`Attack path ${idx+1}/${attackPaths.length} · ${p.length} hops · score ${pct}%`,"ok");
+  // Build hop list for dossier
+  const labels=[]; p.hops.forEach((h,i)=>{ if(i===0) labels.push({label:h.from_label,kind:h.from_kind,id:h.from_id}); labels.push({label:h.to_label,kind:h.to_kind,id:h.to_id,rel:h.rel_type,conf:h.confidence}); });
+  showAttackPathPanel(p, labels);
+}
+function showAttackPathPanel(path, labels){
+  const c=$("#context"); c.hidden=false; $("#ctxKind").textContent="attack-path"; $("#ctxName").textContent="Attack Path";
+  $("#ctxRisk").innerHTML=`<span class="risk-badge" style="background:${path.total_score>=0.7?'var(--green)':path.total_score>=0.4?'var(--accent)':'var(--red)'};color:#fff">${Math.round(path.total_score*100)}% score</span>`;
+  $("#ctxTags").innerHTML=`<span class="tag">${path.length} hops</span>`;
+  $("#ctxMeta").innerHTML=""; $("#ctxSources").innerHTML=""; $("#ctxTransforms").innerHTML="";
+  const rl=$("#ctxRels"); rl.innerHTML="";
+  labels.forEach((l,i)=>{
+    const r=el("div","rel"); r.style.cursor="pointer";
+    const conf=l.conf?` <span class="muted">(${Math.round(l.conf*100)}%)</span>`:"";
+    const rel=l.rel?`<span class="rt">${esc(l.rel)}</span> `:`<span class="rt">start</span> `;
+    r.innerHTML=rel+`<b>${esc(l.label)}</b> <span class="muted">${esc(l.kind)}</span>`+conf;
+    r.addEventListener("click",()=>{ if(cy){cy.$(":selected").unselect(); cy.$id(l.id).select(); selectNode(l.id);} });
+    rl.appendChild(r);
+  });
+  if(attackPaths.length>1){
+    const nav=el("div","rel"); nav.style.textAlign="center"; nav.style.marginTop="8px";
+    nav.innerHTML=attackPaths.map((_,i)=>`<a href="#" style="margin:0 4px;${i===attackPathIdx?'font-weight:700':''}" onclick="event.preventDefault();renderAttackPath(${i})">Path ${i+1}</a>`).join(" · ");
+    rl.appendChild(nav);
+  }
+}
+function showPathPanel(nodes, path){
   const c=$("#context"); c.hidden=false; $("#ctxKind").textContent="path"; $("#ctxName").textContent="Path trace";
   $("#ctxRisk").innerHTML=""; $("#ctxTags").innerHTML=""; $("#ctxMeta").innerHTML=""; $("#ctxSources").innerHTML=""; $("#ctxTransforms").innerHTML="";
   const rl=$("#ctxRels"); rl.innerHTML=""; nodes.forEach((lab,i)=>{ const r=el("div","rel"); r.innerHTML=(i<nodes.length-1?`<span class="rt">hop ${i+1}</span> `:`<span class="rt">end</span> `)+esc(lab); rl.appendChild(r); });
 }
-function clearPath(){ pathSource=null; pathBanner(""); if(cy) cy.elements().removeClass("pathhl faded"); }
+function clearPath(){ pathSource=null; pathBanner(""); attackPaths=[]; attackPathIdx=0; if(cy) cy.elements().removeClass("pathhl faded"); }
 $("#btnPath")&&$("#btnPath").addEventListener("click",()=>{ const sel=cy&&cy.$(":selected").length?cy.$(":selected")[0].id():null; if(sel){ startPath(sel); } else { toast("Select a node, then click Path — or right-click a node → Find path from here"); } });
 $("#btnConnect")&&$("#btnConnect").addEventListener("click",()=>{ const t=activeTab(); if(!t||!t.graph.nodes.length){ toast("Add or load entities first","err"); return; } startConnectMode(); });
 
