@@ -13,6 +13,8 @@ use std::fmt;
 pub enum Domain {
     /// Child-protection / hotline / victim-identification (the DATA.md preset).
     ChildProtection,
+    /// Counter-human-trafficking: recruitment, transport, exploitation, proceeds.
+    HumanTrafficking,
     /// SOC / threat-intel / DFIR / red & blue team.
     Cybersecurity,
     /// Fraud, AML, financial crime investigation.
@@ -55,6 +57,7 @@ impl Domain {
     pub fn slug(self) -> &'static str {
         match self {
             Domain::ChildProtection => "child-protection",
+            Domain::HumanTrafficking => "human-trafficking",
             Domain::Cybersecurity => "cybersecurity",
             Domain::Fraud => "fraud",
             Domain::Kyc => "kyc",
@@ -79,6 +82,7 @@ impl Domain {
     pub fn title(self) -> &'static str {
         match self {
             Domain::ChildProtection => "Child Protection & Victim Identification",
+            Domain::HumanTrafficking => "Counter-Human-Trafficking (Anti-Tráfico de Pessoas)",
             Domain::Cybersecurity => "Cybersecurity / Threat Intelligence",
             Domain::Fraud => "Fraud, AML & Financial Crime",
             Domain::Kyc => "KYC / Identity Verification & Fraud Analysis",
@@ -105,6 +109,7 @@ impl Domain {
     pub fn mission(self) -> &'static str {
         match self {
             Domain::ChildProtection => "Protect children and identify victims. Prioritize imminent-risk cases, preserve chain of custody, and never expose sensitive material beyond operational need. The AI supports investigators; it never decides guilt.",
+            Domain::HumanTrafficking => "Disrupt trafficking networks and protect victims (victim-centred, trauma-informed). Map the chain recruitment → transport → exploitation → proceeds: recruiters, controllers, advertisers, phones and handles reused across ads, hotels/apartments, vehicles, routes, payment rails. Treat indicators (debt bondage, retained documents, third-party control, movement between cities, minors) as leads requiring corroboration, never as proof. Never expose victim identities beyond operational need; preserve chain of custody; the AI supports investigators and hotlines — it never decides guilt.",
             Domain::Cybersecurity => "Detect, correlate and prioritize threats. Map infrastructure, actors and TTPs; surface actionable, evidence-backed leads for SOC/DFIR analysts.",
             Domain::Fraud => "Detect fraud rings and illicit money flows. Correlate accounts, devices and transactions; quantify exposure and recommend defensible next steps.",
             Domain::Kyc => "Verify identities and analyze fraud. Correlate a person's connected records/documents to assess whether the identity behind a document is real, with country-aware checks. Lawful basis required; respect LGPD/GDPR — validation is decision-support, never a definitive identity ruling.",
@@ -129,6 +134,7 @@ impl Domain {
     pub fn all() -> &'static [Domain] {
         &[
             Domain::ChildProtection,
+            Domain::HumanTrafficking,
             Domain::Cybersecurity,
             Domain::Fraud,
             Domain::Kyc,

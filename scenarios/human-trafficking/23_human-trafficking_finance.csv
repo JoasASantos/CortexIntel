@@ -1,0 +1,11 @@
+transaction_id,account_id,wallet_address,provider_name,amount,currency,city,timestamp,suspect_id,report_category,notes
+TX-1001,emservicos,,"EM Serviços LTDA",1200,BRL,SaoPaulo,2026-06-02T21:30:00Z,S-FIN-04,ad_payment,"PIX para plano 'destaque' de anúncios (AD-001/AD-002)"
+TX-1002,lua_sp2026,,"Hotel Estrela do Sul",2800,BRL,SaoPaulo,2026-06-03T12:00:00Z,S-CTL-03,lodging,"Diárias semanais quartos 305/306 em dinheiro"
+TX-1003,emservicos,bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh,"EM Serviços LTDA",0.12,BTC,SaoPaulo,2026-06-05T08:00:00Z,S-FIN-04,proceeds_layering,"Conversão de receita em BTC via P2P"
+TX-1004,vagasmodelosbr,,"EM Serviços LTDA",900,BRL,Fortaleza,2026-05-27T18:00:00Z,S-REC-01,recruitment_expense,"Passagens rodoviárias compradas em lote"
+TX-1005,douglasviagens,,"EM Serviços LTDA",1500,BRL,Fortaleza,2026-05-28T06:00:00Z,S-TRA-02,transport_fee,"Pagamento ao motorista por viagem"
+TX-1006,bella_ctba,,"Ed. Solar",3200,BRL,Curitiba,2026-06-14T10:00:00Z,S-CTL-03,lodging,"Aluguel temporada apto 402 via terceiro"
+TX-1007,emservicos,bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh,"EM Serviços LTDA",0.08,BTC,Curitiba,2026-06-18T09:00:00Z,S-FIN-04,proceeds_layering,"Segunda conversão BTC"
+TX-1008,nina_zonasul,,"Pousada Fronteira",1900,BRL,FozDoIguacu,2026-06-23T11:00:00Z,S-CTL-03,lodging,"Pousada paga em dinheiro"
+TX-1009,emservicos,0x52908400098527886E0F7030069857D2E4169EE7,"EM Serviços LTDA",2.4,ETH,FozDoIguacu,2026-06-26T07:00:00Z,S-FIN-04,cross_border_transfer,"Transferência antes da travessia para Ciudad del Este"
+TX-1010,lua_sp2026,,"EM Serviços LTDA",8000,BRL,SaoPaulo,2026-06-30T20:00:00Z,S-CTL-03,debt_collection,"'Dívida' de V-02 cobrada integralmente"

@@ -87,3 +87,50 @@ The AI **supports** decisions — it never decides guilt/liability or takes irre
 ## License & use
 
 Built for authorized intelligence, investigative and decision-support work. Handle personal data under the applicable law (LGPD / GDPR / local). This is decision-support, never a definitive ruling.
+
+
+## Cognitive layer (v0.0.2)
+
+Every LLM call goes through a scored router plus memory/governance layers:
+
+* **Model catalog & base score** (`src/llm/models.rs`) — Claude Opus 5 / Sonnet 5, Codex GPT-6 Astras / GPT-5.6 Sol · Luna · Terra / GPT-5.5, Gemini 2.5, Kimi, Qwen, DeepSeek (OpenAI-compatible APIs from `.env`), hermes / opencode / any CLI. Each model scores reasoning × speed × cost; the task tier (simple / standard / complex), JSON need, payload size and budget pressure pick the winner and the cross-vendor fallback order. Inspect in *Ajustes → Provedores & Roteamento* or `GET /api/models`.
+* **Token / cost governor** (`src/llm/governor.rs`) — per-job budgets scaled to the workload, pressure feedback into routing, hard veto.
+* **Prompt + semantic cache** (`src/llm/cache.rs`) — exact hash cache and near-duplicate (embeddings or lexical) cache, TTL-bound.
+* **Prep / distill** (`src/llm/prep.rs`) — observation compressor (dedupe, truncate, head/tail windowing), language directive (pt-BR by default), reply distillation so only the essential JSON reaches the engine.
+* **Memory & retrieval** (`src/memory.rs`) — project facts, grep + BM25 + vector hybrid retrieval, GraphRAG neighbourhood packing, context compression. `GET/POST /api/memory/*`.
+* **Orchestrator** (`src/orchestrator.rs`) — dynamic tool registry (`GET /api/tools`), planner → worker → answer → critic loop for every question.
+* **Event bus** (`src/bus.rs`) — every step is logged per job (`GET /api/jobs/status` returns `log[]`, shown live in the GUI console) and globally (`GET /api/events`).
+
+See `.env.example` for all knobs.
+
+## Scenario packs
+
+* `scenarios/human-trafficking/` — **Operação Rota Silenciosa**: synthetic counter-trafficking case (recruitment → transport → exploitation → proceeds) with 3 datasets, a classifier plugin, 9 transforms (`trafficking` category) and 6 agents. See its README.
+
+## Configurable API transforms (v0.0.3)
+
+A transform with `runtime: "api"` carries a **declarative JSON spec** (no code) so operators wire any REST service from the GUI (Ajustes → Loja de Transforms) or a plugin manifest. Built-ins:
+
+| category | transform | service |
+|---|---|---|
+| signals | Shodan host/search, Censys, GreyNoise, AbuseIPDB, LeakCheck, crypto-abuse, generic GET builder | key per service |
+| phone | HLR/owner lookup, phone→linked accounts (WhatsApp/Telegram) | key + endpoint |
+| face | per-provider face search — FaceCheck.ID, PimEyes, Search4Faces, FaceSearch/FaceOnLive, Lenso.ai, Betaface — plus generic, face compare, reverse image | key per provider (+ endpoint for some), image upload |
+| geoint | geocode (OSM, no key), cameras nearby (OSM surveillance), places nearby (hotels/ATMs), Wi-Fi→location (WiGLE) | mostly no key |
+
+**Spec** (`entrypoint`): `steps[]` (method, url, headers, query, json/form/body, save vars) + `map` (items path, kind, label, attributes, relation, lat/lon, confidence) + optional `extra[]`. Placeholders: `{label} {key} {attr.NAME} {param.NAME} {var.NAME} {lat} {lon} {file_b64} {label_digits} {label_enc}`; item fields as `item.path` or `{item.path}`. Params are declared in `params[]` and the GUI renders a form (text/number/file/select), including file upload for face search. Keys live in Ajustes → Chaves de API; per-run endpoints/files come from the form.
+
+## Seed investigation (AI)
+
+**Investigar com IA** (add-entity modal, entities panel, ⌘K): type a subject (name, phone, CPF, wallet…) + free-form context; the model derives the connected entities (aliases, phones, CPF/RG, e-mails, addresses, crypto wallets, URLs, social accounts, orgs, vehicles) and their relationships as **hypotheses** to confirm. A deterministic extractor guarantees real identifiers in the text (e-mail, CPF/CNPJ, BTC/ETH wallet, @handle, URL/domain) even offline. Endpoint: `POST /api/jobs {kind:"investigate"}` → merged into the graph via the existing proposal flow. Then run the API transforms to confirm each lead.
+
+## Ontology (v0.0.3)
+
+17 new entity kinds: vehicle, email, username, address, document, hash, credential, breach, celltower, wifi, certificate, camera, event, weapon, face, bankaccount (plus richer intra-record links and correlation hubs: same_email_as, same_handle_as, same_address_as, same_vehicle_as, same_bank_account_as, same_cell_as, same_wifi_as, same_file_as). Sensitive kinds (document, credential, face, victim, media…) are fingerprint-labelled and gated.
+
+
+### Face-search providers & fan-out
+
+Dedicated transforms: `face.facecheck` (FaceCheck.ID, 2-step upload+search), `face.pimeyes`, `face.search4faces` (VK/OK/TikTok/IG datasets), `face.facesearch` (FaceSearch/FaceOnLive), `face.lenso`, `face.betaface` (attributes + match). Each takes the image from a media/face/person entity (`attributes.path`) or a `file` param, keys from Ajustes → Chaves de API, per-run endpoints remembered per provider.
+
+Add an entity + image and search in one shot: the **Adicionar entidade** modal (and the entities panel quick-add for media/face) opens the native file picker directly, with a "Busca facial em todos os provedores" checkbox that fans out across every installed+configured face provider on add. Results are merged as URLs/accounts tagged by provider and match band (`match:strong ≥90` / `match:likely 75–90` / `match:possible <75`). Also on any media/face/person node: right-click → "Buscar rosto (todos os provedores)", or ⌘K → "Busca facial".

@@ -15,9 +15,14 @@ frontend is plain HTML/CSS/JS.
 ```
 gui/
   dist/            # WebView frontend (static, no build step)
-    index.html     # layout: topbar, sidebar, graph, context panel, modals
-    styles.css     # dark intelligence theme (+ light fallback)
-    app.js         # canvas force-directed graph, Tauri bridge, views
+    index.html     # layout: top navbar + breadcrumbs, icon rail, graph workspace
+                   #   (entities panel · canvas · details panel · console), views
+    styles.css     # design system v2: neutral graphite, warm accent, light/dark tokens
+    app.js         # engine bridge, views, cytoscape graph (flowsint-style nodes)
+    ui.js          # workspace layer: entities panel, selection & bulk actions,
+                   #   context menus (node/edge/canvas), console/log, shortcuts,
+                   #   paste-to-add, export, display settings, models panel
+    l10n.js        # runtime localization (pt/es) for rendered text & tooltips
   src-tauri/       # Rust backend
     src/main.rs    # #[tauri::command] wrappers over cortexintel::api
     tauri.conf.json

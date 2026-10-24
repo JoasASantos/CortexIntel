@@ -40,7 +40,7 @@ impl SemanticType {
     pub fn entity_kind(self) -> Option<EntityKind> {
         match self {
             SemanticType::Email => Some(EntityKind::Account),
-            SemanticType::Phone => Some(EntityKind::Account),
+            SemanticType::Phone => Some(EntityKind::Selector),
             SemanticType::Ip => Some(EntityKind::Ip),
             SemanticType::Url => Some(EntityKind::Url),
             SemanticType::Domain => Some(EntityKind::Domain),

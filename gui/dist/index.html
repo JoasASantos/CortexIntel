@@ -69,26 +69,31 @@
   <!-- ===== Main app ===== -->
   <div class="app" id="app" hidden>
     <header class="topbar">
-      <div class="brand">
-        <span class="logo">◈</span><span class="brand-name">CortexIntel</span>
+      <div class="brand"><span class="logo">◈</span><span class="brand-name">CortexIntel</span></div>
+      <div class="crumbs" id="crumbs">
+        <div class="crumb" id="crumbProject" data-tip="Switch project"><b id="crumbProjectName">—</b><span class="caret">▾</span></div>
+        <span class="crumb-sep">/</span>
+        <div class="crumb" id="crumbView"><span id="crumbViewName">Dashboard</span><span class="caret">▾</span></div>
       </div>
       <div class="tabs" id="tabs"></div>
-      <button class="icon-btn newtab" id="btnNewProject" title="New project (⌘N)">＋</button>
+      <button class="icon-btn newtab" id="btnNewProject" hidden>＋</button>
       <div class="hdr-proj">
-        <button class="icon-btn" id="btnHdrOpen" title="Open project">☰</button>
-        <button class="icon-btn" id="btnHdrExport" title="Export active project">⬇</button>
-        <button class="icon-btn" id="btnHdrImport" title="Import project">⬆</button>
+        <button class="icon-btn" id="btnHdrOpen">☰</button>
+        <button class="icon-btn" id="btnHdrExport">⬇</button>
+        <button class="icon-btn" id="btnHdrImport">⬆</button>
       </div>
       <div class="global-search">
         <span class="gs-icon">⌕</span>
-        <input id="globalSearch" type="text" placeholder="Search entities…  (⌘K commands)" />
+        <input id="globalSearch" type="text" placeholder="Search entities, commands…" />
+        <kbd>⌘K</kbd>
       </div>
       <div class="topbar-right">
-        <div class="sync-status" id="syncStatus"><span class="dot idle"></span><span id="syncLabel">idle</span></div>
-        <button class="btn ghost" id="btnAsk" title="Ask AI — summarize, navigate, act anywhere (⌘/)">✦ Ask AI</button>
-        <button class="btn primary" id="btnRun" title="Run analysis (⌘R)">▶ Run</button>
-        <button class="icon-btn" id="btnNotifications" title="Notifications">🔔<span class="badge" id="notifBadge" hidden>0</span></button>
-        <div class="profile" id="profileBtn" title="Account"><span class="avatar" id="avatar">OP</span></div>
+        <div class="sync-status" id="syncStatus" data-tip="Activity log (⌘D)"><span class="dot idle"></span><span id="syncLabel">idle</span></div>
+        <button class="btn ghost" id="btnAsk" data-tip="Ask AI (⌘/)">✦ Ask AI</button>
+        <button class="btn primary" id="btnRun" data-tip="Run analysis (⌘R)">▶ Run</button>
+        <button class="icon-btn" id="btnTheme" data-tip="Toggle theme"></button>
+        <button class="icon-btn" id="btnNotifications" data-tip="Notifications">🔔<span class="badge" id="notifBadge" hidden>0</span></button>
+        <div class="profile" id="profileBtn" data-tip="Account"><span class="avatar" id="avatar">OP</span></div>
       </div>
     </header>
     <div class="class-banner" id="classBanner" hidden></div>
@@ -96,19 +101,22 @@
     <div class="shell">
       <nav class="sidebar">
         <ul class="nav">
-          <li data-view="dashboard" class="active"><span class="ni">▤</span><span data-i18n="nav.dashboard">Dashboard</span></li>
-          <li data-view="graph"><span class="ni">◕</span><span data-i18n="nav.graph">Graph</span></li>
-          <li data-view="intelligence"><span class="ni">✦</span><span data-i18n="nav.intelligence">Intelligence</span></li>
-          <li data-view="priority"><span class="ni">◎</span><span data-i18n="nav.priority">Priority</span></li>
-          <li data-view="agents"><span class="ni">◈</span><span data-i18n="nav.agents">Agents</span></li>
-          <li data-view="entities"><span class="ni">⬡</span><span data-i18n="nav.entities">Entities</span></li>
-          <li data-view="sources"><span class="ni">⇄</span><span data-i18n="nav.sources">Sources</span></li>
-          <li data-view="timeline"><span class="ni">⧗</span><span data-i18n="nav.timeline">Timeline</span></li>
-          <li data-view="alerts"><span class="ni">⚠</span><span data-i18n="nav.alerts">Alerts</span></li>
-          <li data-view="reports"><span class="ni">▦</span><span data-i18n="nav.reports">Reports</span></li>
-          <li data-view="settings"><span class="ni">⚙</span><span data-i18n="nav.settings">Settings</span></li>
+          <li data-view="dashboard" class="active" data-tip="Dashboard"><span class="ni">▤</span><span data-i18n="nav.dashboard">Dashboard</span></li>
+          <li data-view="graph" data-tip="Graph"><span class="ni">◕</span><span data-i18n="nav.graph">Graph</span></li>
+          <li data-view="entities" data-tip="Entities"><span class="ni">⬡</span><span data-i18n="nav.entities">Entities</span></li>
+          <li data-view="intelligence" data-tip="Intelligence"><span class="ni">✦</span><span data-i18n="nav.intelligence">Intelligence</span></li>
+          <li data-view="priority" data-tip="Priority"><span class="ni">◎</span><span data-i18n="nav.priority">Priority</span></li>
+          <li data-view="agents" data-tip="Agents"><span class="ni">◈</span><span data-i18n="nav.agents">Agents</span></li>
+          <li class="nav-sep"></li>
+          <li data-view="sources" data-tip="Sources"><span class="ni">⇄</span><span data-i18n="nav.sources">Sources</span></li>
+          <li data-view="timeline" data-tip="Timeline"><span class="ni">⧗</span><span data-i18n="nav.timeline">Timeline</span></li>
+          <li data-view="alerts" data-tip="Alerts"><span class="ni">⚠</span><span data-i18n="nav.alerts">Alerts</span></li>
+          <li data-view="reports" data-tip="Reports"><span class="ni">▦</span><span data-i18n="nav.reports">Reports</span></li>
         </ul>
         <div class="sidebar-foot">
+          <ul class="nav" style="flex:none">
+            <li data-view="settings" data-tip="Settings"><span class="ni">⚙</span><span data-i18n="nav.settings">Settings</span></li>
+          </ul>
           <div class="vertical-pill" id="verticalPill">—</div>
           <div class="prov-pill" id="providerPill">provider: auto</div>
         </div>
@@ -117,7 +125,8 @@
       <main class="main" id="main">
         <!-- Dashboard — Decision Command Center -->
         <section class="view" id="view-dashboard">
-          <div class="view-head"><h1 id="dashTitle">Command Center</h1><p class="muted" id="dashSub" data-i18n="view.dash.sub">Investigation state, data confidence, risk drivers and the next best action.</p></div>
+          <div class="view-head"><div><h1 id="dashTitle">Command Center</h1><p class="muted" id="dashSub" data-i18n="view.dash.sub">Investigation state, data confidence, risk drivers and the next best action.</p></div>
+            <div class="row-actions"><button class="btn ghost" id="btnDashGraph"><span data-i18n="btn.openGraph">Open graph</span></button><button class="btn primary" id="btnDashRun">▶ <span data-i18n="btn.runAnalysis">Run analysis</span></button></div></div>
           <div class="situation" id="situationHeader" hidden></div>
           <div class="card readiness" id="readinessCard">
             <div class="rd-left">
@@ -139,105 +148,201 @@
           </div>
           <div class="cards two">
             <div class="card"><div class="card-head"><h3 data-i18n="card.recentSignals">Recent signals</h3></div><div class="list" id="signalsList"><div class="empty">—</div></div></div>
-            <div class="card"><div class="card-head"><h3 data-i18n="card.yourProjects">Your projects</h3><button class="btn ghost" id="btnNewProject2"><span>＋ </span><span data-i18n="btn.newShort">New</span></button></div>
+            <div class="card"><div class="card-head"><h3 data-i18n="card.yourProjects">Your projects</h3><button class="btn ghost sm" id="btnNewProject2"><span>＋ </span><span data-i18n="btn.newShort">New</span></button></div>
               <div class="list" id="projectList"><div class="empty">No projects yet.</div></div></div>
           </div>
         </section>
 
-        <!-- Graph -->
+        <!-- Graph workspace -->
         <section class="view" id="view-graph" hidden>
           <div class="graph-wrap">
-            <div class="graph-toolbar">
-              <div class="gt-left">
-                <div class="canvas-switch" id="canvasSwitch">
-                  <button class="cmode active" data-canvas="graph" data-i18n="canvas.graph">Graph</button>
-                  <button class="cmode" data-canvas="map" data-i18n="canvas.map">Map</button>
+            <div class="graph-body">
+              <!-- left: entities panel -->
+              <aside class="gpanel" id="nodesPanel">
+                <div class="np-tabs">
+                  <button class="np-tab active" data-nptab="list" id="npTabList"><span class="ni"></span><span data-i18n="np.entities">Entities</span></button>
+                  <button class="np-tab" data-nptab="add" id="npTabAdd"><span class="ni"></span><span data-i18n="np.add">Add</span></button>
                 </div>
-                <div class="mode-switch" id="graphModes">
-                  <button class="gmode active" data-mode="overview" title="High-level clusters" data-i18n="gmode.overview">Overview</button>
-                  <button class="gmode" data-mode="risk" title="High &amp; critical only" data-i18n="gmode.risk">Risk</button>
-                  <button class="gmode" data-mode="neighborhood" title="Around the selected entity" data-i18n="gmode.neighborhood">Neighborhood</button>
-                  <button class="gmode" data-mode="timeline" title="By time" data-i18n="gmode.timeline">Timeline</button>
-                  <button class="gmode" data-mode="full" title="Everything" data-i18n="gmode.full">Full</button>
-                  <button class="gmode" data-mode="network" title="Broker &amp; communities" data-i18n="gmode.network">Network</button>
-                  <button class="gmode" data-mode="score" title="Intelligence Score heat" data-i18n="gmode.score">Score</button>
+                <div class="np-sel" id="npSel" hidden>
+                  <b id="npSelCount">0</b><span data-i18n="np.selected">selected</span>
+                  <button class="icon-btn" id="npSelAi" data-tip="Ask AI about selection"></button>
+                  <button class="icon-btn" id="npSelDelete" data-tip="Remove selected"></button>
+                  <button class="btn primary" id="npSelRun" data-tip="Run transform on selection"><span class="ni"></span><span id="npSelRunN">(0)</span></button>
+                  <button class="icon-btn" id="npSelClear" data-tip="Clear selection"></button>
                 </div>
-                <span class="muted" id="graphStats">0 nodes · 0 edges</span>
+                <div class="np-sellist" id="npSelList" hidden></div>
+                <div id="npListWrap" style="display:flex;flex-direction:column;flex:1;min-height:0">
+                  <div class="np-head">
+                    <input type="checkbox" id="npAll" data-tip="Select all visible" />
+                    <div class="np-count"><b id="npCount">0</b> <span data-i18n="np.nodes">nodes</span></div>
+                    <div class="np-search"><span class="ni"></span><input id="npSearch" placeholder="Search…" /></div>
+                    <button class="icon-btn" id="npFilterBtn" data-tip="Filter by type"></button>
+                  </div>
+                  <div class="np-filters" id="npFilters" hidden></div>
+                  <div class="np-list" id="npList"><div class="np-spacer" id="npSpacer"></div></div>
+                </div>
+                <div class="np-add" id="npAdd" hidden>
+                  <h5 data-i18n="np.pickType">Entity type</h5>
+                  <div class="kind-grid" id="npKindGrid"></div>
+                  <h5 data-i18n="np.value">Label / value</h5>
+                  <input class="input" id="npAddLabel" placeholder="name, email, IP, domain…" />
+                  <div class="row-actions"><button class="btn primary" id="npAddBtn" style="flex:1"><span data-i18n="btn.addEntityFull">Add entity</span></button><button class="btn ghost" id="npAddMore" data-tip="Full form (media, files)">…</button></div>
+                  <p class="muted" style="margin:6px 0 0;font-size:11px" data-i18n="np.pasteHint">Tip: paste emails, IPs, domains or URLs directly on the canvas (⌘V) to add them.</p>
+                </div>
+                <div class="gpanel-resizer" data-resize="left"></div>
+              </aside>
+
+              <!-- center: canvas -->
+              <div class="gcanvas dots" id="gcanvas">
+                <div id="cy"></div>
+                <div id="globe3d" hidden></div>
+                <canvas id="mapCanvas" hidden></canvas>
+                <div class="map-empty" id="mapEmpty" hidden></div>
+
+                <div class="ftb ftb-tl" id="ftbLeft">
+                  <button class="icon-btn" id="btnNodesPanel" data-tip="Toggle entities panel (⌘B)"></button>
+                  <span class="sep"></span>
+                  <button class="icon-btn" id="btnSelectMode" data-tip="Selection mode (hold S · drag to lasso)"></button>
+                  <button class="icon-btn" id="btnAddEntity" data-tip="Add entity (A)"></button>
+                  <button class="icon-btn" id="btnConnect" data-tip="Connect two nodes (C)"></button>
+                  <button class="icon-btn" id="btnPath" data-tip="Find path (P)"></button>
+                  <span class="sep"></span>
+                  <button class="icon-btn" id="zoomIn" data-tip="Zoom in (+)"></button>
+                  <button class="icon-btn" id="zoomOut" data-tip="Zoom out (−)"></button>
+                  <button class="icon-btn" id="btnFit" data-tip="Fit to screen (F)"></button>
+                  <button class="icon-btn" id="btnRelayout" data-tip="Re-run layout (L)"></button>
+                  <span class="sep"></span>
+                  <button class="icon-btn" id="btnFilters" data-tip="Filters"></button>
+                  <button class="icon-btn" id="btnGraphSettings" data-tip="Display settings"></button>
+                  <button class="icon-btn" id="btnExport" data-tip="Export (PNG / JSON)"></button>
+                  <button class="icon-btn" id="btnReset" data-tip="Reset view (Esc)"></button>
+                  <span class="sep"></span>
+                  <button class="icon-btn" id="btnAsk2" data-tip="AI copilot (⌘/)"></button>
+                </div>
+                <div class="ftb ftb-tr" id="ftbRight">
+                  <div class="canvas-switch" id="canvasSwitch">
+                    <button class="cmode active" data-canvas="graph"><span class="ni"></span><span data-i18n="canvas.graph">Graph</span></button>
+                    <button class="cmode" data-canvas="map"><span class="ni"></span><span data-i18n="canvas.map">Map</span></button>
+                  </div>
+                  <span class="sep"></span>
+                  <select id="graphLayout" class="mini-select" data-tip="Layout"><option value="fcose">Force</option><option value="concentric">Concentric</option><option value="breadthfirst">Hierarchy</option><option value="circle">Circle</option><option value="grid">Grid</option></select>
+                  <select id="graphCluster" class="mini-select" data-tip="Cluster"><option value="none">Cluster: off</option><option value="kind">By type</option><option value="component">By component</option></select>
+                  <span class="sep"></span>
+                  <span id="graphStats">0 nodes · 0 edges</span>
+                </div>
+                <div class="ftb ftb-tr2" id="ftbLens">
+                  <div class="mode-switch" id="graphModes">
+                    <button class="gmode active" data-mode="overview" data-i18n="gmode.overview">Overview</button>
+                    <button class="gmode" data-mode="risk" data-i18n="gmode.risk">Risk</button>
+                    <button class="gmode" data-mode="neighborhood" data-i18n="gmode.neighborhood">Neighborhood</button>
+                    <button class="gmode" data-mode="timeline" data-i18n="gmode.timeline">Timeline</button>
+                    <button class="gmode" data-mode="full" data-i18n="gmode.full">Full</button>
+                    <button class="gmode" data-mode="network" data-i18n="gmode.network">Network</button>
+                    <button class="gmode" data-mode="score" data-i18n="gmode.score">Score</button>
+                  </div>
+                </div>
+                <input id="graphFilter" hidden />
+                <div class="graph-filters" id="graphFilters" hidden>
+                  <span class="gf-label"><span data-i18n="gf.title">Filters</span><button class="icon-btn" id="gfClose" style="width:22px;height:22px">✕</button></span>
+                  <div class="gf-presets">
+                    <button class="gf-preset active" data-preset="all" data-i18n="gf.all">All</button>
+                    <button class="gf-preset" data-preset="crit" data-i18n="gf.crit">Critical + High</button>
+                    <button class="gf-preset" data-preset="suspicious" data-i18n="gf.suspicious">Suspicious/Malicious</button>
+                    <button class="gf-preset" data-preset="sensitive" data-i18n="gf.sensitive">Sensitive</button>
+                  </div>
+                  <div class="gf-sub" data-i18n="gf.types">Entity types</div>
+                  <div class="gf-kinds" id="gfKinds"></div>
+                  <div class="gf-sub" data-i18n="gf.edges">Relationship types</div>
+                  <div class="gf-kinds" id="gfEdges"></div>
+                </div>
+                <div class="graph-zoom" id="graphZoom" hidden>
+                  <button id="zoomFit" title="Fit">⤢</button>
+                </div>
+                <div class="minimap-wrap" id="minimapWrap"><div class="minimap-title">OVERVIEW</div><canvas id="minimap"></canvas></div>
+                <div class="legend" id="legend"></div>
+                <div class="graph-empty" id="graphEmpty">
+                  <div class="ge-inner"><div class="ge-icon">◕</div><h2 data-i18n="empty.title">No graph yet</h2>
+                    <p data-i18n="empty.sub">Run an analysis, connect a source, or add entities manually (people, media, IPs…) to start building the graph.</p>
+                    <div class="row-actions" style="justify-content:center"><button class="btn primary" id="btnRun2"><span>▶ </span><span data-i18n="btn.runAnalysis">Run analysis</span></button><button class="btn ghost" id="btnAddEntity2"><span>+ </span><span data-i18n="btn.addEntityFull">Add entity</span></button></div>
+                    <div class="ge-hints"><span><kbd>⌘V</kbd> paste selectors</span><span><kbd>A</kbd> add</span><span><kbd>⌘K</kbd> commands</span></div></div>
+                </div>
+                <div class="graph-tip" id="graphTip" hidden></div>
+                <!-- AI copilot dock -->
+                <div class="ask-dock" id="askDock" hidden>
+                  <div class="ask-head"><span>✦ AI Copilot</span><button class="icon-btn" id="askClose">✕</button></div>
+                  <div class="ask-log" id="askLog"></div>
+                  <div class="ask-input">
+                    <textarea id="askText" rows="2" placeholder="Ask about this graph… e.g. 'which accounts share infrastructure and why?'"></textarea>
+                    <button class="btn primary" id="askSend" data-i18n="btn.send">Send</button>
+                  </div>
+                </div>
               </div>
-              <div class="gt-right">
-                <input id="graphFilter" placeholder="Filter…" />
-                <select id="graphCluster" class="mini-select" title="Collapse into clusters"><option value="none">Cluster: off</option><option value="kind">By type</option><option value="component">By component</option></select>
-                <select id="graphLayout" class="mini-select"><option value="fcose">Force (fcose)</option><option value="concentric">Concentric</option><option value="breadthfirst">Hierarchy</option><option value="circle">Circle</option><option value="grid">Grid</option></select>
-                <button class="btn ghost" id="btnAddEntity"><span>+ </span><span data-i18n="gtool.entity">Entity</span></button>
-                <button class="btn ghost" id="btnFit" data-i18n="gtool.fit">Fit</button>
-                <button class="btn ghost" id="btnPath" data-i18n="gtool.path">Path</button>
-                <button class="btn ghost" id="btnConnect" data-i18n="gtool.connect">Connect</button>
-                <button class="btn ghost" id="btnReset" data-i18n="gtool.reset">Reset</button>
-                <button class="btn ghost" id="btnAsk2"><span>✦ </span><span data-i18n="gtool.ask">Ask</span></button>
-              </div>
+
+              <!-- right: details panel -->
+              <aside class="context gpanel right" id="context" hidden>
+                <div class="gpanel-resizer" data-resize="right"></div>
+                <div class="ctx-head">
+                  <div><div class="ctx-kind" id="ctxKind">entity</div><div class="ctx-name" id="ctxName">—</div></div>
+                  <div class="ctx-tools">
+                    <button class="icon-btn" id="ctxEnrich" data-tip="Run transform / enrich"></button>
+                    <button class="icon-btn" id="ctxEdit" data-tip="Edit"></button>
+                    <button class="icon-btn" id="ctxDelete" data-tip="Remove node"></button>
+                    <button class="icon-btn" id="ctxClose" data-tip="Close (Esc)">✕</button>
+                  </div>
+                </div>
+                <div class="ctx-risk" id="ctxRisk"></div>
+                <div class="ctx-actions">
+                  <button class="btn ghost" data-act="expand"><span data-i18n="ctx.expand">Expand (AI)</span></button>
+                  <button class="btn ghost" data-act="connect" data-i18n="ctx.connect">Connect</button>
+                  <button class="btn ghost" data-act="isolate" data-i18n="ctx.isolate">Isolate</button>
+                  <button class="btn ghost" data-act="neighbors" data-i18n="ctx.neighbors">Neighbors</button>
+                  <button class="btn ghost" data-act="alert" data-i18n="ctx.alert">Create alert</button>
+                  <button class="btn ghost" data-act="edit" data-i18n="ctx.edit">Edit</button>
+                </div>
+                <div class="ctx-section"><h4><span data-i18n="ctx.properties">Properties</span></h4><div class="kv" id="ctxMeta"></div></div>
+                <div class="ctx-section"><h4><span id="ctxNbTitle">Neighbors</span></h4><canvas class="nb-canvas" id="ctxNeighbors"></canvas></div>
+                <div class="ctx-section"><h4><span data-i18n="ctx.relations">Relationships</span> <span class="cnt" id="ctxRelCount"></span></h4><div class="rel-list" id="ctxRels"></div></div>
+                <div class="ctx-section"><h4><span data-i18n="ctx.tags">Tags</span> <button class="tag-add" id="ctxAddTag" title="Add tag">＋</button></h4><div class="chips" id="ctxTags"></div></div>
+                <div class="ctx-section"><h4 data-i18n="ctx.sources">Sources</h4><div class="chips" id="ctxSources"></div></div>
+                <div class="ctx-section"><h4 data-i18n="ctx.transforms">Transforms</h4><div class="rel-list" id="ctxTransforms"><div class="empty">—</div></div></div>
+                <div class="ctx-section"><h4 data-i18n="cmt.title">Comments</h4>
+                  <div class="comments" id="ctxComments"></div>
+                  <div class="comment-add"><input id="ctxCommentInput" data-i18n-ph="cmt.placeholder" placeholder="Add a comment…" /><button class="btn ghost sm" id="ctxCommentSend" data-i18n="cmt.post">Post</button></div>
+                </div>
+              </aside>
             </div>
-            <div class="graph-filters" id="graphFilters">
-              <span class="gf-label">Filters</span>
-              <div class="gf-presets">
-                <button class="gf-preset active" data-preset="all" data-i18n="gf.all">All</button>
-                <button class="gf-preset" data-preset="crit" data-i18n="gf.crit">Critical + High</button>
-                <button class="gf-preset" data-preset="suspicious" data-i18n="gf.suspicious">Suspicious/Malicious</button>
-                <button class="gf-preset" data-preset="sensitive" data-i18n="gf.sensitive">Sensitive</button>
-              </div>
-              <div class="gf-kinds" id="gfKinds"></div>
-              <div class="gf-kinds" id="gfEdges" style="margin-top:6px;border-top:1px solid rgba(120,140,160,0.18);padding-top:6px"></div>
-            </div>
-            <div id="cy"></div>
-            <div id="globe3d" hidden></div>
-            <canvas id="mapCanvas" hidden></canvas>
-            <div class="map-empty" id="mapEmpty" hidden></div>
-            <div class="graph-zoom" id="graphZoom">
-              <button id="zoomIn" title="Zoom in">+</button>
-              <button id="zoomOut" title="Zoom out">−</button>
-              <button id="zoomFit" title="Fit">⤢</button>
-            </div>
-            <div class="minimap-wrap" id="minimapWrap"><div class="minimap-title">OVERVIEW</div><canvas id="minimap"></canvas></div>
-            <div class="legend" id="legend"></div>
-            <div class="graph-empty" id="graphEmpty">
-              <div class="ge-inner"><div class="ge-icon">◕</div><h2 data-i18n="empty.title">No graph yet</h2>
-                <p data-i18n="empty.sub">Run an analysis, connect a source, or add entities manually (people, media, IPs…) to start building the graph.</p>
-                <div class="row-actions" style="justify-content:center"><button class="btn primary" id="btnRun2"><span>▶ </span><span data-i18n="btn.runAnalysis">Run analysis</span></button><button class="btn ghost" id="btnAddEntity2"><span>+ </span><span data-i18n="btn.addEntityFull">Add entity</span></button></div></div>
-            </div>
-            <!-- AI copilot dock -->
-            <div class="ask-dock" id="askDock" hidden>
-              <div class="ask-head"><span>✦ AI Copilot</span><button class="icon-btn" id="askClose">✕</button></div>
-              <div class="ask-log" id="askLog"></div>
-              <div class="ask-input">
-                <textarea id="askText" rows="2" placeholder="Ask about this graph… e.g. 'which accounts share infrastructure and why?'"></textarea>
-                <button class="btn primary" id="askSend" data-i18n="btn.send">Send</button>
-              </div>
+            <!-- bottom: console -->
+            <div class="console" id="console">
+              <div class="console-head" id="consoleHead"><span class="ni"></span><span data-i18n="console.title">Console</span> <kbd>⌘D</kbd><span class="muted" id="consoleLast" style="margin:0 0 0 8px;font-size:11px"></span>
+                <span class="ch-right"><button class="icon-btn" id="consoleClear" data-tip="Clear log"></button><button class="icon-btn" id="consoleToggle" data-tip="Open / close"></button></span></div>
+              <div class="console-log" id="consoleLog"></div>
             </div>
           </div>
         </section>
 
         <!-- Entities — Entity Registry -->
         <section class="view" id="view-entities" hidden>
-          <div class="view-head"><h1 data-i18n="view.entities">Entity Registry</h1><p class="muted" data-i18n="view.entities.sub">Validate, resolve, enrich and prioritize the entities that feed your intelligence.</p></div>
+          <div class="view-head"><div><h1 data-i18n="view.entities">Entity Registry</h1><p class="muted" data-i18n="view.entities.sub">Validate, resolve, enrich and prioritize the entities that feed your intelligence.</p></div>
+            <div class="row-actions"><button class="btn ghost" id="btnEntExport">⬇ CSV</button><button class="btn primary" id="btnEntAdd">＋ <span data-i18n="btn.addEntityFull">Add entity</span></button></div></div>
           <div class="cards" id="entSummary"></div>
           <div class="ent-controls">
             <div class="chips" id="entFilters"></div>
-            <input id="entSearch" placeholder="Search / intent — 'high risk low confidence', 'no source', 'duplicates', 'people connected to…'" />
+            <input id="entSearch" placeholder="Search / intent — 'high risk low confidence', 'no source', 'duplicates'…" />
           </div>
           <div class="bulkbar" id="entBulkBar" hidden>
             <span id="entSelCount">0 selected</span>
-            <button class="btn ghost" data-bulk="graph">Isolate in graph</button>
-            <button class="btn ghost" data-bulk="intel">Generate intelligence</button>
-            <button class="btn ghost" data-bulk="tag">Bulk tag</button>
-            <button class="btn ghost" data-bulk="review">Mark reviewed</button>
-            <button class="btn ghost" data-bulk="clear">Clear</button>
+            <button class="btn ghost" data-bulk="graph" data-i18n="bulk.graph">Isolate in graph</button>
+            <button class="btn ghost" data-bulk="intel" data-i18n="bulk.intel">Generate intelligence</button>
+            <button class="btn ghost" data-bulk="tag" data-i18n="bulk.tag">Bulk tag</button>
+            <button class="btn ghost" data-bulk="review" data-i18n="bulk.review">Mark reviewed</button>
+            <button class="btn ghost" data-bulk="clear" data-i18n="bulk.clear">Clear</button>
           </div>
           <div class="tbl-wrap"><table class="tbl" id="entitiesTable"><thead><tr>
             <th style="width:24px"><input type="checkbox" id="entSelAll" title="Select page"></th>
-            <th>Entity</th><th>Type</th><th>Risk</th><th>Confidence</th><th>Quality</th><th>Conns</th><th>Sources</th><th>Status</th>
+            <th class="sortable" data-sort="label" data-i18n="col.entity">Entity</th><th class="sortable" data-sort="kind" data-i18n="col.type">Type</th><th class="sortable" data-sort="risk" data-i18n="col.risk">Risk</th><th class="sortable" data-sort="conf" data-i18n="col.conf">Confidence</th><th class="sortable" data-sort="qual" data-i18n="col.quality">Quality</th><th class="sortable" data-sort="deg" data-i18n="col.conns">Conns</th><th class="sortable" data-sort="src" data-i18n="col.sources">Sources</th><th data-i18n="col.status">Status</th><th data-i18n="col.tags">Tags</th>
           </tr></thead><tbody></tbody></table></div>
           <div class="ent-foot muted" id="entFoot"></div>
         </section>
-
         <!-- Intelligence (decision-grade product) -->
         <section class="view" id="view-intelligence" hidden>
           <div class="view-head"><h1 data-i18n="view.intelligence">Intelligence</h1><p class="muted" data-i18n="view.intelligence.sub">Decision-ready product synthesized from the current investigation.</p></div>
@@ -347,15 +452,17 @@
                 </div>
               </div>
               <div class="stab" id="stab-providers" hidden>
-                <div class="card"><div class="card-head"><h3>AI provider</h3></div>
+                <div class="card"><div class="card-head"><h3>AI provider</h3><span class="conf-pill" id="providerHint">auto = base score · governor · fallback</span></div>
                   <div class="cselect" id="setProvider"></div>
-                  <div class="route-table">
-                    <div class="rt-row"><span>Classification / Audit</span><span class="tag off">simple → Codex gpt-5.5</span></div>
-                    <div class="rt-row"><span>Extraction / Correlation</span><span class="tag ok">standard → Claude Sonnet</span></div>
-                    <div class="rt-row"><span>Risk / Investigation / Ask</span><span class="tag ok">complex → Claude Opus 4.8</span></div>
-                    <div class="rt-row"><span>High data density</span><span class="tag ok">escalates → Claude Opus</span></div>
-                  </div>
-                  <p class="muted" style="margin-top:10px">Auto routes by task complexity: critical/high-density to Claude (Opus 4.8 → Sonnet), simpler to Codex. Override models with CORTEX_MODEL_COMPLEX / _STANDARD / _SIMPLE.</p></div>
+                  <p class="muted" style="margin-top:10px" data-nol10n>Auto roteia por <b>base score</b> (raciocínio × velocidade × custo, ponderados pela complexidade da tarefa) com gate de contexto, disponibilidade do provedor e pressão de orçamento do governor. Sobrescreva com <code>CORTEX_MODEL_COMPLEX / _STANDARD / _SIMPLE</code>; registre modelos novos via <code>CORTEX_MODELS_JSON</code>; APIs OpenAI-compatíveis (Kimi, Qwen, DeepSeek, OpenRouter, Ollama) via <code>CORTEX_API_&lt;NOME&gt;_KEY</code> no <code>.env</code>; hermes/opencode via <code>CORTEX_HERMES_CMD / CORTEX_OPENCODE_CMD</code>.</p></div>
+                <div class="card"><div class="card-head"><h3 data-nol10n>Roteamento por tarefa</h3><button class="btn ghost sm" id="btnModelsRefresh">↻</button></div>
+                  <div id="modelRoutes" class="list"><div class="empty">—</div></div></div>
+                <div class="card"><div class="card-head"><h3 data-nol10n>Catálogo de modelos</h3><span class="conf-pill" id="modelsMeta"></span></div>
+                  <div class="tbl-wrap" style="max-height:420px"><table class="tbl" id="modelsTable"><thead><tr><th data-nol10n>Modelo</th><th data-nol10n>Provedor</th><th data-nol10n>Base</th><th data-nol10n>Raciocínio</th><th data-nol10n>Velocidade</th><th data-nol10n>Custo</th><th data-nol10n>Contexto</th><th data-nol10n>Forças</th><th data-nol10n>Disponível</th></tr></thead><tbody></tbody></table></div></div>
+                <div class="cards two">
+                  <div class="card"><div class="card-head"><h3 data-nol10n>Governor de tokens / custo</h3></div><div class="kv" id="governorInfo"></div></div>
+                  <div class="card"><div class="card-head"><h3 data-nol10n>Cache de prompts / semântico</h3><button class="btn ghost sm" id="btnCacheClear" data-nol10n>Limpar</button></div><div class="kv" id="cacheInfo"></div></div>
+                </div>
               </div>
               <div class="stab" id="stab-datasources" hidden>
                 <div class="card"><div class="card-head"><h3>Connect a source</h3></div>
@@ -411,28 +518,17 @@
         </section>
       </main>
 
-      <!-- Right context panel -->
-      <aside class="context" id="context" hidden>
-        <div class="ctx-head"><div><div class="ctx-kind" id="ctxKind">entity</div><div class="ctx-name" id="ctxName">—</div></div><button class="icon-btn" id="ctxClose">✕</button></div>
-        <div class="ctx-risk" id="ctxRisk"></div>
-        <div class="ctx-section"><h4>Tags <button class="tag-add" id="ctxAddTag" title="Add tag">＋</button></h4><div class="chips" id="ctxTags"></div></div>
-        <div class="ctx-section"><h4>Metadata</h4><div class="kv" id="ctxMeta"></div></div>
-        <div class="ctx-section"><h4>Direct relations</h4><div class="rel-list" id="ctxRels"></div></div>
-        <div class="ctx-section"><h4>Sources</h4><div class="chips" id="ctxSources"></div></div>
-        <div class="ctx-actions">
-          <button class="btn ghost" data-act="edit" data-i18n="ctx.edit">Edit</button>
-          <button class="btn ghost" data-act="connect" data-i18n="ctx.connect">Connect</button>
-          <button class="btn ghost" data-act="expand"><span>✦ </span><span data-i18n="ctx.expand">Expand (AI)</span></button>
-          <button class="btn ghost" data-act="isolate" data-i18n="ctx.isolate">Isolate</button>
-          <button class="btn ghost" data-act="neighbors" data-i18n="ctx.neighbors">Neighbors</button>
-          <button class="btn ghost" data-act="alert" data-i18n="ctx.alert">Create alert</button>
-        </div>
-        <div class="ctx-section"><h4>Transforms</h4><div class="rel-list" id="ctxTransforms"><div class="empty">—</div></div></div>
-        <div class="ctx-section"><h4 data-i18n="cmt.title">Comments</h4>
-          <div class="comments" id="ctxComments"></div>
-          <div class="comment-add"><input id="ctxCommentInput" data-i18n-ph="cmt.placeholder" placeholder="Add a comment…" /><button class="btn ghost" id="ctxCommentSend" data-i18n="cmt.post">Post</button></div>
-        </div>
-      </aside>
+    </div>
+    <div class="statusbar" id="statusbar">
+      <span class="sb-item" id="sbProject"><b>—</b></span>
+      <span class="sb-item" id="sbGraph">0 nodes · 0 edges</span>
+      <span class="sb-item" id="sbProvider">provider: auto</span>
+      <span class="sb-item" id="sbSel"></span>
+      <span class="sb-right">
+        <span class="sb-item sb-btn" id="sbConsole"><span class="ni"></span> Console <kbd>⌘D</kbd></span>
+        <span class="sb-item sb-btn" id="sbShortcuts"><span class="ni"></span> Shortcuts <kbd>?</kbd></span>
+        <span class="sb-item" id="sbVersion">v0.1</span>
+      </span>
     </div>
   </div>
 
@@ -469,5 +565,7 @@
   <input type="file" id="filePicker" hidden />
 
   <script src="app.js"></script>
+  <script src="ui.js"></script>
+  <script src="l10n.js"></script>
 </body>
 </html>

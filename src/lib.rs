@@ -6,7 +6,9 @@ pub mod agentlib;
 pub mod agents;
 pub mod anomaly;
 pub mod assessment;
+pub mod attackpath;
 pub mod audit;
+pub mod bus;
 pub mod auth;
 pub mod calibrate;
 pub mod cli;
@@ -23,7 +25,9 @@ pub mod iscore;
 pub mod keys;
 pub mod linkpred;
 pub mod llm;
+pub mod memory;
 pub mod monitor;
+pub mod orchestrator;
 pub mod netsci;
 pub mod ontology;
 pub mod pipeline;
@@ -207,8 +211,10 @@ pub mod api {
             LlmRouter::offline(false)
         } else {
             LlmRouter::new(cfg.provider, None, None, false)
-        };
+        }.with_lang(&cfg.lang);
+        crate::bus::emit("run.start", format!("domain={} provider={} lang={} inputs={}", params.domain, params.provider, cfg.lang, params.inputs.len()));
         let result = pipeline::run(srcs, &cfg, &router)?;
+        if let Some(pid) = &params.project_id { crate::memory::invalidate(pid); }
 
         if let Some(pid) = &params.project_id {
             if !pid.is_empty() {
@@ -258,6 +264,13 @@ pub mod api {
         /// Optional project AI instructions to steer the answer.
         #[serde(default, alias = "aiInstructions")]
         pub ai_instructions: Option<String>,
+        #[serde(default, alias = "projectId")]
+        pub project_id: Option<String>,
+        #[serde(default)]
+        pub lang: Option<String>,
+        /// Bypass the orchestrator (planner/worker/critic) and answer directly.
+        #[serde(default)]
+        pub direct: Option<bool>,
     }
 
     pub fn ask(params: AskParams) -> Result<serde_json::Value> {
@@ -266,18 +279,110 @@ pub mod api {
         }
         let domain = parse_domain(&params.domain);
         let provider = parse_provider(&params.provider);
+        let lang = match params.lang.as_deref() { Some("en") => "en", Some("es") => "es", _ => "pt" }.to_string();
         let router = if provider == ProviderChoice::Mock {
             LlmRouter::offline(false)
         } else {
             LlmRouter::new(provider, None, None, false)
+        }.with_lang(&lang);
+        let instr = params.ai_instructions.clone().filter(|s| !s.trim().is_empty());
+        let answer_fn = |q: &str, ctx: &str| -> crate::llm::LlmRequest {
+            let mut context = ctx.to_string();
+            if let Some(i) = &instr { context = format!("OPERATOR INSTRUCTIONS (steer your analysis):\n{i}\n\n{context}"); }
+            crate::agents::ask_request(domain, q, &context)
         };
-        let mut context = summarize_graph_for_prompt(&params.graph);
-        if let Some(instr) = params.ai_instructions.as_deref().filter(|s| !s.trim().is_empty()) {
-            context = format!("OPERATOR INSTRUCTIONS (steer your analysis):\n{instr}\n\n{context}");
+        let project = params.project_id.clone().unwrap_or_default();
+        if params.direct.unwrap_or(false) || project.is_empty() {
+            let context = summarize_graph_for_prompt(&params.graph);
+            let req = answer_fn(&params.question, &context);
+            let resp = router.complete(&req)?;
+            let mut v = resp.as_json().unwrap_or_else(|_| serde_json::json!({ "answer": resp.text }));
+            v["_meta"] = serde_json::json!({"provider": resp.provider, "model": resp.model, "mode": "direct"});
+            return Ok(v);
         }
-        let req = crate::agents::ask_request(domain, &params.question, &context);
+        let (mut answer, trace) = crate::orchestrator::ask(&router, &project, domain.slug(), &params.question, &params.graph, &lang, &answer_fn)?;
+        answer["_meta"] = serde_json::json!({
+            "provider": trace.provider, "model": trace.model, "mode": "orchestrated", "planner": trace.planner,
+            "plan": trace.plan, "observations": trace.observations.len(), "retrieval_chars": trace.retrieval_chars, "critic": trace.critic,
+        });
+        Ok(answer)
+    }
+
+    /// Seed investigation: given a subject (name / selector) + free-form context,
+    /// the AI derives the connected entities (aliases, addresses, phones,
+    /// CPF/RG, e-mails, crypto wallets, URLs, social accounts, orgs, vehicles…)
+    /// and the relationships between them — all marked as HYPOTHESES for the
+    /// analyst to confirm. Deterministic extraction runs first so real selectors
+    /// present in the text are never missed.
+    #[derive(serde::Deserialize)]
+    pub struct InvestigateParams {
+        pub subject: String,
+        #[serde(default)]
+        pub kind: Option<String>,
+        #[serde(default)]
+        pub context: String,
+        #[serde(default = "default_domain")]
+        pub domain: String,
+        #[serde(default = "default_provider")]
+        pub provider: String,
+        #[serde(default, alias = "projectId")]
+        pub project_id: Option<String>,
+        #[serde(default)]
+        pub lang: Option<String>,
+    }
+
+    pub fn investigate(params: InvestigateParams) -> Result<serde_json::Value> {
+        if params.subject.trim().is_empty() {
+            return Err(anyhow!("empty subject"));
+        }
+        let domain = parse_domain(&params.domain);
+        let provider = parse_provider(&params.provider);
+        let lang = match params.lang.as_deref() { Some("en") => "en", Some("es") => "es", _ => "pt" }.to_string();
+        let router = if provider == ProviderChoice::Mock { LlmRouter::offline(false) } else { LlmRouter::new(provider, None, None, false) }.with_lang(&lang);
+        let subj_kind = params.kind.clone().unwrap_or_else(|| "person".into());
+        // Deterministic selectors found in subject + context (never invented).
+        let mut seed_entities: Vec<serde_json::Value> = Vec::new();
+        let scan = format!("{} {}", params.subject, params.context);
+        for (k, v) in crate::extract::scan_indicators(&scan) {
+            seed_entities.push(serde_json::json!({"kind": k.as_str(), "label": v, "hypothesis": false, "attributes": {"origin": "extraído do texto"}}));
+        }
+        let sys = crate::prompts::seed_investigate_system(domain);
+        let task = crate::prompts::seed_investigate_task(&params.subject, &subj_kind, &params.context);
+        let req = crate::llm::LlmRequest::new(sys, task)
+            .label(format!("{}.investigate", domain.slug()))
+            .json(serde_json::json!({"type":"object","required":["entities","relationships"]}))
+            .complexity(crate::llm::Complexity::Complex)
+            .lang(&lang);
         let resp = router.complete(&req)?;
-        resp.as_json().or_else(|_| Ok(serde_json::json!({ "answer": resp.text })))
+        let mut v = resp.as_json().unwrap_or_else(|_| serde_json::json!({"entities": [], "relationships": []}));
+        if !v.is_object() { v = serde_json::json!({"entities": [], "relationships": [], "summary": resp.text}); }
+        if !v.get("entities").map(|e| e.is_array()).unwrap_or(false) { v["entities"] = serde_json::json!([]); }
+        if !v.get("relationships").map(|e| e.is_array()).unwrap_or(false) { v["relationships"] = serde_json::json!([]); }
+        // Merge deterministic seeds in front, deduped by (kind,label); link each to the subject.
+        let subj_label = params.subject.clone();
+        if let Some(arr) = v.get_mut("entities").and_then(|e| e.as_array_mut()) {
+            let mut seen: std::collections::HashSet<String> = arr.iter().filter_map(|e| Some(format!("{}|{}", e.get("kind")?.as_str()?, e.get("label")?.as_str()?.to_lowercase()))).collect();
+            for e in seed_entities.into_iter().rev() {
+                let key = format!("{}|{}", e.get("kind").and_then(|x| x.as_str()).unwrap_or(""), e.get("label").and_then(|x| x.as_str()).unwrap_or("").to_lowercase());
+                if seen.insert(key) { arr.insert(0, e); }
+            }
+        }
+        // Link deterministic seeds to the subject when the model gave no relationship for them.
+        {
+            let ents: Vec<(String,String,bool)> = v.get("entities").and_then(|e| e.as_array()).map(|a| a.iter().filter_map(|e| Some((e.get("kind")?.as_str()?.to_string(), e.get("label")?.as_str()?.to_string(), e.get("hypothesis").and_then(|h| h.as_bool()).unwrap_or(true)))).collect()).unwrap_or_default();
+            let linked: std::collections::HashSet<String> = v.get("relationships").and_then(|r| r.as_array()).map(|a| a.iter().filter_map(|r| r.get("target").and_then(|t| t.as_str()).map(|s| s.to_lowercase())).chain(a.iter().filter_map(|r| r.get("source").and_then(|t| t.as_str()).map(|s| s.to_lowercase()))).collect()).unwrap_or_default();
+            let rel_for = |k: &str| match k { "selector" => "uses_phone", "email" => "has_email", "document" => "holds_document", "address" => "lives_at", "wallet" => "controls_wallet", "bankaccount" => "owns_bank_account", "url" | "domain" => "linked_to", "organization" => "associate_of", "username" | "account" => "uses_username", _ => "linked_to" };
+            if let Some(rels) = v.get_mut("relationships").and_then(|r| r.as_array_mut()) {
+                for (k, lbl, hyp) in ents { if lbl.to_lowercase() != subj_label.to_lowercase() && !linked.contains(&lbl.to_lowercase()) { rels.push(serde_json::json!({"source": subj_label, "type": rel_for(&k), "target": lbl, "confidence": if hyp {0.4} else {0.7}, "hypothesis": hyp})); } }
+            }
+        }
+        // Ensure the subject itself is present and everything links to it.
+        v["subject"] = serde_json::json!({"kind": subj_kind, "label": params.subject});
+        v["_meta"] = serde_json::json!({"provider": resp.provider, "model": resp.model, "mode": "investigate"});
+        if let Some(pid) = params.project_id.as_deref().filter(|s| !s.is_empty()) {
+            let _ = crate::projects::add_activity(pid, "investigate", &format!("Investigação por IA: {} ({} entidades propostas)", params.subject, v.get("entities").and_then(|e| e.as_array()).map(|a| a.len()).unwrap_or(0)), serde_json::json!({}));
+        }
+        Ok(v)
     }
 
     /// Compact the frontend graph (nodes/edges) into a prompt-sized context.
@@ -544,6 +649,25 @@ pub mod api {
         Ok(serde_json::from_str(&raw)?)
     }
 
+    /// Find attack paths between two entities in a project's graph.
+    pub fn attack_path(params: serde_json::Value) -> Result<serde_json::Value> {
+        let project_id = params.get("project_id").or_else(|| params.get("projectId"))
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("missing project_id"))?;
+        let source_id = params.get("source_id").and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("missing source_id"))?;
+        let target_id = params.get("target_id").and_then(|v| v.as_str())
+            .ok_or_else(|| anyhow!("missing target_id"))?;
+        let max_paths = params.get("max_paths").and_then(|v| v.as_u64()).unwrap_or(3) as usize;
+        let max_depth = params.get("max_depth").and_then(|v| v.as_u64()).unwrap_or(15) as usize;
+
+        let p = crate::projects::load(project_id)?;
+        let c = p.last_result.ok_or_else(|| anyhow!("project has no analysis yet"))?;
+        let graph = crate::ontology::KnowledgeGraph::from_case(&c);
+        let result = crate::attackpath::find_paths(&graph, source_id, target_id, max_paths, max_depth);
+        Ok(serde_json::to_value(result)?)
+    }
+
     fn parse_domain(s: &str) -> Domain {
         Domain::all()
             .iter()
@@ -561,6 +685,7 @@ pub mod api {
             "claude" => ProviderChoice::Claude,
             "codex" => ProviderChoice::Codex,
             "gemini" => ProviderChoice::Gemini,
+            "custom" => ProviderChoice::Custom,
             "mock" => ProviderChoice::Mock,
             _ => ProviderChoice::Auto,
         }

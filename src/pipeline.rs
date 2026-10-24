@@ -507,6 +507,7 @@ pub fn run(
 
 fn step(n: &str, title: &str) {
     println!("{} {}", format!("[{n}]").dimmed(), title.bold());
+    crate::bus::emit("pipeline.stage", format!("[{n}] {title}"));
 }
 
 fn note_mcp_plan(src: &Box<dyn DataSource>) {

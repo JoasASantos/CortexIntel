@@ -15,29 +15,36 @@ use std::process::{Command, Stdio};
 
 pub struct GenericProvider {
     cmd: Option<String>,
+    label: String,
+    env: String,
 }
 
 impl GenericProvider {
     pub fn new() -> Self {
-        GenericProvider { cmd: std::env::var("CORTEX_LLM_CMD").ok().filter(|s| !s.trim().is_empty()) }
+        Self::named("custom", "CORTEX_LLM_CMD")
+    }
+    /// A generic CLI under another name — e.g. `hermes` via `CORTEX_HERMES_CMD`
+    /// or `opencode` via `CORTEX_OPENCODE_CMD`.
+    pub fn named(label: &str, env: &str) -> Self {
+        GenericProvider { cmd: std::env::var(env).ok().filter(|s| !s.trim().is_empty()), label: label.to_string(), env: env.to_string() }
     }
     pub fn is_configured(&self) -> bool {
         self.cmd.is_some()
     }
     fn parts(&self) -> Result<Vec<String>> {
-        let raw = self.cmd.clone().ok_or_else(|| anyhow!("CORTEX_LLM_CMD not set — no custom model configured"))?;
+        let raw = self.cmd.clone().ok_or_else(|| anyhow!("{} not set — no {} model configured", self.env, self.label))?;
         Ok(raw.split_whitespace().map(|s| s.to_string()).collect())
     }
 }
 
 impl LlmProvider for GenericProvider {
     fn name(&self) -> &str {
-        "custom"
+        &self.label
     }
 
     fn complete(&self, req: &LlmRequest) -> Result<LlmResponse> {
         let parts = self.parts()?;
-        let (bin, args) = parts.split_first().ok_or_else(|| anyhow!("empty CORTEX_LLM_CMD"))?;
+        let (bin, args) = parts.split_first().ok_or_else(|| anyhow!("empty {}", self.env))?;
 
         let mut instruction = String::new();
         instruction.push_str(&req.system);
@@ -59,7 +66,7 @@ impl LlmProvider for GenericProvider {
 
         let mut child = cmd
             .spawn()
-            .with_context(|| format!("failed to spawn custom model `{bin}` (CORTEX_LLM_CMD)"))?;
+            .with_context(|| format!("failed to spawn {} model `{bin}` ({})", self.label, self.env))?;
         if !uses_placeholder {
             if let Some(mut sin) = child.stdin.take() {
                 let _ = sin.write_all(instruction.as_bytes());
@@ -73,13 +80,13 @@ impl LlmProvider for GenericProvider {
         if text.is_empty() {
             return Err(anyhow!("custom model returned empty output"));
         }
-        Ok(LlmResponse { text, provider: "custom".into(), model: bin.clone() })
+        Ok(LlmResponse { text, provider: self.label.clone(), model: req.model.clone().unwrap_or_else(|| bin.clone()) })
     }
 
     fn health(&self) -> Result<String> {
         match &self.cmd {
             Some(c) => Ok(format!("configured: {c}")),
-            None => Err(anyhow!("CORTEX_LLM_CMD not set")),
+            None => Err(anyhow!("{} not set", self.env)),
         }
     }
 }

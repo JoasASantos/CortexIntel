@@ -205,3 +205,33 @@ pub fn audit_task(run_summary: &str) -> String {
          RUN SUMMARY:\n{run_summary}"
     )
 }
+
+/// Seed-investigation persona: expand a subject into a hypothesis graph.
+pub fn seed_investigate_system(domain: crate::config::Domain) -> String {
+    format!(
+        "{}\n\nYou are an OSINT investigation assistant. From a SUBJECT and the analyst's CONTEXT, \
+         you infer the plausibly connected entities and how they relate, to bootstrap a link-analysis \
+         graph the analyst will then verify with transforms/sources. Extract every identifier already \
+         present in the text (names, aliases, e-mails, phones, CPF/RG/CNPJ/passport, addresses, crypto \
+         wallets, URLs/domains, social handles, organizations, vehicles/plates). Then propose the \
+         MISSING connected entities that a competent investigator would look for next, each clearly \
+         marked as a hypothesis. NEVER fabricate a concrete identifier (a real CPF, a real phone, a \
+         real wallet) you were not given — for hypotheses use a descriptive placeholder label (e.g. \
+         'e-mail corporativo (a confirmar)', 'possível sócio', 'carteira recebedora (a rastrear)'). \
+         Facts extracted from the text: hypothesis=false. Everything you infer: hypothesis=true.",
+        header(domain, "OSINT-Investigator")
+    )
+}
+
+pub fn seed_investigate_task(subject: &str, kind: &str, context: &str) -> String {
+    format!(
+        "SUBJECT: {subject}  (kind: {kind})\nCONTEXT (analyst notes):\n{context}\n\n\
+         Return ONLY JSON:\n{{\n\
+           \"summary\": \"<what this subject appears to be and the strongest leads>\",\n\
+           \"entities\": [{{\"kind\":\"person|username|email|selector|document|address|location|wallet|bankaccount|url|domain|organization|vehicle|account|media|face|incident\",\"label\":\"<value or descriptive placeholder>\",\"attributes\":{{}},\"hypothesis\":<bool>}}],\n\
+           \"relationships\": [{{\"source\":\"<label>\",\"type\":\"<owns|uses_phone|has_email|lives_at|holds_document|owns_bank_account|controls_wallet|registered|linked_to|associate_of|same_as|posted|member_of>\",\"target\":\"<label>\",\"confidence\":<0..1>,\"hypothesis\":<bool>}}],\n\
+           \"next_steps\": [\"<which transform/source would confirm each key hypothesis>\"]\n\
+         }}\n\
+         The SUBJECT must be one of the entities. Connect every entity into the graph (no orphans): tie each to the subject or to another entity. Prefer 8–25 entities. Keep identifiers verbatim; do not invent concrete identifiers."
+    )
+}
